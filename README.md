@@ -21,11 +21,11 @@ A next-generation 3D game engine built from scratch in C++20, targeting Vulkan 1
 - **Virtual Geometry** — Nanite-style LOD streaming with screen-space error, priority queue, LRU eviction (512 MB budget)
 - **CDLOD Terrain** — Clipmap rendering with procedural generation and 16-layer material splatting
 - **GPU Particles** — Compute-driven emit/simulate/sort with curl noise turbulence
-- **Full Post-Processing Stack** — TAA, FXAA, bloom, TSR, tone mapping, DOF bokeh, motion blur, chromatic aberration, film grain, vignette, SVGF denoise, auto-exposure, CAS sharpen, GTAO (horizon-based + temporal + spatial denoise), SSR, VRS, volumetric clouds, screen-space contact shadows
-- **Asset Pipeline** — glTF 2.0 importer, shader permutation system, DXC→SPIR-V compilation, hot-reload, dependency-aware include resolver, async loader, SPIR-V shader reflection, shader variant warm-up, persistent shader variant cache (on-disk .svc binary format)
-- **GPU Memory Management** — Buffer pool, frame allocator, staging manager, transient resource pool (aliased), memory defragmenter, aliasing optimizer (graph-coloring), deletion queue, upload ring buffer, descriptor heap + ring buffer, fence pool, resource lifetime manager, buffer suballocator (first-fit + coalescing), memory budget tracker (VK_EXT_memory_budget), async copy engine (dedicated transfer queue DMA)
-- **GPU Submission** — Submission batcher (minimize vkQueueSubmit), render pass cache, pipeline layout cache, sampler pool, command signature builder, PSO builder (fluent API + validation + presets), PSO hash (FNV-1a deduplication), multi-queue sync manager (timeline semaphores), bindless table updater (batched descriptor writes), timestamp calibration (CPU↔GPU clock sync), viewport state manager (dynamic stack)
-- **Debug Systems** — GPU profiler overlay, hierarchical GPU timer, query heap (timestamp/occlusion/pipeline stats), debug line/text renderer, 14-mode debug visualization, render statistics collector (300-frame rolling history), VK_EXT_debug_utils markers/labels/object names, dynamic rendering (VK_KHR_dynamic_rendering), descriptor update templates
+- **Full Post-Processing Stack** — TAA, FXAA, bloom, TSR, tone mapping, DOF bokeh, motion blur, chromatic aberration, film grain, vignette, SVGF denoise, auto-exposure, CAS sharpen, GTAO (horizon-based + temporal + spatial denoise), SSR, VRS, volumetric clouds, screen-space contact shadows, volumetric light scattering (god rays)
+- **Asset Pipeline** — glTF 2.0 importer, shader permutation system, DXC→SPIR-V compilation, hot-reload, dependency-aware include resolver, async loader, SPIR-V shader reflection, shader variant warm-up, persistent shader variant cache (on-disk .svc binary format), shader file watcher (filesystem monitoring + recompilation trigger)
+- **GPU Memory Management** — Buffer pool, frame allocator, staging manager, transient resource pool (aliased), memory defragmenter, aliasing optimizer (graph-coloring), deletion queue, upload ring buffer, descriptor heap + ring buffer, fence pool, resource lifetime manager, buffer suballocator (first-fit + coalescing), memory budget tracker (VK_EXT_memory_budget), async copy engine (dedicated transfer queue DMA), render target pool (format/size-aware recycling), command pool ring (per-frame recycling), descriptor set allocator (transient + persistent)
+- **GPU Submission** — Submission batcher (minimize vkQueueSubmit), render pass cache, pipeline layout cache, sampler pool, command signature builder, PSO builder (fluent API + validation + presets), PSO hash (FNV-1a deduplication), multi-queue sync manager (timeline semaphores), bindless table updater (batched descriptor writes), timestamp calibration (CPU↔GPU clock sync), viewport state manager (dynamic stack), push constant manager (type-safe validation + range merging), specialization constant manager (named presets), pipeline cache manager (disk persistence + PSO dedup), shader module cache (SPIR-V deduplication + lazy loading), image layout tracker (automatic transitions), resource state validator (debug-mode hazard detection)
+- **Debug Systems** — GPU profiler overlay, hierarchical GPU timer, query heap (timestamp/occlusion/pipeline stats), debug line/text renderer, 14-mode debug visualization, render statistics collector (300-frame rolling history), VK_EXT_debug_utils markers/labels/object names, dynamic rendering (VK_KHR_dynamic_rendering), descriptor update templates, render graph visualizer (DOT/Graphviz + Mermaid export)
 
 ## Architecture
 
@@ -59,17 +59,17 @@ A next-generation 3D game engine built from scratch in C++20, targeting Vulkan 1
 ├── engine/
 │   ├── core/           # Types, memory, containers, ECS, jobs, events, math, platform
 │   ├── rhi/
-│   │   ├── common/     # RHI abstraction, buffer pool, staging, timeline fence, barrier tracker, query heap, format utils, indirect buffers, transient pool, memory defrag, aliasing optimizer, render state, attachment builder, command pool, submission batcher, descriptor heap, upload ring, render pass cache, pipeline layout cache, fence pool, sampler pool, resource lifetime, command signature, buffer suballocator, timestamp calibration, bindless updater, PSO builder/hash, queue sync, memory budget, async copy, viewport state
-│   │   └── vulkan/     # Vulkan 1.3 backend, sampler/pipeline/descriptor caches, swapchain presenter, sparse binding, debug markers, dynamic rendering, descriptor templates
+│   │   ├── common/     # RHI abstraction, buffer pool, staging, timeline fence, barrier tracker, query heap, format utils, indirect buffers, transient pool, memory defrag, aliasing optimizer, render state, attachment builder, command pool, submission batcher, descriptor heap, upload ring, render pass cache, pipeline layout cache, fence pool, sampler pool, resource lifetime, command signature, buffer suballocator, timestamp calibration, bindless updater, PSO builder/hash, queue sync, memory budget, async copy, viewport state, push constants, spec constants, pipeline cache manager, shader module cache, image layout tracker, render target pool, command pool ring, descriptor allocator, resource validator
+│   │   └── vulkan/     # Vulkan 1.3 backend, sampler/pipeline/descriptor caches, swapchain presenter+manager, sparse binding, debug markers, dynamic rendering, descriptor templates
 │   ├── renderer/
 │   │   ├── pipeline/   # Render compositor, GPU culling, instance manager, mesh registry, mip generator, draw call merger, GPU scene buffer, occlusion feedback, indirect cull pipeline, texture atlas
-│   │   ├── graph/      # Render graph (async compute, cross-queue sync), resource versioning, work graph scheduler, frame graph compiler, pass profiler, resource pool
+│   │   ├── graph/      # Render graph (async compute, cross-queue sync), resource versioning, work graph scheduler, frame graph compiler, pass profiler, resource pool, graph visualizer
 │   │   ├── materials/  # PBR material system (bindless textures)
 │   │   ├── lighting/   # Clustered light culling (5 light types, 3D grid)
 │   │   ├── streaming/  # Virtual texture streaming, LOD streaming manager
 │   │   └── debug/      # Debug renderer, text, profiler overlay, debug visualization (14 modes), render stats, GPU timer
 │   ├── app/            # Application bootstrap (init/shutdown/main loop)
-│   ├── assets/         # Mesh/texture/shader loaders, resource manager, glTF importer, shader permutations, include resolver, shader warmup, async loader, shader reflection, shader variant cache
+│   ├── assets/         # Mesh/texture/shader loaders, resource manager, glTF importer, shader permutations, include resolver, shader warmup, async loader, shader reflection, shader variant cache, file watcher
 │   ├── scene/          # Camera, transforms, serialization, prefab system
 │   ├── network/        # UDP socket, server, client, reliable delivery
 │   ├── physics/        # Jolt wrapper + stub Euler simulation
@@ -78,7 +78,7 @@ A next-generation 3D game engine built from scratch in C++20, targeting Vulkan 1
 │   ├── scripting/      # Lua/Sol2 wrapper, hot-reload
 │   └── ai/             # Behavior tree, nav mesh (A* pathfinding)
 ├── editor/             # ImGui docking editor (viewport, hierarchy, inspector, console, assets, profiler)
-├── shaders/            # 54 HLSL compute/vertex/fragment shaders
+├── shaders/            # 55 HLSL compute/vertex/fragment shaders
 │   ├── common/         # Shared math, BRDF
 │   ├── compute/        # HZB build, VRS, GPU skinning, particles, occlusion cull, meshlet LOD, indirect draw, VT feedback, cluster lights, frustum cull, mip downsample
 │   ├── visibility/     # Material resolve, visibility buffer resolve
@@ -89,7 +89,7 @@ A next-generation 3D game engine built from scratch in C++20, targeting Vulkan 1
 │   ├── terrain/        # Terrain CDLOD rendering
 │   └── debug/          # Debug lines + text rendering
 ├── samples/triangle/   # Minimal sample app
-├── tests/              # 28 test files (unit + integration)
+├── tests/              # 30 test files (unit + integration)
 ├── CMakeLists.txt
 ├── CMakePresets.json
 ├── vcpkg.json
