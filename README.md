@@ -9,14 +9,18 @@ A next-generation 3D game engine built from scratch in C++20, targeting Vulkan 1
 
 ## Key Features
 
-- **GPU-Driven Rendering** — Visibility buffer pipeline with mesh shaders, meshlet culling, and bindless descriptors
-- **Real-Time Path Tracing** — ReSTIR direct illumination + hybrid GI with spherical harmonic probes
+- **GPU-Driven Rendering** — Visibility buffer, mesh shaders, meshlet LOD selection, two-pass HZB occlusion culling, indirect draw argument builder, clustered light culling
+- **Real-Time Path Tracing** — ReSTIR direct illumination + hybrid GI with SH probes + SVGF denoiser
 - **Projective Geometric Algebra** — PGA motors for all transforms (rotation + translation in a single algebraic element)
-- **Render Graph** — Automatic pass scheduling, barrier insertion, transient resource management, dead-code elimination
+- **Render Graph** — Automatic pass scheduling with async compute, barrier insertion, transient resources, dead-code elimination, cross-queue timeline semaphore sync
+- **Material System** — PBR material instances with 8 bindless texture slots, dirty tracking, GPU structured buffer upload
+- **Virtual Texturing** — Page pool with LRU eviction, GPU feedback buffer, mip-level streaming
 - **Virtual Shadow Maps** — Clipmap-based page pool with LRU eviction
 - **CDLOD Terrain** — Clipmap rendering with procedural generation and 16-layer material splatting
 - **GPU Particles** — Compute-driven emit/simulate/sort with curl noise turbulence
-- **Full Post-Processing Stack** — Bloom, TSR upscaling, tone mapping, DOF (physically-based bokeh), motion blur, GTAO, SSR, VRS
+- **Full Post-Processing Stack** — TAA, FXAA, bloom, TSR, tone mapping, DOF bokeh, motion blur, chromatic aberration, film grain, vignette, SVGF denoise, auto-exposure, CAS sharpen, GTAO, SSR, VRS
+- **Asset Pipeline** — glTF 2.0 importer, shader permutation system, DXC→SPIR-V compilation, hot-reload
+- **Debug Systems** — GPU profiler overlay, debug line/text renderer with built-in bitmap font
 
 ## Architecture
 
@@ -32,11 +36,12 @@ A next-generation 3D game engine built from scratch in C++20, targeting Vulkan 1
 ├──────────────────────────────────────────────────────────┤
 │    Render Pipeline (Render Graph + GPU Profiler)         │
 │  ┌──────────────────────────────────────────────────┐   │
-│  │ VisBuffer → HZB → Material → Lighting → Post    │   │
-│  │ OR PathTrace → Denoise → Post → Composite       │   │
+│  │ Cull → LOD → VisBuffer → HZB → Material → Light │   │
+│  │ OR PathTrace → SVGF Denoise → Post → Composite  │   │
+│  │ Post: TAA/FXAA → Bloom → Exposure → CAS → CA    │   │
 │  └──────────────────────────────────────────────────┘   │
 ├──────────────────────────────────────────────────────────┤
-│        RHI Abstraction (Vulkan 1.3 backend)              │
+│  RHI (Vulkan 1.3 + sampler/pipeline/descriptor caches)   │
 ├──────────────────────────────────────────────────────────┤
 │   Core (Types, Memory, Containers, Jobs, PGA Math, I/O)  │
 └──────────────────────────────────────────────────────────┘
@@ -48,10 +53,17 @@ A next-generation 3D game engine built from scratch in C++20, targeting Vulkan 1
 .
 ├── engine/
 │   ├── core/           # Types, memory, containers, ECS, jobs, events, math, platform
-│   ├── rhi/            # RHI abstraction + Vulkan backend + GPU queries
-│   ├── renderer/       # Visibility, lighting, shadows, particles, terrain, debug, render graph
-│   ├── assets/         # Mesh/texture/shader loaders, resource manager
-│   ├── scene/          # Camera, transforms, serialization
+│   ├── rhi/
+│   │   ├── common/     # RHI abstraction, queries, buffer pool, readback ring, render state
+│   │   └── vulkan/     # Vulkan 1.3 backend, sampler/pipeline/descriptor caches
+│   ├── renderer/
+│   │   ├── pipeline/   # Render pipeline, GPU culling pipeline
+│   │   ├── graph/      # Render graph (async compute, cross-queue sync)
+│   │   ├── materials/  # PBR material system (bindless textures)
+│   │   ├── streaming/  # Virtual texture streaming
+│   │   └── debug/      # Debug renderer, text, profiler overlay
+│   ├── assets/         # Mesh/texture/shader loaders, resource manager, glTF importer, shader permutations
+│   ├── scene/          # Camera, transforms, serialization, prefab system
 │   ├── network/        # UDP socket, server, client, reliable delivery
 │   ├── physics/        # Jolt wrapper + stub Euler simulation
 │   ├── audio/          # Miniaudio wrapper + stub
@@ -59,18 +71,18 @@ A next-generation 3D game engine built from scratch in C++20, targeting Vulkan 1
 │   ├── scripting/      # Lua/Sol2 wrapper, hot-reload
 │   └── ai/             # Behavior tree, nav mesh (A* pathfinding)
 ├── editor/             # ImGui docking editor (viewport, hierarchy, inspector, console, assets, profiler)
-├── shaders/            # 33 HLSL compute/vertex/fragment shaders
+├── shaders/            # 45 HLSL compute/vertex/fragment shaders
 │   ├── common/         # Shared math, BRDF
-│   ├── compute/        # HZB, VRS, GPU skinning, particle emit/simulate
+│   ├── compute/        # HZB, VRS, GPU skinning, particles, occlusion cull, meshlet LOD, indirect draw, VT feedback, cluster lights
 │   ├── visibility/     # Material resolve
 │   ├── lighting/       # GI probes, SSR, SSAO, decals, ReSTIR
-│   ├── postprocess/    # Bloom, tonemap, TSR, DOF, motion blur
+│   ├── postprocess/    # Bloom, tonemap, TSR, DOF, motion blur, TAA, FXAA, SVGF denoise, auto-exposure, CAS, chromatic aberration
 │   ├── atmosphere/     # Sky, volumetric fog
 │   ├── shadows/        # Shadow rasterization
 │   ├── terrain/        # Terrain CDLOD rendering
-│   └── debug/          # Debug line rendering
+│   └── debug/          # Debug lines + text rendering
 ├── samples/triangle/   # Minimal sample app
-├── tests/              # Unit + integration tests (10 test files)
+├── tests/              # 17 test files (unit + integration)
 ├── CMakeLists.txt
 ├── CMakePresets.json
 ├── vcpkg.json
