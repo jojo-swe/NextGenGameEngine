@@ -5,42 +5,76 @@
 [![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://en.cppreference.com/)
 [![CMake](https://img.shields.io/badge/CMake-3.28%2B-blue)](https://cmake.org/)
 
-NextGenGameEngine is a from-scratch C++20 3D engine project focused on modern rendering and engine architecture:
+A next-generation 3D game engine built from scratch in C++20, targeting Vulkan 1.3 with a GPU-driven rendering pipeline, real-time path tracing, and novel mathematical foundations using Projective Geometric Algebra (PGA).
 
-- Vulkan-first renderer (DX12 planned)
-- GPU-driven pipeline (meshlets, visibility, indirect submission)
-- Real-time and reference path tracing tracks
-- Custom core systems (memory, containers, math, jobs, ECS)
+## Key Features
 
-## Project Status
+- **GPU-Driven Rendering** — Visibility buffer pipeline with mesh shaders, meshlet culling, and bindless descriptors
+- **Real-Time Path Tracing** — ReSTIR direct illumination + hybrid GI with spherical harmonic probes
+- **Projective Geometric Algebra** — PGA motors for all transforms (rotation + translation in a single algebraic element)
+- **Render Graph** — Automatic pass scheduling, barrier insertion, transient resource management, dead-code elimination
+- **Virtual Shadow Maps** — Clipmap-based page pool with LRU eviction
+- **CDLOD Terrain** — Clipmap rendering with procedural generation and 16-layer material splatting
+- **GPU Particles** — Compute-driven emit/simulate/sort with curl noise turbulence
+- **Full Post-Processing Stack** — Bloom, TSR upscaling, tone mapping, DOF (physically-based bokeh), motion blur, GTAO, SSR, VRS
 
-This repository is in early pre-alpha.
+## Architecture
 
-Implemented now:
-- Core foundation headers and utilities (`engine/core/*`)
-- Logging and memory allocator scaffolding
-- CMake + vcpkg build setup
-- Sample target: `SampleTriangle`
-
-In progress:
-- Platform layer completion
-- RHI bring-up and first rendered frame path
-- Phase-based execution plan and delivery gates
-
-Master implementation and roadmap document:
-- `frolicking-tumbling-pond.md`
+```text
+┌─────────────────────────────────────────────────────────┐
+│                      Editor (ImGui)                     │
+├─────────────┬──────────┬──────────┬─────────┬───────────┤
+│  Scripting  │ Physics  │  Audio   │Animation│    AI     │
+│  (Lua/Sol2) │  (Jolt)  │(miniaudio│ (PGA    │(Behavior  │
+│             │          │  stub)   │  Motor) │  Tree)    │
+├─────────────┴──────────┴──────────┴─────────┴───────────┤
+│              Scene Graph + ECS + Events                  │
+├──────────────────────────────────────────────────────────┤
+│    Render Pipeline (Render Graph + GPU Profiler)         │
+│  ┌──────────────────────────────────────────────────┐   │
+│  │ VisBuffer → HZB → Material → Lighting → Post    │   │
+│  │ OR PathTrace → Denoise → Post → Composite       │   │
+│  └──────────────────────────────────────────────────┘   │
+├──────────────────────────────────────────────────────────┤
+│        RHI Abstraction (Vulkan 1.3 backend)              │
+├──────────────────────────────────────────────────────────┤
+│   Core (Types, Memory, Containers, Jobs, PGA Math, I/O)  │
+└──────────────────────────────────────────────────────────┘
+```
 
 ## Repository Layout
 
 ```text
 .
-├── engine/                 # Engine library
-├── samples/triangle/       # Minimal sample app target
-├── tests/                  # GoogleTest target scaffold
+├── engine/
+│   ├── core/           # Types, memory, containers, ECS, jobs, events, math, platform
+│   ├── rhi/            # RHI abstraction + Vulkan backend + GPU queries
+│   ├── renderer/       # Visibility, lighting, shadows, particles, terrain, debug, render graph
+│   ├── assets/         # Mesh/texture/shader loaders, resource manager
+│   ├── scene/          # Camera, transforms, serialization
+│   ├── network/        # UDP socket, server, client, reliable delivery
+│   ├── physics/        # Jolt wrapper + stub Euler simulation
+│   ├── audio/          # Miniaudio wrapper + stub
+│   ├── animation/      # Skeleton, clips, blend tree, PGA interpolation
+│   ├── scripting/      # Lua/Sol2 wrapper, hot-reload
+│   └── ai/             # Behavior tree, nav mesh (A* pathfinding)
+├── editor/             # ImGui docking editor (viewport, hierarchy, inspector, console, assets, profiler)
+├── shaders/            # 33 HLSL compute/vertex/fragment shaders
+│   ├── common/         # Shared math, BRDF
+│   ├── compute/        # HZB, VRS, GPU skinning, particle emit/simulate
+│   ├── visibility/     # Material resolve
+│   ├── lighting/       # GI probes, SSR, SSAO, decals, ReSTIR
+│   ├── postprocess/    # Bloom, tonemap, TSR, DOF, motion blur
+│   ├── atmosphere/     # Sky, volumetric fog
+│   ├── shadows/        # Shadow rasterization
+│   ├── terrain/        # Terrain CDLOD rendering
+│   └── debug/          # Debug line rendering
+├── samples/triangle/   # Minimal sample app
+├── tests/              # Unit + integration tests (10 test files)
 ├── CMakeLists.txt
 ├── CMakePresets.json
 ├── vcpkg.json
-└── frolicking-tumbling-pond.md
+└── frolicking-tumbling-pond.md  # Master implementation plan
 ```
 
 ## Requirements
