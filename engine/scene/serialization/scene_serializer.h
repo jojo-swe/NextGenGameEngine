@@ -91,8 +91,7 @@ public:
     // Clear all registered serializers
     void ClearRegistrations() { m_serializers.clear(); }
 
-private:
-    // Binary write helpers
+    // Binary write helpers (public for serialization extensions and testing)
     static void WriteU32(std::vector<u8>& buf, u32 val);
     static void WriteU64(std::vector<u8>& buf, u64 val);
     static void WriteF32(std::vector<u8>& buf, f32 val);
