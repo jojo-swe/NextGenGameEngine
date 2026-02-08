@@ -1,0 +1,141 @@
+"title","body","labels","milestone"
+"Editor-011: Add runtime reflection metadata registry for editable properties","Backlog ID: Editor-011
+Priority: P0
+Estimate: L
+Dependencies: Editor-002
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Add runtime reflection metadata registry for editable properties
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p0,estimate/l,has-dependencies,committed","Sprint 2"
+"Editor-012: Implement inspector widget factory from metadata types","Backlog ID: Editor-012
+Priority: P0
+Estimate: L
+Dependencies: Editor-011
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Implement inspector widget factory from metadata types
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p0,estimate/l,has-dependencies,committed","Sprint 2"
+"Editor-013: Build Scene Hierarchy panel MVP (tree, select, search)","Backlog ID: Editor-013
+Priority: P0
+Estimate: M
+Dependencies: Editor-006, Editor-009
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Build Scene Hierarchy panel MVP (tree, select, search)
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p0,estimate/m,has-dependencies,committed","Sprint 2"
+"Editor-014: Sync hierarchy, inspector, and viewport selection state","Backlog ID: Editor-014
+Priority: P0
+Estimate: M
+Dependencies: Editor-009, Editor-012, Editor-013
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Sync hierarchy, inspector, and viewport selection state
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p0,estimate/m,has-dependencies,committed","Sprint 2"
+"Editor-015: Implement viewport camera controls (fly/orbit/focus/bookmarks)","Backlog ID: Editor-015
+Priority: P0
+Estimate: M
+Dependencies: Editor-007
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Implement viewport camera controls (fly/orbit/focus/bookmarks)
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p0,estimate/m,has-dependencies,committed","Sprint 2"
+"Editor-016: Implement translate gizmo with GA motor application","Backlog ID: Editor-016
+Priority: P0
+Estimate: M
+Dependencies: Editor-014, Editor-015
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Implement translate gizmo with GA motor application
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p0,estimate/m,has-dependencies,committed","Sprint 2"
+"Editor-017: Add rotate/scale gizmos and local/world/parent spaces","Backlog ID: Editor-017
+Priority: P0
+Estimate: M
+Dependencies: Editor-016
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Add rotate/scale gizmos and local/world/parent spaces
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p0,estimate/m,has-dependencies,committed","Sprint 2"
+"Editor-018: Add grid/angle snapping and pivot modes","Backlog ID: Editor-018
+Priority: P0
+Estimate: S
+Dependencies: Editor-017
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Add grid/angle snapping and pivot modes
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p0,estimate/s,has-dependencies,committed","Sprint 2"
+"Editor-019: Wire transform/component edits into undo/redo transactions","Backlog ID: Editor-019
+Priority: P0
+Estimate: M
+Dependencies: Editor-008, Editor-012, Editor-017
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Wire transform/component edits into undo/redo transactions
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p0,estimate/m,has-dependencies,committed","Sprint 2"
+"Editor-020: Entity create/duplicate/delete flows with undo support","Backlog ID: Editor-020
+Priority: P0
+Estimate: M
+Dependencies: Editor-008, Editor-013, Editor-019
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Entity create/duplicate/delete flows with undo support
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p0,estimate/m,has-dependencies,committed","Sprint 2"

@@ -1,0 +1,141 @@
+"title","body","labels","milestone"
+"Editor-001: Create `EditorApp` executable target and startup sequence","Backlog ID: Editor-001
+Priority: P0
+Estimate: S
+Dependencies: -
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Create `EditorApp` executable target and startup sequence
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p0,estimate/s,committed","Sprint 1"
+"Editor-002: Add editor service container and lifecycle wiring","Backlog ID: Editor-002
+Priority: P0
+Estimate: S
+Dependencies: Editor-001
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Add editor service container and lifecycle wiring
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p0,estimate/s,has-dependencies,committed","Sprint 1"
+"Editor-003: Integrate ImGui docking bootstrap and root workspace","Backlog ID: Editor-003
+Priority: P0
+Estimate: M
+Dependencies: Editor-001
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Integrate ImGui docking bootstrap and root workspace
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p0,estimate/m,has-dependencies,committed","Sprint 1"
+"Editor-004: Implement project open/create/select startup flow","Backlog ID: Editor-004
+Priority: P0
+Estimate: M
+Dependencies: Editor-001
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Implement project open/create/select startup flow
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p0,estimate/m,has-dependencies,committed","Sprint 1"
+"Editor-005: Persist and restore workspace layout presets","Backlog ID: Editor-005
+Priority: P0
+Estimate: S
+Dependencies: Editor-003
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Persist and restore workspace layout presets
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p0,estimate/s,has-dependencies,committed","Sprint 1"
+"Editor-006: Build `PanelManager` with panel registration and visibility state","Backlog ID: Editor-006
+Priority: P0
+Estimate: S
+Dependencies: Editor-003
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Build `PanelManager` with panel registration and visibility state
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p0,estimate/s,has-dependencies,committed","Sprint 1"
+"Editor-007: Implement input focus routing (modal/panel/viewport/global)","Backlog ID: Editor-007
+Priority: P0
+Estimate: M
+Dependencies: Editor-006
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Implement input focus routing (modal/panel/viewport/global)
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p0,estimate/m,has-dependencies,committed","Sprint 1"
+"Editor-008: Implement `CommandBus` skeleton with transaction boundaries","Backlog ID: Editor-008
+Priority: P0
+Estimate: M
+Dependencies: Editor-002
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Implement `CommandBus` skeleton with transaction boundaries
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p0,estimate/m,has-dependencies,committed","Sprint 1"
+"Editor-009: Implement global `SelectionService` with history","Backlog ID: Editor-009
+Priority: P0
+Estimate: S
+Dependencies: Editor-002
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Implement global `SelectionService` with history
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p0,estimate/s,has-dependencies,committed","Sprint 1"
+"Editor-010: Split and persist per-project vs per-user settings","Backlog ID: Editor-010
+Priority: P0
+Estimate: S
+Dependencies: Editor-002
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Split and persist per-project vs per-user settings
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p0,estimate/s,has-dependencies,committed","Sprint 1"

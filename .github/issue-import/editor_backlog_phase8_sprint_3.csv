@@ -1,0 +1,169 @@
+"title","body","labels","milestone"
+"Editor-021: Asset indexer + file watcher + import queue service","Backlog ID: Editor-021
+Priority: P1
+Estimate: L
+Dependencies: Editor-002
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Asset indexer + file watcher + import queue service
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p1,estimate/l,has-dependencies,committed","Sprint 3"
+"Editor-022: Asset Browser panel (tree/list/grid/search/filter)","Backlog ID: Editor-022
+Priority: P1
+Estimate: M
+Dependencies: Editor-006, Editor-021
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Asset Browser panel (tree/list/grid/search/filter)
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p1,estimate/m,has-dependencies,committed","Sprint 3"
+"Editor-023: Drag/drop import entrypoints and import job UI","Backlog ID: Editor-023
+Priority: P1
+Estimate: M
+Dependencies: Editor-021, Editor-022
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Drag/drop import entrypoints and import job UI
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p1,estimate/m,has-dependencies,committed","Sprint 3"
+"Editor-024: Import preset assets and deterministic import hash model","Backlog ID: Editor-024
+Priority: P1
+Estimate: M
+Dependencies: Editor-023
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Import preset assets and deterministic import hash model
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p1,estimate/m,has-dependencies,committed","Sprint 3"
+"Editor-025: Reimport flow with before/after diff preview","Backlog ID: Editor-025
+Priority: P1
+Estimate: M
+Dependencies: Editor-024
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Reimport flow with before/after diff preview
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p1,estimate/m,has-dependencies,committed","Sprint 3"
+"Editor-026: Dependency graph service for asset references","Backlog ID: Editor-026
+Priority: P1
+Estimate: M
+Dependencies: Editor-021
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Dependency graph service for asset references
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p1,estimate/m,has-dependencies,committed","Sprint 3"
+"Editor-027: Asset diagnostic badges (dirty/stale/error/missing deps)","Backlog ID: Editor-027
+Priority: P1
+Estimate: S
+Dependencies: Editor-022, Editor-026
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Asset diagnostic badges (dirty/stale/error/missing deps)
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p1,estimate/s,has-dependencies,committed","Sprint 3"
+"Editor-028: Prefab asset schema and serialization adapters","Backlog ID: Editor-028
+Priority: P1
+Estimate: L
+Dependencies: Editor-011, Editor-021
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Prefab asset schema and serialization adapters
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p1,estimate/l,has-dependencies,committed","Sprint 3"
+"Editor-029: Prefab instantiate/apply/revert overrides workflows","Backlog ID: Editor-029
+Priority: P1
+Estimate: L
+Dependencies: Editor-028, Editor-019
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Prefab instantiate/apply/revert overrides workflows
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p1,estimate/l,has-dependencies,committed","Sprint 3"
+"Editor-030: Prefab variant chains with override conflict UI","Backlog ID: Editor-030
+Priority: P1
+Estimate: L
+Dependencies: Editor-029
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Prefab variant chains with override conflict UI
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p1,estimate/l,has-dependencies,stretch","Sprint 3"
+"Editor-031: Scene save/load deterministic round-trip validator","Backlog ID: Editor-031
+Priority: P1
+Estimate: M
+Dependencies: Editor-011, Editor-019
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Scene save/load deterministic round-trip validator
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p1,estimate/m,has-dependencies,committed","Sprint 3"
+"Editor-032: Autosave checkpoints and dirty-state tracking","Backlog ID: Editor-032
+Priority: P1
+Estimate: M
+Dependencies: Editor-010, Editor-031
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Autosave checkpoints and dirty-state tracking
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p1,estimate/m,has-dependencies,committed","Sprint 3"

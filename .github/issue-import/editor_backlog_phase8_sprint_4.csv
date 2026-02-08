@@ -1,0 +1,253 @@
+"title","body","labels","milestone"
+"Editor-033: PIE world clone/snapshot-restore orchestration","Backlog ID: Editor-033
+Priority: P1
+Estimate: L
+Dependencies: Editor-002, Editor-031
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+PIE world clone/snapshot-restore orchestration
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p1,estimate/l,has-dependencies,committed","Sprint 4"
+"Editor-034: PIE toolbar controls (play/pause/step/timescale)","Backlog ID: Editor-034
+Priority: P1
+Estimate: S
+Dependencies: Editor-006, Editor-033
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+PIE toolbar controls (play/pause/step/timescale)
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p1,estimate/s,has-dependencies,committed","Sprint 4"
+"Editor-035: Bridge runtime selection and editor selection in PIE","Backlog ID: Editor-035
+Priority: P1
+Estimate: M
+Dependencies: Editor-014, Editor-033
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Bridge runtime selection and editor selection in PIE
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p1,estimate/m,has-dependencies,committed","Sprint 4"
+"Editor-036: Live entity/component debug inspector in PIE","Backlog ID: Editor-036
+Priority: P1
+Estimate: M
+Dependencies: Editor-012, Editor-033
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Live entity/component debug inspector in PIE
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p1,estimate/m,has-dependencies,committed","Sprint 4"
+"Editor-037: Script console panel and watch expressions","Backlog ID: Editor-037
+Priority: P1
+Estimate: M
+Dependencies: Editor-006, Editor-033
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Script console panel and watch expressions
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p1,estimate/m,has-dependencies,stretch","Sprint 4"
+"Editor-038: Event trace panel with filtering and bookmarking","Backlog ID: Editor-038
+Priority: P1
+Estimate: M
+Dependencies: Editor-006, Editor-033
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Event trace panel with filtering and bookmarking
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p1,estimate/m,has-dependencies,stretch","Sprint 4"
+"Editor-039: CPU timeline profiler panel integration","Backlog ID: Editor-039
+Priority: P1
+Estimate: M
+Dependencies: Editor-006
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+CPU timeline profiler panel integration
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p1,estimate/m,has-dependencies,committed","Sprint 4"
+"Editor-040: GPU timeline profiler panel integration","Backlog ID: Editor-040
+Priority: P1
+Estimate: M
+Dependencies: Editor-039
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+GPU timeline profiler panel integration
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p1,estimate/m,has-dependencies,committed","Sprint 4"
+"Editor-041: Viewport render debug modes (buffers, IDs, overdraw)","Backlog ID: Editor-041
+Priority: P1
+Estimate: M
+Dependencies: Editor-015
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Viewport render debug modes (buffers, IDs, overdraw)
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p1,estimate/m,has-dependencies,stretch","Sprint 4"
+"Editor-042: Capture/export profiler sessions and baseline diff","Backlog ID: Editor-042
+Priority: P1
+Estimate: M
+Dependencies: Editor-039, Editor-040
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Capture/export profiler sessions and baseline diff
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p1,estimate/m,has-dependencies,committed","Sprint 4"
+"Editor-043: Crash detection + recovery bootstrap on next launch","Backlog ID: Editor-043
+Priority: P2
+Estimate: M
+Dependencies: Editor-032
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Crash detection + recovery bootstrap on next launch
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p2,estimate/m,has-dependencies,committed","Sprint 4"
+"Editor-044: Recovery UI for checkpoint/session restore selection","Backlog ID: Editor-044
+Priority: P2
+Estimate: S
+Dependencies: Editor-043
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Recovery UI for checkpoint/session restore selection
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p2,estimate/s,has-dependencies,committed","Sprint 4"
+"Editor-045: Plugin API v1 (versioning, capabilities, lifecycle)","Backlog ID: Editor-045
+Priority: P2
+Estimate: L
+Dependencies: Editor-002, Editor-006
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Plugin API v1 (versioning, capabilities, lifecycle)
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p2,estimate/l,has-dependencies,stretch","Sprint 4"
+"Editor-046: Dynamic panel/tool plugin loading and sandbox guards","Backlog ID: Editor-046
+Priority: P2
+Estimate: L
+Dependencies: Editor-045
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Dynamic panel/tool plugin loading and sandbox guards
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p2,estimate/l,has-dependencies,stretch","Sprint 4"
+"Editor-047: Source control status integration (Git file state overlays)","Backlog ID: Editor-047
+Priority: P2
+Estimate: M
+Dependencies: Editor-021, Editor-022
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Source control status integration (Git file state overlays)
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p2,estimate/m,has-dependencies,committed","Sprint 4"
+"Editor-048: Structured diff/merge hooks for scene/prefab assets","Backlog ID: Editor-048
+Priority: P2
+Estimate: L
+Dependencies: Editor-028, Editor-047
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Structured diff/merge hooks for scene/prefab assets
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p2,estimate/l,has-dependencies,stretch","Sprint 4"
+"Editor-049: Pre-commit validation runner and UX surfaced in editor","Backlog ID: Editor-049
+Priority: P2
+Estimate: M
+Dependencies: Editor-031, Editor-047
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Pre-commit validation runner and UX surfaced in editor
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p2,estimate/m,has-dependencies,committed","Sprint 4"
+"Editor-050: Long-session soak automation and E1-E5 acceptance checklist","Backlog ID: Editor-050
+Priority: P2
+Estimate: M
+Dependencies: Editor-032, Editor-042, Editor-044
+Source: Phase 8.18 in frolicking-tumbling-pond.md
+
+Description:
+Long-session soak automation and E1-E5 acceptance checklist
+
+Done When:
+- [ ] Implemented in editor/runtime codebase
+- [ ] Covered by automated test(s) or validation harness where applicable
+- [ ] Documented in editor module notes/changelog
+- [ ] Accepted against sprint exit criteria","area/editor,phase/8,priority/p2,estimate/m,has-dependencies,committed","Sprint 4"
