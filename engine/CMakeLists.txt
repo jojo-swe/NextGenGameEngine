@@ -58,6 +58,7 @@ if(WIN32)
             dwmapi
             xinput
             winmm
+            ws2_32      # Winsock2 (network)
     )
 endif()
 
