@@ -136,12 +136,15 @@ bool RenderGraph::Compile() {
     TopologicalSort();
     CullUnused();
     AllocateTransientResources();
+    ClassifyAsyncPasses();
+    InsertCrossQueueSync();
 
     m_compiled = true;
 
     u32 culled = GetCulledPassCount();
-    NGE_LOG_DEBUG("Render graph compiled: {} passes ({} active, {} culled), {} resources",
-                  m_passes.size(), m_passes.size() - culled, culled, m_resources.size());
+    u32 asyncCount = static_cast<u32>(m_asyncExecutionOrder.size());
+    NGE_LOG_DEBUG("Render graph compiled: {} passes ({} active, {} culled, {} async), {} resources",
+                  m_passes.size(), m_passes.size() - culled, culled, asyncCount, m_resources.size());
     return true;
 }
 
@@ -332,6 +335,150 @@ void RenderGraph::Execute(rhi::ICommandList* cmd) {
     }
 }
 
+void RenderGraph::Execute(rhi::ICommandList* graphicsCmd, rhi::ICommandList* asyncComputeCmd) {
+    if (!m_compiled) {
+        NGE_LOG_ERROR("Render graph not compiled before execution!");
+        return;
+    }
+
+    ComputeBarriers();
+
+    // Execute graphics queue passes
+    for (u32 passIdx : m_executionOrder) {
+        auto& pass = m_passes[passIdx];
+        if (pass.culled || pass.asyncCompute) continue;
+        if (!pass.executeFunc) continue;
+
+        // Wait for async compute if needed
+        if (pass.needsWait && asyncComputeCmd) {
+            graphicsCmd->WaitSemaphore(pass.waitValue);
+        }
+
+        graphicsCmd->BeginDebugLabel(pass.name.c_str(), 0.2f, 0.6f, 0.9f);
+
+        for (const auto& access : pass.reads) {
+            rhi::ResourceState currentState = m_resourceStates[access.handle.index];
+            if (currentState != access.state) {
+                InsertBarrier(graphicsCmd, access.handle, currentState, access.state);
+                m_resourceStates[access.handle.index] = access.state;
+            }
+        }
+        for (const auto& access : pass.writes) {
+            rhi::ResourceState currentState = m_resourceStates[access.handle.index];
+            if (currentState != access.state) {
+                InsertBarrier(graphicsCmd, access.handle, currentState, access.state);
+                m_resourceStates[access.handle.index] = access.state;
+            }
+        }
+
+        pass.executeFunc(graphicsCmd);
+        graphicsCmd->EndDebugLabel();
+    }
+
+    // Execute async compute passes
+    if (asyncComputeCmd) {
+        for (u32 passIdx : m_asyncExecutionOrder) {
+            auto& pass = m_passes[passIdx];
+            if (pass.culled) continue;
+            if (!pass.executeFunc) continue;
+
+            if (pass.needsWait) {
+                asyncComputeCmd->WaitSemaphore(pass.waitValue);
+            }
+
+            asyncComputeCmd->BeginDebugLabel(pass.name.c_str(), 0.9f, 0.4f, 0.2f);
+
+            for (const auto& access : pass.reads) {
+                rhi::ResourceState currentState = m_resourceStates[access.handle.index];
+                if (currentState != access.state) {
+                    InsertBarrier(asyncComputeCmd, access.handle, currentState, access.state);
+                    m_resourceStates[access.handle.index] = access.state;
+                }
+            }
+            for (const auto& access : pass.writes) {
+                rhi::ResourceState currentState = m_resourceStates[access.handle.index];
+                if (currentState != access.state) {
+                    InsertBarrier(asyncComputeCmd, access.handle, currentState, access.state);
+                    m_resourceStates[access.handle.index] = access.state;
+                }
+            }
+
+            pass.executeFunc(asyncComputeCmd);
+            asyncComputeCmd->EndDebugLabel();
+
+            if (pass.needsSignal) {
+                asyncComputeCmd->SignalSemaphore(pass.signalValue);
+            }
+        }
+    }
+}
+
+void RenderGraph::ClassifyAsyncPasses() {
+    m_asyncExecutionOrder.clear();
+
+    for (u32 passIdx : m_executionOrder) {
+        auto& pass = m_passes[passIdx];
+        if (pass.culled) continue;
+
+        if (pass.type == PassType::AsyncCompute) {
+            pass.asyncCompute = true;
+            m_asyncExecutionOrder.push_back(passIdx);
+        }
+    }
+
+    // Remove async passes from the main execution order
+    m_executionOrder.erase(
+        std::remove_if(m_executionOrder.begin(), m_executionOrder.end(),
+                        [this](u32 idx) { return m_passes[idx].asyncCompute; }),
+        m_executionOrder.end());
+}
+
+void RenderGraph::InsertCrossQueueSync() {
+    m_nextSemaphoreValue = 1;
+
+    // For each async compute pass, check if any graphics pass reads its output
+    for (u32 asyncIdx : m_asyncExecutionOrder) {
+        auto& asyncPass = m_passes[asyncIdx];
+
+        for (const auto& write : asyncPass.writes) {
+            // Find graphics passes that read this resource
+            for (u32 gfxIdx : m_executionOrder) {
+                auto& gfxPass = m_passes[gfxIdx];
+                if (gfxPass.culled) continue;
+
+                for (const auto& read : gfxPass.reads) {
+                    if (read.handle == write.handle) {
+                        // Async must signal, graphics must wait
+                        asyncPass.needsSignal = true;
+                        asyncPass.signalValue = m_nextSemaphoreValue;
+                        gfxPass.needsWait = true;
+                        gfxPass.waitValue = m_nextSemaphoreValue;
+                        m_nextSemaphoreValue++;
+                    }
+                }
+            }
+        }
+
+        // Also check if async pass reads from graphics pass output
+        for (const auto& read : asyncPass.reads) {
+            for (u32 gfxIdx : m_executionOrder) {
+                auto& gfxPass = m_passes[gfxIdx];
+                if (gfxPass.culled) continue;
+
+                for (const auto& write : gfxPass.writes) {
+                    if (write.handle == read.handle) {
+                        gfxPass.needsSignal = true;
+                        gfxPass.signalValue = m_nextSemaphoreValue;
+                        asyncPass.needsWait = true;
+                        asyncPass.waitValue = m_nextSemaphoreValue;
+                        m_nextSemaphoreValue++;
+                    }
+                }
+            }
+        }
+    }
+}
+
 void RenderGraph::Reset() {
     // Free transient resources
     for (auto& res : m_resources) {
@@ -348,8 +495,10 @@ void RenderGraph::Reset() {
     m_resources.clear();
     m_builders.clear();
     m_executionOrder.clear();
+    m_asyncExecutionOrder.clear();
     m_resourceStates.clear();
     m_compiled = false;
+    m_nextSemaphoreValue = 1;
 }
 
 void RenderGraph::DumpGraph() const {

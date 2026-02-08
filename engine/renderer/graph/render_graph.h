@@ -153,6 +153,13 @@ struct RGPass {
     // Compile state
     bool culled = false;
     u32  executionOrder = 0;
+
+    // Async compute state
+    bool asyncCompute = false;       // Runs on async compute queue
+    bool needsSignal = false;        // Must signal semaphore after execution
+    bool needsWait = false;          // Must wait on semaphore before execution
+    u32  signalValue = 0;            // Timeline semaphore value to signal
+    u32  waitValue = 0;              // Timeline semaphore value to wait on
 };
 
 // ─── Render Graph ────────────────────────────────────────────────────────
@@ -168,8 +175,11 @@ public:
     // Compile: topological sort, cull unused, allocate transient resources, insert barriers
     bool Compile();
 
-    // Execute: run all passes in order
+    // Execute: run all passes in order on graphics queue
     void Execute(rhi::ICommandList* cmd);
+
+    // Execute with separate async compute command list
+    void Execute(rhi::ICommandList* graphicsCmd, rhi::ICommandList* asyncComputeCmd);
 
     // Reset for next frame
     void Reset();
@@ -201,10 +211,16 @@ private:
 
     // Compiled execution order
     std::vector<u32> m_executionOrder;
+    std::vector<u32> m_asyncExecutionOrder; // Async compute passes
     bool m_compiled = false;
 
     // Resource state tracking for barrier insertion
     std::unordered_map<u32, rhi::ResourceState> m_resourceStates;
+
+    // Cross-queue synchronization
+    u32 m_nextSemaphoreValue = 1;
+    void ClassifyAsyncPasses();
+    void InsertCrossQueueSync();
 };
 
 } // namespace nge::renderer
