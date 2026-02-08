@@ -122,21 +122,18 @@ bool SceneSerializer::SaveToFile(const std::string& path, ecs::World& world) {
 bool SceneSerializer::SaveToBuffer(std::vector<u8>& outBuffer, ecs::World& world) {
     outBuffer.clear();
 
+    // Collect all entities
+    auto entities = world.GetAllEntities();
+    u32 entityCount = static_cast<u32>(entities.size());
+
     // Reserve header space (will be filled in later)
     usize headerPos = outBuffer.size();
     outBuffer.resize(headerPos + sizeof(SceneFileHeader));
 
-    // Collect all entities - for now just create a simple placeholder
-    // TODO: Implement proper entity iteration in World class
-    Array<Entity> entities = Array<Entity>();
-    // Placeholder - in a real implementation we'd iterate all entities
-    // For now, this will serialize an empty scene
-    
-    usize entityCount = entities.Size();
-    WriteU32(outBuffer, static_cast<u32>(entityCount));
+    // Write entities
+    WriteU32(outBuffer, entityCount);
 
-    for (usize i = 0; i < entities.Size(); ++i) {
-        const auto& entity = entities[i];
+    for (auto entity : entities) {
         // Entity ID
         WriteU64(outBuffer, entity.id);
 
@@ -145,15 +142,21 @@ bool SceneSerializer::SaveToBuffer(std::vector<u8>& outBuffer, ecs::World& world
         // TODO: query parent from scene hierarchy
         WriteU64(outBuffer, parentId);
 
-        // Name (placeholder for now)
-        std::string name = "Entity_" + std::to_string(entity.Index());
+        // Name
+        std::string name = world.GetEntityName(entity);
         WriteString(outBuffer, name);
 
-        // Transform (placeholder for now)
-        // TODO: Get actual transform component
-        WriteVec3(outBuffer, {0, 0, 0});
-        WriteVec4(outBuffer, {0, 0, 0, 1});
-        WriteVec3(outBuffer, {1, 1, 1});
+        // Transform (always serialized)
+        auto* transform = world.GetTransform(entity);
+        if (transform) {
+            WriteVec3(outBuffer, transform->position);
+            WriteVec4(outBuffer, transform->rotation);
+            WriteVec3(outBuffer, transform->scale);
+        } else {
+            WriteVec3(outBuffer, {0, 0, 0});
+            WriteVec4(outBuffer, {0, 0, 0, 1});
+            WriteVec3(outBuffer, {1, 1, 1});
+        }
 
         // Component data
         u32 componentCount = 0;
@@ -238,15 +241,14 @@ bool SceneSerializer::LoadFromBuffer(const u8* data, usize size, ecs::World& wor
         std::string name = reader.ReadString();
 
         // Create entity
-        ecs::Entity entity = world.CreateEntity();
+        ecs::Entity entity = world.CreateEntity(name);
         idMap[oldId] = entity;
 
         // Transform
         math::Vec3 position = reader.ReadVec3();
         math::Vec4 rotation = reader.ReadVec4();
         math::Vec3 scale = reader.ReadVec3();
-        // TODO: Add transform component when transform system is implemented
-        // world.SetTransform(entity, position, rotation, scale);
+        world.SetTransform(entity, position, rotation, scale);
 
         // Parent reparenting (deferred — parent may not exist yet)
         (void)parentId;
