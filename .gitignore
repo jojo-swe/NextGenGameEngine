@@ -1,0 +1,49 @@
+# Build directories
+build/
+out/
+cmake-build-*/
+
+# IDE files
+.vs/
+.vscode/
+*.sln
+*.vcxproj*
+*.user
+.idea/
+*.swp
+*.swo
+
+# Compiled objects
+*.obj
+*.o
+*.a
+*.lib
+*.so
+*.dll
+*.dylib
+*.exe
+*.pdb
+*.ilk
+*.exp
+
+# Shader bytecode
+*.spv
+*.dxil
+*.cso
+
+# Dependency cache
+vcpkg_installed/
+packages/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Profiler captures
+*.tracy
+
+# Cooked assets
+cooked/
+
+# Logs
+*.log

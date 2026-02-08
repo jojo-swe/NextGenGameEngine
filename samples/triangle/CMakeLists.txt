@@ -1,0 +1,2 @@
+add_executable(SampleTriangle main.cpp)
+target_link_libraries(SampleTriangle PRIVATE NextGenEngine)
