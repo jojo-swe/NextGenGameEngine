@@ -2,8 +2,11 @@
 
 #include "engine/core/types.h"
 #include "engine/rhi/common/rhi_device.h"
+#include "engine/rhi/common/rhi_queries.h"
+#include "engine/renderer/graph/render_graph.h"
 #include "engine/scene/camera/camera.h"
 #include "engine/core/math/pga.h"
+#include <memory>
 
 namespace nge::renderer {
 
@@ -73,6 +76,12 @@ public:
 
     // Main entry point: render one frame
     void RenderFrame(const FrameRenderData& frameData);
+
+    // Render graph-based frame (preferred path)
+    void RenderFrameGraph(const FrameRenderData& frameData);
+
+    // GPU profiler access
+    rhi::GPUProfiler& GetProfiler() { return m_profiler; }
 
 private:
     // ─── Pipeline passes ──────────────────────────────────────────────
@@ -154,6 +163,11 @@ private:
     rhi::BufferHandle m_visibleListBuffer;     // Visible instance indices
     rhi::BufferHandle m_drawCommandBuffer;     // Indirect draw commands
     rhi::BufferHandle m_instanceDataBuffer;    // Per-instance transforms + bounds
+
+    // ─── Render graph ────────────────────────────────────────────────
+    std::unique_ptr<RenderGraph> m_renderGraph;
+    rhi::GPUProfiler m_profiler;
+    bool m_useRenderGraph = true;
 };
 
 } // namespace nge::renderer

@@ -26,13 +26,17 @@ bool RenderPipeline::Init(rhi::IDevice* device, u32 width, u32 height) {
     CreateRenderTargets(width, height);
     CreatePipelines();
 
+    m_renderGraph = std::make_unique<RenderGraph>(device);
+    m_profiler.Init(128, 60);
+
     NGE_LOG_INFO("Render pipeline initialized: {}x{}, mode={}", width, height, static_cast<int>(m_mode));
     return true;
 }
 
 void RenderPipeline::Shutdown() {
+    m_profiler.Shutdown();
+    if (m_renderGraph) { m_renderGraph->Reset(); m_renderGraph.reset(); }
     DestroyRenderTargets();
-    // Pipelines are destroyed by the device
     m_device = nullptr;
 }
 
@@ -101,6 +105,136 @@ void RenderPipeline::RenderFrame(const FrameRenderData& frameData) {
 
     cmd->End();
     m_device->SubmitCommandList(cmd);
+}
+
+// ─── Render Graph-Based Frame ────────────────────────────────────────────
+
+void RenderPipeline::RenderFrameGraph(const FrameRenderData& frameData) {
+    m_profiler.BeginFrame();
+    m_renderGraph->Reset();
+
+    using namespace rhi;
+    auto fmt16F = Format::RGBA16_FLOAT;
+    auto rwUsage = TextureUsage::ShaderRead | TextureUsage::ShaderWrite;
+
+    // Import external resources
+    RGTextureDesc swapDesc;
+    swapDesc.width = m_width;
+    swapDesc.height = m_height;
+    swapDesc.format = Format::RGBA8_UNORM;
+
+    // ── Depth Prepass / Visibility Buffer ─────────────────────────────
+    auto& visPass = m_renderGraph->AddPass("VisibilityBuffer", PassType::Graphics);
+    RGTextureDesc depthDesc{m_width, m_height, 1, 1, Format::D32_FLOAT, TextureUsage::DepthStencil | TextureUsage::ShaderRead, "SceneDepth"};
+    RGTextureDesc visDesc{m_width, m_height, 1, 1, Format::RG32_UINT, TextureUsage::RenderTarget | TextureUsage::ShaderRead, "VisBuffer"};
+    auto rgDepth = visPass.CreateTexture("SceneDepth", depthDesc);
+    auto rgVisBuffer = visPass.CreateTexture("VisBuffer", visDesc);
+    visPass.WriteDepth(rgDepth);
+    visPass.WriteColor(rgVisBuffer);
+    visPass.SetViewport(m_width, m_height);
+    visPass.SetExecute([this, &frameData](ICommandList* cmd) {
+        m_profiler.BeginScope("VisibilityBuffer");
+        PassVisibilityBuffer(cmd, frameData);
+        m_profiler.EndScope();
+    });
+
+    // ── HZB Build ────────────────────────────────────────────────────
+    auto& hzbPass = m_renderGraph->AddPass("HZBBuild", PassType::Compute);
+    RGTextureDesc hzbDesc{m_width / 2, m_height / 2, 1, 8, Format::R32_FLOAT, rwUsage, "HZB"};
+    auto rgHZB = hzbPass.CreateTexture("HZB", hzbDesc);
+    hzbPass.Read(rgDepth);
+    hzbPass.Write(rgHZB);
+    hzbPass.SetExecute([this](ICommandList* cmd) {
+        m_profiler.BeginScope("HZBBuild");
+        PassHZBGeneration(cmd);
+        m_profiler.EndScope();
+    });
+
+    // ── Material Resolve ─────────────────────────────────────────────
+    auto& matPass = m_renderGraph->AddPass("MaterialResolve", PassType::Compute);
+    RGTextureDesc albedoDesc{m_width, m_height, 1, 1, Format::RGBA8_UNORM, rwUsage, "GBuffer_Albedo"};
+    RGTextureDesc normalDesc{m_width, m_height, 1, 1, Format::RG16_FLOAT, rwUsage, "GBuffer_Normal"};
+    auto rgAlbedo = matPass.CreateTexture("GBuffer_Albedo", albedoDesc);
+    auto rgNormal = matPass.CreateTexture("GBuffer_Normal", normalDesc);
+    matPass.Read(rgVisBuffer);
+    matPass.Read(rgDepth);
+    matPass.Write(rgAlbedo);
+    matPass.Write(rgNormal);
+    matPass.SetExecute([this, &frameData](ICommandList* cmd) {
+        m_profiler.BeginScope("MaterialResolve");
+        PassMaterialResolve(cmd, frameData);
+        m_profiler.EndScope();
+    });
+
+    // ── Direct Lighting ──────────────────────────────────────────────
+    auto& directPass = m_renderGraph->AddPass("DirectLighting", PassType::Compute);
+    RGTextureDesc directDesc{m_width, m_height, 1, 1, fmt16F, rwUsage, "DirectLight"};
+    auto rgDirect = directPass.CreateTexture("DirectLight", directDesc);
+    directPass.Read(rgAlbedo);
+    directPass.Read(rgNormal);
+    directPass.Read(rgDepth);
+    directPass.Write(rgDirect);
+    directPass.SetExecute([this, &frameData](ICommandList* cmd) {
+        m_profiler.BeginScope("DirectLighting");
+        PassDirectLighting(cmd, frameData);
+        m_profiler.EndScope();
+    });
+
+    // ── Indirect Lighting (GI) ───────────────────────────────────────
+    RGResourceHandle rgIndirect;
+    if (m_mode == RenderMode::GPUDriven || m_mode == RenderMode::HybridGI) {
+        auto& indirectPass = m_renderGraph->AddPass("IndirectLighting", PassType::Compute);
+        RGTextureDesc indirectDesc{m_width, m_height, 1, 1, fmt16F, rwUsage, "IndirectLight"};
+        rgIndirect = indirectPass.CreateTexture("IndirectLight", indirectDesc);
+        indirectPass.Read(rgAlbedo);
+        indirectPass.Read(rgNormal);
+        indirectPass.Read(rgDepth);
+        indirectPass.Write(rgIndirect);
+        indirectPass.SetExecute([this, &frameData](ICommandList* cmd) {
+            m_profiler.BeginScope("IndirectLighting");
+            PassIndirectLighting(cmd, frameData);
+            m_profiler.EndScope();
+        });
+    }
+
+    // ── Post-Processing ──────────────────────────────────────────────
+    auto& postPass = m_renderGraph->AddPass("PostProcess", PassType::Compute);
+    RGTextureDesc sceneDesc{m_width, m_height, 1, 1, fmt16F, rwUsage, "SceneColor"};
+    auto rgScene = postPass.CreateTexture("SceneColor", sceneDesc);
+    postPass.Read(rgDirect);
+    if (rgIndirect.IsValid()) postPass.Read(rgIndirect);
+    postPass.Write(rgScene);
+    postPass.SetExecute([this, &frameData](ICommandList* cmd) {
+        m_profiler.BeginScope("PostProcess");
+        PassPostProcess(cmd, frameData);
+        m_profiler.EndScope();
+    });
+
+    // ── Composite to Swapchain ───────────────────────────────────────
+    auto& compositePass = m_renderGraph->AddPass("Composite", PassType::Graphics);
+    auto rgSwapchain = compositePass.ImportTexture("Swapchain", m_device->GetSwapchainTexture(), swapDesc);
+    compositePass.Read(rgScene);
+    compositePass.Write(rgSwapchain, ResourceState::RenderTarget);
+    compositePass.SetExecute([this](ICommandList* cmd) {
+        m_profiler.BeginScope("Composite");
+        PassComposite(cmd);
+        m_profiler.EndScope();
+    });
+
+    // Compile and execute
+    m_renderGraph->Compile();
+
+    auto* cmd = m_device->GetCommandList();
+    cmd->Begin();
+    m_renderGraph->Execute(cmd);
+
+    // Present barrier
+    TextureHandle swapchain = m_device->GetSwapchainTexture();
+    cmd->TextureBarrier(swapchain, ResourceState::RenderTarget, ResourceState::Present);
+    cmd->End();
+    m_device->SubmitCommandList(cmd);
+
+    m_profiler.EndFrame();
 }
 
 // ─── Pass Implementations (stubs — filled in as subsystems are built) ────
