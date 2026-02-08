@@ -21,6 +21,7 @@ public:
 
     virtual void PollEvents() = 0;
     virtual bool ShouldClose() const = 0;
+    virtual void SetShouldClose(bool close) = 0;
     virtual void SetTitle(const char* title) = 0;
 
     virtual u32 GetWidth() const = 0;

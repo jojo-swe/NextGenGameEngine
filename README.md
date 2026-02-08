@@ -1,6 +1,6 @@
 # NextGenGameEngine
 
-[![CI](https://img.shields.io/badge/CI-not%20configured-lightgrey)](#roadmap)
+[![CI](https://github.com/jojo-swe/NextGenGameEngine/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jojo-swe/NextGenGameEngine/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://en.cppreference.com/)
 [![CMake](https://img.shields.io/badge/CMake-3.28%2B-blue)](https://cmake.org/)
@@ -93,14 +93,21 @@ Note: test infrastructure is configured, but test coverage is still being built 
 
 ## Dependencies
 
-Managed by `vcpkg.json`, including:
-- Vulkan loader + VMA
+Managed by `vcpkg.json`.
+
+Core (default) dependencies:
 - fmt + spdlog
 - GTest
-- meshoptimizer
-- Jolt Physics
-- Lua + sol2
-- ImGui (docking)
+
+Optional manifest features:
+- `rendering`: volk/VMA/meshoptimizer/imgui/stb/cgltf/tracy
+- `gameplay`: joltphysics/sol2/lua/entt
+
+Example (enable optional sets during configure):
+
+```powershell
+cmake --preset windows-debug -DVCPKG_MANIFEST_FEATURES="rendering;gameplay"
+```
 
 ## Roadmap
 
@@ -127,6 +134,10 @@ Pull requests are welcome. For larger changes, open an issue first with:
 - Problem statement
 - Proposed approach
 - Validation plan (tests, perf, compatibility)
+
+CI runs repository sanity checks plus:
+- Cross-platform configure/build/test jobs on Windows and Linux
+- A fuller Windows lane with `rendering;gameplay` manifest features enabled
 
 ## License
 

@@ -6,6 +6,11 @@ project(NextGenGameEngine
     DESCRIPTION "Next-generation 3D game engine with real-time path tracing"
 )
 
+# ─── Build options ─────────────────────────────────────────────────────────
+option(NGE_ENABLE_VULKAN "Enable Vulkan integration" ON)
+option(NGE_BUILD_SAMPLES "Build sample applications" ON)
+option(NGE_BUILD_TESTS "Build unit/integration tests" ON)
+
 # ─── C++ Standard ───────────────────────────────────────────────────────────
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -58,14 +63,22 @@ elseif(UNIX AND NOT APPLE)
 endif()
 
 # ─── Find packages ─────────────────────────────────────────────────────────
-find_package(Vulkan REQUIRED)
+if(NGE_ENABLE_VULKAN)
+    find_package(Vulkan REQUIRED)
+endif()
 find_package(spdlog CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
-find_package(GTest CONFIG REQUIRED)
+if(NGE_BUILD_TESTS)
+    find_package(GTest CONFIG REQUIRED)
+endif()
 
 # ─── Subdirectories ────────────────────────────────────────────────────────
 add_subdirectory(engine)
-add_subdirectory(samples)
-add_subdirectory(tests)
+if(NGE_BUILD_SAMPLES)
+    add_subdirectory(samples)
+endif()
+if(NGE_BUILD_TESTS)
+    add_subdirectory(tests)
+endif()
 # add_subdirectory(tools)
 # add_subdirectory(editor)

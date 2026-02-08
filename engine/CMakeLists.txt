@@ -40,10 +40,16 @@ target_include_directories(NextGenEngine
 # ─── Dependencies ──────────────────────────────────────────────────────────
 target_link_libraries(NextGenEngine
     PUBLIC
-        Vulkan::Vulkan
         spdlog::spdlog
         fmt::fmt
 )
+
+if(NGE_ENABLE_VULKAN)
+    target_link_libraries(NextGenEngine PUBLIC Vulkan::Vulkan)
+    target_compile_definitions(NextGenEngine PUBLIC NGE_ENABLE_VULKAN=1)
+else()
+    target_compile_definitions(NextGenEngine PUBLIC NGE_ENABLE_VULKAN=0)
+endif()
 
 # ─── Platform libraries ───────────────────────────────────────────────────
 if(WIN32)

@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  repo-sanity:
+    name: Repo Sanity Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required files
+        run: |
+          set -euo pipefail
+          test -f README.md
+          test -f LICENSE
+          test -f CMakeLists.txt
+          test -f CMakePresets.json
+          test -f vcpkg.json
+          test -f frolicking-tumbling-pond.md
+
+      - name: Validate JSON files
+        run: |
+          set -euo pipefail
+          python -m json.tool CMakePresets.json > /dev/null
+          python -m json.tool vcpkg.json > /dev/null
+
+      - name: Validate CMake availability
+        run: cmake --version
+
+  build-and-test:
+    name: Build and Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            configure_preset: windows-debug
+          - os: ubuntu-latest
+            configure_preset: linux-debug
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgJsonGlob: "vcpkg.json"
+
+      - name: Configure
+        run: cmake --preset ${{ matrix.configure_preset }} -DNGE_ENABLE_VULKAN=OFF -DNGE_BUILD_SAMPLES=OFF
+
+      - name: Build
+        run: cmake --build build --config Debug --parallel
+
+      - name: Test
+        run: ctest --test-dir build -C Debug --output-on-failure
+
+  build-and-test-full-windows:
+    name: Build and Test Full (windows-latest)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgJsonGlob: "vcpkg.json"
+
+      - name: Configure (full manifest features)
+        run: cmake --preset windows-debug -DNGE_ENABLE_VULKAN=OFF -DNGE_BUILD_SAMPLES=ON -DVCPKG_MANIFEST_FEATURES="rendering;gameplay"
+
+      - name: Build
+        run: cmake --build build --config Debug --parallel
+
+      - name: Test
+        run: ctest --test-dir build -C Debug --output-on-failure

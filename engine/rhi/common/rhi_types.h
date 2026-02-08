@@ -243,6 +243,7 @@ enum class ResourceState : u32 {
     ShaderRead,
     ShaderWrite,
     RenderTarget,
+    DepthWrite,
     DepthStencilWrite,
     DepthStencilRead,
     TransferSrc,

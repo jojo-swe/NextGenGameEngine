@@ -1,4 +1,5 @@
 #include "engine/core/platform/window.h"
+#include "engine/core/platform/input.h"
 #include "engine/core/logging/log.h"
 #include "engine/core/assert.h"
 
@@ -10,6 +11,52 @@
 #include <Windows.h>
 
 namespace nge::platform {
+
+// ─── Win32 Virtual Key → Engine Key mapping ──────────────────────────────
+static Key MapVirtualKey(u32 vk) {
+    if (vk >= 'A' && vk <= 'Z') return static_cast<Key>(vk);
+    if (vk >= '0' && vk <= '9') return static_cast<Key>(vk);
+
+    switch (vk) {
+        case VK_F1:      return Key::F1;
+        case VK_F2:      return Key::F2;
+        case VK_F3:      return Key::F3;
+        case VK_F4:      return Key::F4;
+        case VK_F5:      return Key::F5;
+        case VK_F6:      return Key::F6;
+        case VK_F7:      return Key::F7;
+        case VK_F8:      return Key::F8;
+        case VK_F9:      return Key::F9;
+        case VK_F10:     return Key::F10;
+        case VK_F11:     return Key::F11;
+        case VK_F12:     return Key::F12;
+        case VK_ESCAPE:  return Key::Escape;
+        case VK_RETURN:  return Key::Enter;
+        case VK_TAB:     return Key::Tab;
+        case VK_BACK:    return Key::Backspace;
+        case VK_SPACE:   return Key::Space;
+        case VK_DELETE:  return Key::Delete;
+        case VK_INSERT:  return Key::Insert;
+        case VK_LEFT:    return Key::Left;
+        case VK_RIGHT:   return Key::Right;
+        case VK_UP:      return Key::Up;
+        case VK_DOWN:    return Key::Down;
+        case VK_HOME:    return Key::Home;
+        case VK_END:     return Key::End;
+        case VK_PRIOR:   return Key::PageUp;
+        case VK_NEXT:    return Key::PageDown;
+        case VK_LSHIFT:  return Key::LeftShift;
+        case VK_RSHIFT:  return Key::RightShift;
+        case VK_LCONTROL: return Key::LeftCtrl;
+        case VK_RCONTROL: return Key::RightCtrl;
+        case VK_LMENU:   return Key::LeftAlt;
+        case VK_RMENU:   return Key::RightAlt;
+        case VK_SHIFT:   return Key::LeftShift;
+        case VK_CONTROL: return Key::LeftCtrl;
+        case VK_MENU:    return Key::LeftAlt;
+        default:         return Key::Unknown;
+    }
+}
 
 class Win32Window final : public Window {
 public:
@@ -79,6 +126,7 @@ public:
     }
 
     bool ShouldClose() const override { return m_shouldClose; }
+    void SetShouldClose(bool close) override { m_shouldClose = close; }
 
     void SetTitle(const char* title) override {
         int len = MultiByteToWideChar(CP_UTF8, 0, title, -1, nullptr, 0);
@@ -133,6 +181,43 @@ private:
                 case WM_DESTROY:
                     PostQuitMessage(0);
                     return 0;
+
+                // ─── Keyboard input forwarding ────────────────────────
+                case WM_KEYDOWN:
+                case WM_SYSKEYDOWN: {
+                    Key key = MapVirtualKey(static_cast<u32>(wParam));
+                    if (key != Key::Unknown) Input::OnKeyEvent(key, true);
+                    return 0;
+                }
+                case WM_KEYUP:
+                case WM_SYSKEYUP: {
+                    Key key = MapVirtualKey(static_cast<u32>(wParam));
+                    if (key != Key::Unknown) Input::OnKeyEvent(key, false);
+                    return 0;
+                }
+
+                // ─── Mouse button forwarding ──────────────────────────
+                case WM_LBUTTONDOWN: Input::OnMouseButtonEvent(MouseButton::Left, true);   SetCapture(hwnd); return 0;
+                case WM_LBUTTONUP:   Input::OnMouseButtonEvent(MouseButton::Left, false);  ReleaseCapture(); return 0;
+                case WM_RBUTTONDOWN: Input::OnMouseButtonEvent(MouseButton::Right, true);  SetCapture(hwnd); return 0;
+                case WM_RBUTTONUP:   Input::OnMouseButtonEvent(MouseButton::Right, false); ReleaseCapture(); return 0;
+                case WM_MBUTTONDOWN: Input::OnMouseButtonEvent(MouseButton::Middle, true);  return 0;
+                case WM_MBUTTONUP:   Input::OnMouseButtonEvent(MouseButton::Middle, false); return 0;
+
+                // ─── Mouse move forwarding ────────────────────────────
+                case WM_MOUSEMOVE: {
+                    f32 mx = static_cast<f32>(LOWORD(lParam));
+                    f32 my = static_cast<f32>(HIWORD(lParam));
+                    Input::OnMouseMoveEvent(mx, my);
+                    return 0;
+                }
+
+                // ─── Mouse scroll forwarding ──────────────────────────
+                case WM_MOUSEWHEEL: {
+                    f32 delta = static_cast<f32>(GET_WHEEL_DELTA_WPARAM(wParam)) / WHEEL_DELTA;
+                    Input::OnMouseScrollEvent(delta);
+                    return 0;
+                }
             }
         }
 
