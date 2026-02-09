@@ -1,5 +1,7 @@
 # NextGen Game Engine — Master Implementation Plan
 
+<!-- markdownlint-disable MD013 MD022 MD032 MD033 MD040 MD060 -->
+
 ## Vision
 
 A from-scratch 3D game engine rivaling Unreal Engine 5 with real-time path tracing, virtual geometry, GPU-driven rendering, and novel mathematical foundations. Written in C++20/23 with Vulkan 1.3 primary / DX12 secondary.
