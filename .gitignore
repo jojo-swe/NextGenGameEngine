@@ -12,6 +12,7 @@ cmake-build-*/
 .idea/
 *.swp
 *.swo
+.windsurf/
 
 # Compiled objects
 *.obj
