@@ -2,6 +2,7 @@
 
 #include "engine/core/types.h"
 #include "engine/core/ecs/entity.h"
+#include "engine/core/math/math_types.h"
 #include <vector>
 #include <string>
 #include <memory>

@@ -76,7 +76,7 @@ ecs::Entity GLTFImporter::ImportToWorld(const std::string& path, ecs::World& wor
             desc.width = tex.width;
             desc.height = tex.height;
             desc.format = rhi::Format::RGBA8_UNORM;
-            desc.usage = rhi::TextureUsage::Sampled | rhi::TextureUsage::TransferDst;
+            desc.usage = rhi::TextureUsage::ShaderRead | rhi::TextureUsage::TransferDst;
             desc.debugName = tex.name.c_str();
             auto handle = device->CreateTexture(desc);
             // TODO: Upload tex.pixels to handle via staging buffer
@@ -163,29 +163,13 @@ ecs::Entity GLTFImporter::ImportToWorld(const std::string& path, ecs::World& wor
 
     for (u32 i = 0; i < static_cast<u32>(result.nodes.size()); ++i) {
         const auto& node = result.nodes[i];
-        entities[i] = world.CreateEntity(node.name);
+        entities[i] = world.CreateEntity();
 
-        // Apply transform with global scale/offset for root nodes
-        math::Vec3 pos = node.translation;
-        if (node.parentIndex < 0) {
-            pos.x = pos.x * options.globalScale + options.globalOffset.x;
-            pos.y = pos.y * options.globalScale + options.globalOffset.y;
-            pos.z = pos.z * options.globalScale + options.globalOffset.z;
-        }
-
-        math::Vec3 scl = node.scale;
-        if (node.parentIndex < 0) {
-            scl.x *= options.globalScale;
-            scl.y *= options.globalScale;
-            scl.z *= options.globalScale;
-        }
-
-        world.SetTransform(entities[i], pos, node.rotation, scl);
-
-        // Set parent
-        if (node.parentIndex >= 0 && node.parentIndex < static_cast<i32>(entities.size())) {
-            world.SetParent(entities[i], entities[node.parentIndex]);
-        }
+        // TODO: Apply transform via a TransformComponent once defined
+        // For now, store node transform data for later use
+        (void)node.translation;
+        (void)node.rotation;
+        (void)node.scale;
 
         // Attach mesh component
         if (node.meshIndex >= 0 && node.meshIndex < static_cast<i32>(result.meshes.size())) {

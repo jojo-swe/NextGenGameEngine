@@ -79,7 +79,7 @@ u32 NavMesh::FindNearestNode(const math::Vec3& pos) const {
 
     for (u32 i = 0; i < static_cast<u32>(m_nodes.size()); ++i) {
         math::Vec3 diff = m_nodes[i].position - pos;
-        f32 dist = diff.LengthSquared();
+        f32 dist = diff.LengthSq();
         if (dist < minDist) {
             minDist = dist;
             nearest = i;

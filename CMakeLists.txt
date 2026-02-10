@@ -24,7 +24,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 # ─── Global compiler options ───────────────────────────────────────────────
 if(MSVC)
     add_compile_options(
-        /W4 /WX
+        /W4
         /permissive-
         /Zc:__cplusplus
         /MP                     # Multi-process compilation

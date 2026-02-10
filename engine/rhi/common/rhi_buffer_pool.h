@@ -31,7 +31,7 @@ public:
     struct Config {
         u32         blockSize = 4 * 1024 * 1024; // 4 MB per block
         u32         alignment = 256;               // Min allocation alignment
-        BufferUsage usage = BufferUsage::Constant | BufferUsage::TransferSrc;
+        BufferUsage usage = BufferUsage::Uniform | BufferUsage::TransferSrc;
         MemoryUsage memoryUsage = MemoryUsage::CPU_To_GPU;
         u32         maxFramesInFlight = 3;
     };

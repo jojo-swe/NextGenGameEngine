@@ -12,38 +12,12 @@ namespace nge::rhi {
 // Validates the configuration before creation and provides clear error
 // messages for misconfigured pipelines.
 
-enum class CullMode : u8 { None, Front, Back, FrontAndBack };
-enum class FrontFace : u8 { CounterClockwise, Clockwise };
+// CullMode, FrontFace, PrimitiveTopology, BlendFactor, BlendOp,
+// VertexAttribute, VertexBinding, BlendAttachment are in rhi_types.h
+
 enum class PolygonMode : u8 { Fill, Line, Point };
-enum class PrimitiveTopology : u8 { TriangleList, TriangleStrip, TriangleFan, LineList, LineStrip, PointList };
-enum class BlendFactor : u8 { Zero, One, SrcAlpha, OneMinusSrcAlpha, DstAlpha, OneMinusDstAlpha, SrcColor, OneMinusSrcColor };
-enum class BlendOp : u8 { Add, Subtract, ReverseSubtract, Min, Max };
 enum class CompareFunc : u8 { Never, Less, LessEqual, Greater, GreaterEqual, Equal, NotEqual, Always };
 enum class StencilOp : u8 { Keep, Zero, Replace, IncrClamp, DecrClamp, Invert, IncrWrap, DecrWrap };
-
-struct VertexAttribute {
-    u32         location;
-    Format      format;
-    u32         offset;
-    u32         binding;
-};
-
-struct VertexBinding {
-    u32  binding;
-    u32  stride;
-    bool perInstance = false;
-};
-
-struct BlendAttachment {
-    bool        blendEnable = false;
-    BlendFactor srcColor = BlendFactor::One;
-    BlendFactor dstColor = BlendFactor::Zero;
-    BlendOp     colorOp = BlendOp::Add;
-    BlendFactor srcAlpha = BlendFactor::One;
-    BlendFactor dstAlpha = BlendFactor::Zero;
-    BlendOp     alphaOp = BlendOp::Add;
-    u8          writeMask = 0xF; // RGBA
-};
 
 struct StencilState {
     StencilOp   failOp = StencilOp::Keep;

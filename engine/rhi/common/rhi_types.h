@@ -9,7 +9,12 @@ namespace nge::rhi {
 // Typed handles to GPU resources. Index into backend arrays.
 template <typename Tag>
 struct Handle {
-    u32 index = UINT32_MAX;
+    union {
+        u32 index;
+        u32 id;
+    };
+    Handle() : index(UINT32_MAX) {}
+    constexpr u32 GetId() const { return index; }
     constexpr bool IsValid() const { return index != UINT32_MAX; }
     constexpr bool operator==(Handle o) const { return index == o.index; }
     constexpr bool operator!=(Handle o) const { return index != o.index; }
@@ -81,9 +86,6 @@ enum class Format : u32 {
     BC5_UNORM, BC5_SNORM,
     BC6H_UFLOAT, BC6H_SFLOAT,
     BC7_UNORM, BC7_SRGB,
-
-    // R32G32 for visibility buffer
-    RG32_UINT,
 
     Count
 };
@@ -200,6 +202,7 @@ enum class FrontFace : u8 {
 enum class PrimitiveTopology : u8 {
     TriangleList,
     TriangleStrip,
+    TriangleFan,
     LineList,
     LineStrip,
     PointList,

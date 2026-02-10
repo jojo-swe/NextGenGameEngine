@@ -185,20 +185,20 @@ void AnimationSystem::ComputeWorldTransforms(const Skeleton& skeleton, Animation
             pose.worldTransforms[i] = pose.localTransforms[i];
         } else {
             u32 parent = static_cast<u32>(skeleton.bones[i].parentIndex);
-            pose.worldTransforms[i] = math::pga::Motor::Multiply(
+            pose.worldTransforms[i] = pga::Motor::Multiply(
                 pose.worldTransforms[parent], pose.localTransforms[i]);
         }
 
         // Skinning matrix = worldTransform * inverseBindPose
-        math::pga::Motor skinMotor = math::pga::Motor::Multiply(
+        pga::Motor skinMotor = pga::Motor::Multiply(
             pose.worldTransforms[i], skeleton.bones[i].invBindPose);
         pose.skinningMatrices[i] = skinMotor.ToMat4();
     }
 }
 
-math::pga::Motor AnimationSystem::InterpolateKeyframes(const Keyframe& a, const Keyframe& b, f32 t) {
+pga::Motor AnimationSystem::InterpolateKeyframes(const Keyframe& a, const Keyframe& b, f32 t) {
     // Use PGA Motor slerp for geodesic interpolation
-    return math::pga::Motor::Slerp(a.transform, b.transform, t);
+    return pga::Motor::Slerp(a.transform, b.transform, t);
 }
 
 void AnimationSystem::FindKeyframes(const BoneChannel& channel, f32 time,
@@ -246,7 +246,7 @@ void AnimationSystem::BlendPoses(const AnimationPose& a, const AnimationPose& b,
                 break;
 
             case BlendMode::Blend:
-                result.localTransforms[i] = math::pga::Motor::Slerp(
+                result.localTransforms[i] = pga::Motor::Slerp(
                     a.localTransforms[i], b.localTransforms[i], weight);
                 break;
 
@@ -254,9 +254,9 @@ void AnimationSystem::BlendPoses(const AnimationPose& a, const AnimationPose& b,
                 // Additive: apply B's delta on top of A
                 // delta = B * inverse(bindPose), result = A * delta^weight
                 // Simplified: slerp identity→B with weight, multiply onto A
-                result.localTransforms[i] = math::pga::Motor::Multiply(
+                result.localTransforms[i] = pga::Motor::Multiply(
                     a.localTransforms[i],
-                    math::pga::Motor::Slerp(math::pga::Motor::Identity(), b.localTransforms[i], weight));
+                    pga::Motor::Slerp(pga::Motor::Identity(), b.localTransforms[i], weight));
                 break;
         }
     }

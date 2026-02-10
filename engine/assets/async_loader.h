@@ -129,7 +129,7 @@ private:
     std::atomic<u32> m_completedThisFrame{0};
     std::atomic<u32> m_failedThisFrame{0};
     f64 m_totalLoadTimeMs = 0;
-    std::mutex m_statsMutex;
+    mutable std::mutex m_statsMutex;
 };
 
 } // namespace nge::assets

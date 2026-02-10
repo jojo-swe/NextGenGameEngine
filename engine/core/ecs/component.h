@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/core/types.h"
+#include <atomic>
 #include <typeinfo>
 #include <cstring>
 

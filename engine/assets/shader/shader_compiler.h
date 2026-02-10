@@ -2,6 +2,7 @@
 
 #include "engine/core/types.h"
 #include "engine/rhi/common/rhi_types.h"
+#include "engine/rhi/common/rhi_device.h"
 #include <string>
 #include <vector>
 #include <unordered_map>

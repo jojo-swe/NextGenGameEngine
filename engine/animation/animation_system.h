@@ -3,6 +3,7 @@
 #include "engine/core/types.h"
 #include "engine/core/math/math_types.h"
 #include "engine/core/math/pga.h"
+
 #include <vector>
 #include <string>
 #include <unordered_map>
@@ -15,8 +16,8 @@ namespace nge::animation {
 struct Bone {
     std::string name;
     i32         parentIndex = -1; // -1 = root bone
-    math::pga::Motor bindPose;    // Local bind-pose transform
-    math::pga::Motor invBindPose; // Inverse bind-pose (for skinning)
+    pga::Motor bindPose;    // Local bind-pose transform
+    pga::Motor invBindPose; // Inverse bind-pose (for skinning)
 };
 
 struct Skeleton {
@@ -37,7 +38,7 @@ struct Skeleton {
 
 struct Keyframe {
     f32              time;
-    math::pga::Motor transform; // Local bone transform at this keyframe
+    pga::Motor transform; // Local bone transform at this keyframe
 };
 
 struct BoneChannel {
@@ -57,13 +58,13 @@ struct AnimationClip {
 // Result of evaluating an animation at a specific time.
 
 struct AnimationPose {
-    std::vector<math::pga::Motor> localTransforms;  // Per-bone local
-    std::vector<math::pga::Motor> worldTransforms;  // Per-bone world (computed)
+    std::vector<pga::Motor> localTransforms;  // Per-bone local
+    std::vector<pga::Motor> worldTransforms;  // Per-bone world (computed)
     std::vector<math::Mat4>       skinningMatrices;  // Final matrices for GPU upload
 
     void Resize(u32 boneCount) {
-        localTransforms.resize(boneCount, math::pga::Motor::Identity());
-        worldTransforms.resize(boneCount, math::pga::Motor::Identity());
+        localTransforms.resize(boneCount, pga::Motor::Identity());
+        worldTransforms.resize(boneCount, pga::Motor::Identity());
         skinningMatrices.resize(boneCount, math::Mat4::Identity());
     }
 };
@@ -130,7 +131,7 @@ public:
 
 private:
     // Interpolate between two keyframes
-    math::pga::Motor InterpolateKeyframes(const Keyframe& a, const Keyframe& b, f32 t);
+    pga::Motor InterpolateKeyframes(const Keyframe& a, const Keyframe& b, f32 t);
 
     // Find keyframes surrounding a given time
     void FindKeyframes(const BoneChannel& channel, f32 time,
