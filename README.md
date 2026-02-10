@@ -149,10 +149,12 @@ Note: test infrastructure is configured, but test coverage is still being built 
 Managed by `vcpkg.json`.
 
 Core (default) dependencies:
+
 - fmt + spdlog
 - GTest
 
 Optional manifest features:
+
 - `rendering`: volk/VMA/meshoptimizer/imgui/stb/cgltf/tracy
 - `gameplay`: joltphysics/sol2/lua/entt
 
@@ -165,6 +167,7 @@ cmake --preset windows-debug -DVCPKG_MANIFEST_FEATURES="rendering;gameplay"
 ## Roadmap
 
 Execution follows phased delivery:
+
 - Foundation and build stability
 - RHI (Vulkan and DX12 parity)
 - GPU-driven rendering pipeline
@@ -172,9 +175,11 @@ Execution follows phased delivery:
 - Tooling, scripting, and networking
 
 Detailed milestones, gates, and scene profile IDs live in:
+
 - `frolicking-tumbling-pond.md`
 
 Direct links to key plan sections:
+
 - [Phase 0: Delivery and Risk](frolicking-tumbling-pond.md#phase-0-delivery-risk)
 - [Phase 2.4: DirectX 12 Backend](frolicking-tumbling-pond.md#phase-2-4-directx12-backend)
 - [Phase 6.4: Serialization and Versioning](frolicking-tumbling-pond.md#phase-6-4-serialization-versioning)
@@ -184,11 +189,13 @@ Direct links to key plan sections:
 ## Contributing
 
 Pull requests are welcome. For larger changes, open an issue first with:
+
 - Problem statement
 - Proposed approach
 - Validation plan (tests, perf, compatibility)
 
 CI runs repository sanity checks plus:
+
 - Cross-platform configure/build/test jobs on Windows and Linux
 - A fuller Windows lane with `rendering;gameplay` manifest features enabled
 
