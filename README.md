@@ -78,7 +78,7 @@ A next-generation 3D game engine built from scratch in C++20, targeting Vulkan 1
 │   ├── scripting/      # Lua/Sol2 wrapper, hot-reload
 │   └── ai/             # Behavior tree, nav mesh (A* pathfinding)
 ├── editor/             # ImGui docking editor (viewport, hierarchy, inspector, console, assets, profiler)
-├── shaders/            # 90 HLSL compute/vertex/fragment shaders
+├── shaders/            # 94 HLSL compute/vertex/fragment shaders
 │   ├── common/         # Shared math, BRDF
 │   ├── compute/        # HZB build, VRS, GPU skinning, particles, occlusion cull, meshlet LOD, indirect draw, VT feedback, cluster lights, frustum cull, mip downsample
 │   ├── visibility/     # Material resolve, visibility buffer resolve
@@ -89,7 +89,7 @@ A next-generation 3D game engine built from scratch in C++20, targeting Vulkan 1
 │   ├── terrain/        # Terrain CDLOD rendering
 │   └── debug/          # Debug lines + text rendering
 ├── samples/triangle/   # Minimal sample app
-├── tests/              # 68 test files (unit + integration)
+├── tests/              # 75 test files (unit + integration)
 ├── CMakeLists.txt
 ├── CMakePresets.json
 ├── vcpkg.json
