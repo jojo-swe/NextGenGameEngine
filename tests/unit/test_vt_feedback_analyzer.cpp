@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_vt_feedback_analyzer.h"
 
+using namespace nge;
 using namespace nge::rhi;
 
 static VTPageId MakePage(u32 tex, u32 mip, u32 x, u32 y) {

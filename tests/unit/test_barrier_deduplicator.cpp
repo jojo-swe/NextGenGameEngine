@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_barrier_deduplicator.h"
 
+using namespace nge;
 using namespace nge::rhi;
 
 static BarrierDesc MakeImageBarrier(u64 handle, u32 srcStage, u32 dstStage,

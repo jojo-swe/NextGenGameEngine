@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_descriptor_pool_allocator.h"
 
+using namespace nge;
 using namespace nge::rhi;
 
 static std::vector<PoolSizeEntry> SimpleReq(DescriptorType type = DescriptorType::UniformBuffer, u32 count = 1) {

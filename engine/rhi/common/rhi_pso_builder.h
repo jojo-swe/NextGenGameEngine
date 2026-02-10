@@ -15,9 +15,7 @@ namespace nge::rhi {
 // CullMode, FrontFace, PrimitiveTopology, BlendFactor, BlendOp,
 // VertexAttribute, VertexBinding, BlendAttachment are in rhi_types.h
 
-enum class PolygonMode : u8 { Fill, Line, Point };
-enum class CompareFunc : u8 { Never, Less, LessEqual, Greater, GreaterEqual, Equal, NotEqual, Always };
-enum class StencilOp : u8 { Keep, Zero, Replace, IncrClamp, DecrClamp, Invert, IncrWrap, DecrWrap };
+// PolygonMode, StencilOp, CompareFunc are defined in rhi_types.h
 
 struct StencilState {
     StencilOp   failOp = StencilOp::Keep;

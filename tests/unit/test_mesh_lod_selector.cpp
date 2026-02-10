@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_mesh_lod_selector.h"
 
+using namespace nge;
 using namespace nge::rhi;
 
 static u32 SetupMeshWith3LODs(MeshLODSelector& sel) {

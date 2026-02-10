@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_async_readback.h"
 
+using namespace nge;
 using namespace nge::rhi;
 
 TEST(AsyncReadback, InitAndShutdown) {

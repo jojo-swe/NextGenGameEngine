@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_rt_pool.h"
 
+using namespace nge;
 using namespace nge::rhi;
 
 static RenderTargetDesc MakeDesc(u32 w, u32 h, RTFormat fmt, u8 flags = 0x01, u32 mips = 1, u32 layers = 1, u32 samples = 1) {

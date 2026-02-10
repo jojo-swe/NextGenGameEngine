@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_draw_call_compactor.h"
 
+using namespace nge;
 using namespace nge::rhi;
 
 static CompactDrawArgs MakeDraw(u32 indexCount, u32 instanceCount, u32 firstIndex = 0,

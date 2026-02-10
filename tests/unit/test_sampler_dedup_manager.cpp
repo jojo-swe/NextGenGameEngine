@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_sampler_dedup_manager.h"
 
+using namespace nge;
 using namespace nge::rhi;
 
 static SamplerDesc MakeDesc(SamplerFilter mag = SamplerFilter::Linear,

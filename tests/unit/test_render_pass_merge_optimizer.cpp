@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_render_pass_merge_optimizer.h"
 
+using namespace nge;
 using namespace nge::rhi;
 
 static RenderPassDesc MakePass(u32 id, const std::string& name, u32 w, u32 h, u32 samples = 1) {

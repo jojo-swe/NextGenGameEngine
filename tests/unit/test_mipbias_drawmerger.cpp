@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_mip_bias_controller.h"
 #include "engine/rhi/common/rhi_draw_call_merger.h"
 
+using namespace nge;
 using namespace nge::rhi;
 
 // ─── Mip Bias Controller Tests ───────────────────────────────────────────

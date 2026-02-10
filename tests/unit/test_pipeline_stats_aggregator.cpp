@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_pipeline_stats_aggregator.h"
 #include <cstring>
 
+using namespace nge;
 using namespace nge::rhi;
 
 static PipelineStatistics MakeStats(u64 vtx, u64 frag, u64 compute = 0, u64 prims = 0) {

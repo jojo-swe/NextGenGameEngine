@@ -60,12 +60,25 @@ public:
     virtual void TraceRays(u32 width, u32 height, u32 depth = 1) = 0;
 
     // ─── Transfer ─────────────────────────────────────────────────────
-    virtual void CopyBuffer(BufferHandle src, BufferHandle dst, u64 srcOffset, u64 dstOffset, u64 size) = 0;
+    virtual void CopyBuffer(BufferHandle src, u64 srcOffset, BufferHandle dst, u64 dstOffset, u64 size) = 0;
     virtual void CopyBufferToTexture(BufferHandle src, TextureHandle dst, u32 mipLevel = 0, u32 arrayLayer = 0) = 0;
     virtual void CopyTextureToBuffer(TextureHandle src, BufferHandle dst, u32 mipLevel = 0, u32 arrayLayer = 0) = 0;
 
     // ─── Acceleration structure ───────────────────────────────────────
     virtual void BuildAccelerationStructure(AccelStructHandle accelStruct) = 0;
+
+    // ─── Buffer utilities ────────────────────────────────────────────
+    virtual void FillBuffer(BufferHandle buffer, u64 offset, u64 size, u32 value) = 0;
+    virtual void UpdateBuffer(BufferHandle buffer, u64 offset, u64 size, const void* data) = 0;
+    virtual void BlitTexture(TextureHandle src, TextureHandle dst) = 0;
+
+    // ─── Dynamic state ──────────────────────────────────────────────
+    virtual void SetViewport(const Viewport& viewport) = 0;
+    virtual void SetScissor(const Scissor& scissor) = 0;
+
+    // ─── Synchronization ────────────────────────────────────────────
+    virtual void WaitSemaphore(u64 semaphore, u64 value = 0) = 0;
+    virtual void SignalSemaphore(u64 semaphore, u64 value = 0) = 0;
 
     // ─── Debug ────────────────────────────────────────────────────────
     virtual void BeginDebugLabel(const char* name, f32 r = 1, f32 g = 1, f32 b = 1) = 0;

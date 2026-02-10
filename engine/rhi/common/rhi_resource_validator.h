@@ -28,7 +28,7 @@ namespace nge::rhi {
     #define NGE_RESOURCE_VALIDATE(validator, ...) (validator).__VA_ARGS__
 #endif
 
-enum class ResourceState : u8 {
+enum class ValidationResourceState : u8 {
     Uninitialized,
     Idle,
     Reading,
@@ -112,7 +112,7 @@ private:
     struct TrackedResource {
         u64            handle;
         std::string    name;
-        ResourceState  state;
+        ValidationResourceState  state;
         std::string    lastWriter;
         u64            createFrame;
     };

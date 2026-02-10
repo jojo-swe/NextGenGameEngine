@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_timeline_semaphore_pool.h"
 #include "engine/rhi/vulkan/vk_shader_object.h"
 
+using namespace nge;
 using namespace nge::rhi;
 using namespace nge::rhi::vulkan;
 

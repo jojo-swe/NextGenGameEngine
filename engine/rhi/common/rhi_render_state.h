@@ -10,31 +10,7 @@ namespace nge::rhi {
 // Produces a hashable state block that maps to PSO creation.
 
 // ─── Blend State ─────────────────────────────────────────────────────────
-
-enum class BlendFactor : u8 {
-    Zero, One,
-    SrcColor, OneMinusSrcColor,
-    DstColor, OneMinusDstColor,
-    SrcAlpha, OneMinusSrcAlpha,
-    DstAlpha, OneMinusDstAlpha,
-    ConstantColor, OneMinusConstantColor,
-    SrcAlphaSaturate,
-};
-
-enum class BlendOp : u8 {
-    Add, Subtract, ReverseSubtract, Min, Max,
-};
-
-struct BlendAttachment {
-    bool        enable = false;
-    BlendFactor srcColor = BlendFactor::One;
-    BlendFactor dstColor = BlendFactor::Zero;
-    BlendOp     colorOp  = BlendOp::Add;
-    BlendFactor srcAlpha = BlendFactor::One;
-    BlendFactor dstAlpha = BlendFactor::Zero;
-    BlendOp     alphaOp  = BlendOp::Add;
-    u8          writeMask = 0xF; // RGBA
-};
+// BlendFactor, BlendOp, BlendAttachment are defined in rhi_types.h
 
 struct BlendState {
     BlendAttachment attachments[8];
@@ -45,9 +21,7 @@ struct BlendState {
 
 // ─── Depth/Stencil State ─────────────────────────────────────────────────
 
-enum class StencilOp : u8 {
-    Keep, Zero, Replace, IncrementClamp, DecrementClamp, Invert, IncrementWrap, DecrementWrap,
-};
+// StencilOp, CompareOp are defined in rhi_types.h
 
 struct StencilFace {
     StencilOp failOp      = StencilOp::Keep;
@@ -73,9 +47,7 @@ struct DepthStencilState {
 
 // ─── Rasterizer State ────────────────────────────────────────────────────
 
-enum class PolygonMode : u8 { Fill, Line, Point };
-enum class CullMode : u8 { None, Front, Back, FrontAndBack };
-enum class FrontFace : u8 { CounterClockwise, Clockwise };
+// PolygonMode, CullMode, FrontFace are defined in rhi_types.h
 
 struct RasterizerState {
     PolygonMode polygonMode = PolygonMode::Fill;

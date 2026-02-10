@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_shader_variant_dispatch.h"
 
+using namespace nge;
 using namespace nge::rhi;
 
 TEST(ShaderVariantDispatch, InitAndShutdown) {

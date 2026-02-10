@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_transient_attachment_allocator.h"
 
+using namespace nge;
 using namespace nge::rhi;
 
 static TransientAttachmentDesc MakeDesc(u32 w, u32 h, AttachmentFormat fmt = AttachmentFormat::RGBA8_UNORM,

@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_resource_transition_tracker.h"
 
+using namespace nge;
 using namespace nge::rhi;
 
 TEST(ResourceTransitionTracker, InitAndShutdown) {

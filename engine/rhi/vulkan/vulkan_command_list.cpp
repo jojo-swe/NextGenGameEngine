@@ -219,7 +219,7 @@ void VulkanCommandList::TraceRays(u32 /*width*/, u32 /*height*/, u32 /*depth*/) 
     // TODO: Implement when RT pipeline is complete
 }
 
-void VulkanCommandList::CopyBuffer(BufferHandle src, BufferHandle dst, u64 srcOffset, u64 dstOffset, u64 size) {
+void VulkanCommandList::CopyBuffer(BufferHandle src, u64 srcOffset, BufferHandle dst, u64 dstOffset, u64 size) {
     const auto& srcBuf = m_device->GetBuffer(src);
     const auto& dstBuf = m_device->GetBuffer(dst);
     VkBufferCopy region{srcOffset, dstOffset, size};

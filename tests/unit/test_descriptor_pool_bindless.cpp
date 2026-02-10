@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_descriptor_pool_manager.h"
 #include "engine/rhi/common/rhi_bindless_texture_manager.h"
 
+using namespace nge;
 using namespace nge::rhi;
 
 // ─── Descriptor Pool Manager Tests ───────────────────────────────────────

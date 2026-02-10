@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_queue_capabilities.h"
 #include "engine/rhi/common/rhi_timeline_semaphore_pool.h"
 
+using namespace nge;
 using namespace nge::rhi;
 
 // ─── Queue Capability Manager Tests ──────────────────────────────────────

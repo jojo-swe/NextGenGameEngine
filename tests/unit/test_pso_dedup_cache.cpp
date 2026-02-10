@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_pso_dedup_cache.h"
 
+using namespace nge;
 using namespace nge::rhi;
 
 static PSOKey MakeKey(u64 hash, PSOType type = PSOType::Graphics) {

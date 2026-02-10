@@ -19,7 +19,7 @@ void ResourceStateValidator::Init(const ResourceValidatorConfig& config) {
 void ResourceStateValidator::Shutdown() {
     // Report any resources that were never destroyed
     for (const auto& [handle, res] : m_resources) {
-        if (res.state != ResourceState::Destroyed) {
+        if (res.state != ValidationResourceState::Destroyed) {
             AddMessage(ValidationSeverity::Warning,
                        "Resource leaked (never destroyed): " + res.name, res.name);
         }
@@ -46,7 +46,7 @@ void ResourceStateValidator::TrackCreate(u64 handle, const std::string& name) {
     TrackedResource res;
     res.handle = handle;
     res.name = name;
-    res.state = ResourceState::Uninitialized;
+    res.state = ValidationResourceState::Uninitialized;
     res.createFrame = m_currentFrame;
     m_resources[handle] = std::move(res);
 }
@@ -68,7 +68,7 @@ void ResourceStateValidator::TrackDestroy(u64 handle) {
         return;
     }
 
-    if (it->second.state == ResourceState::Writing || it->second.state == ResourceState::Reading) {
+    if (it->second.state == ValidationResourceState::Writing || it->second.state == ValidationResourceState::Reading) {
         AddMessage(ValidationSeverity::Error,
                    "Destroying resource while still in use: " + it->second.name, it->second.name);
     }
@@ -97,14 +97,14 @@ bool ResourceStateValidator::ValidateRead(u64 handle, const std::string& passNam
         return false;
     }
 
-    if (it->second.state == ResourceState::Uninitialized) {
+    if (it->second.state == ValidationResourceState::Uninitialized) {
         AddMessage(ValidationSeverity::Error,
                    "Reading uninitialized resource '" + it->second.name + "' in pass '" + passName + "'",
                    it->second.name);
         return false;
     }
 
-    if (it->second.state == ResourceState::Writing) {
+    if (it->second.state == ValidationResourceState::Writing) {
         AddMessage(ValidationSeverity::Error,
                    "Read-while-write hazard: '" + it->second.name + "' written by '" +
                    it->second.lastWriter + "', read in '" + passName + "' without barrier",
@@ -112,7 +112,7 @@ bool ResourceStateValidator::ValidateRead(u64 handle, const std::string& passNam
         return false;
     }
 
-    it->second.state = ResourceState::Reading;
+    it->second.state = ValidationResourceState::Reading;
     return true;
 }
 
@@ -135,7 +135,7 @@ bool ResourceStateValidator::ValidateWrite(u64 handle, const std::string& passNa
         return false;
     }
 
-    if (it->second.state == ResourceState::Reading) {
+    if (it->second.state == ValidationResourceState::Reading) {
         AddMessage(ValidationSeverity::Error,
                    "Write-after-read hazard: '" + it->second.name + "' still being read, "
                    "write attempted in '" + passName + "' without barrier",
@@ -143,14 +143,14 @@ bool ResourceStateValidator::ValidateWrite(u64 handle, const std::string& passNa
         return false;
     }
 
-    if (it->second.state == ResourceState::Writing) {
+    if (it->second.state == ValidationResourceState::Writing) {
         AddMessage(ValidationSeverity::Warning,
                    "Write-after-write: '" + it->second.name + "' overwritten by '" +
                    passName + "' (previously by '" + it->second.lastWriter + "')",
                    it->second.name);
     }
 
-    it->second.state = ResourceState::Writing;
+    it->second.state = ValidationResourceState::Writing;
     it->second.lastWriter = passName;
     return true;
 }
@@ -182,7 +182,7 @@ bool ResourceStateValidator::ValidateTransition(u64 handle, ImageLayout from, Im
                    it->second.name);
     }
 
-    if (from == ImageLayout::Undefined && it->second.state != ResourceState::Uninitialized) {
+    if (from == ImageLayout::Undefined && it->second.state != ValidationResourceState::Uninitialized) {
         AddMessage(ValidationSeverity::Warning,
                    "Transitioning from Undefined but resource was previously written (data loss): '" +
                    it->second.name + "' in pass '" + passName + "'",
@@ -197,7 +197,7 @@ void ResourceStateValidator::MarkWritten(u64 handle) {
     std::lock_guard lock(m_mutex);
     auto it = m_resources.find(handle);
     if (it != m_resources.end()) {
-        it->second.state = ResourceState::Writing;
+        it->second.state = ValidationResourceState::Writing;
     }
 }
 
@@ -206,7 +206,7 @@ void ResourceStateValidator::MarkIdle(u64 handle) {
     std::lock_guard lock(m_mutex);
     auto it = m_resources.find(handle);
     if (it != m_resources.end()) {
-        it->second.state = ResourceState::Idle;
+        it->second.state = ValidationResourceState::Idle;
     }
 }
 

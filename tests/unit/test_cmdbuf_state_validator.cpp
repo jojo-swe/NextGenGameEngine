@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_cmdbuf_state_validator.h"
 
+using namespace nge;
 using namespace nge::rhi;
 
 TEST(CmdBufStateValidator, InitAndShutdown) {

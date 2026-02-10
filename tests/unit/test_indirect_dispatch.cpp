@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_indirect_dispatch_builder.h"
 
+using namespace nge;
 using namespace nge::rhi;
 
 TEST(IndirectDispatchBuilder, InitAndShutdown) {

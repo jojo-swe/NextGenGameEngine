@@ -3,21 +3,7 @@
 
 namespace nge::rhi {
 
-bool SamplerDesc::operator==(const SamplerDesc& other) const {
-    return minFilter == other.minFilter &&
-           magFilter == other.magFilter &&
-           mipFilter == other.mipFilter &&
-           addressU == other.addressU &&
-           addressV == other.addressV &&
-           addressW == other.addressW &&
-           mipLodBias == other.mipLodBias &&
-           maxAnisotropy == other.maxAnisotropy &&
-           enableCompare == other.enableCompare &&
-           compareOp == other.compareOp &&
-           minLod == other.minLod &&
-           maxLod == other.maxLod &&
-           unnormalizedCoordinates == other.unnormalizedCoordinates;
-}
+// SamplerDesc::operator== is defaulted in rhi_types.h
 
 size_t SamplerDescHash::operator()(const SamplerDesc& desc) const {
     size_t h = 0;

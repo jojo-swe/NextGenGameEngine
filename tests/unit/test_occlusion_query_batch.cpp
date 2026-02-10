@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_occlusion_query_batch.h"
 
+using namespace nge;
 using namespace nge::rhi;
 
 TEST(OcclusionQueryBatch, InitAndShutdown) {

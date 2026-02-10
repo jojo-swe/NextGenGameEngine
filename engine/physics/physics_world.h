@@ -139,8 +139,8 @@ public:
     void SetAngularVelocity(BodyId id, const math::Vec3& vel);
 
     // Convert to/from PGA Motor
-    math::pga::Motor GetMotor(BodyId id) const;
-    void SetMotor(BodyId id, const math::pga::Motor& motor);
+    pga::Motor GetMotor(BodyId id) const;
+    void SetMotor(BodyId id, const pga::Motor& motor);
 
     // Forces
     void AddForce(BodyId id, const math::Vec3& force);

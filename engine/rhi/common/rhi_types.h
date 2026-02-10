@@ -2,8 +2,13 @@
 
 #include "engine/core/types.h"
 #include <cstdint>
+#include <string>
 
 namespace nge::rhi {
+
+// Forward declarations
+class IDevice;
+class ICommandList;
 
 // ─── Resource Handles ────────────────────────────────────────────────────
 // Typed handles to GPU resources. Index into backend arrays.
@@ -48,12 +53,15 @@ enum class GraphicsAPI : u8 {
 enum class QueueType : u8 {
     Graphics,
     Compute,
+    AsyncCompute = Compute, // Alias
     Transfer,
+    Copy = Transfer,        // Alias
     Count
 };
 
 enum class Format : u32 {
     Unknown = 0,
+    Undefined = 0, // Alias for Unknown
 
     // 8-bit
     R8_UNORM, R8_SNORM, R8_UINT, R8_SINT,
@@ -102,9 +110,13 @@ enum class TextureType : u8 {
 enum class TextureUsage : u32 {
     None              = 0,
     ShaderRead        = 1 << 0,
+    Sampled           = 1 << 0, // Alias for ShaderRead
     ShaderWrite       = 1 << 1,
+    Storage           = 1 << 1, // Alias for ShaderWrite (UAV)
     RenderTarget      = 1 << 2,
+    ColorAttachment   = 1 << 2, // Alias for RenderTarget
     DepthStencil      = 1 << 3,
+    DepthAttachment   = 1 << 3, // Alias for DepthStencil
     TransferSrc       = 1 << 4,
     TransferDst       = 1 << 5,
     InputAttachment   = 1 << 6,
@@ -122,8 +134,11 @@ enum class BufferUsage : u32 {
     Vertex          = 1 << 0,
     Index           = 1 << 1,
     Uniform         = 1 << 2,
+    Constant        = 1 << 2, // Alias for Uniform
     Storage         = 1 << 3,
+    UnorderedAccess = 1 << 3, // Alias for Storage
     Indirect        = 1 << 4,
+    IndirectArgs    = 1 << 4, // Alias for Indirect
     TransferSrc     = 1 << 5,
     TransferDst     = 1 << 6,
     AccelStructInput   = 1 << 7,
@@ -153,6 +168,7 @@ enum class ShaderStage : u32 {
     TessEval       = 1 << 5,
     Mesh           = 1 << 6,
     Amplification  = 1 << 7,  // Task shader in Vulkan
+    Task           = 1 << 7,  // Alias for Amplification
     RayGeneration  = 1 << 8,
     RayMiss        = 1 << 9,
     RayClosestHit  = 1 << 10,
@@ -214,6 +230,8 @@ enum class BlendFactor : u8 {
     DstColor, OneMinusDstColor,
     SrcAlpha, OneMinusSrcAlpha,
     DstAlpha, OneMinusDstAlpha,
+    ConstantColor, OneMinusConstantColor,
+    SrcAlphaSaturate,
 };
 
 enum class BlendOp : u8 {
@@ -223,6 +241,7 @@ enum class BlendOp : u8 {
 enum class FilterMode : u8 {
     Nearest,
     Linear,
+    Anisotropic,
 };
 
 enum class AddressMode : u8 {
@@ -245,18 +264,33 @@ enum class ResourceState : u32 {
     UniformBuffer,
     ShaderRead,
     ShaderWrite,
+    Storage,           // Alias-like for ShaderWrite/UAV
+    UnorderedAccess,   // UAV state
     RenderTarget,
+    ColorAttachment,   // Alias for RenderTarget
     DepthWrite,
+    DepthAttachment,   // Alias for DepthWrite
     DepthStencilWrite,
     DepthStencilRead,
     TransferSrc,
     TransferDst,
+    HostRead,          // CPU readback
     Present,
     AccelStructRead,
     AccelStructWrite,
     AccelStructBuildInput,
     IndirectArgument,
 };
+
+inline ResourceState operator|(ResourceState a, ResourceState b) {
+    return static_cast<ResourceState>(static_cast<u32>(a) | static_cast<u32>(b));
+}
+inline ResourceState operator&(ResourceState a, ResourceState b) {
+    return static_cast<ResourceState>(static_cast<u32>(a) & static_cast<u32>(b));
+}
+inline bool HasState(ResourceState flags, ResourceState test) {
+    return (static_cast<u32>(flags) & static_cast<u32>(test)) != 0;
+}
 
 // ─── Descriptors ─────────────────────────────────────────────────────────
 
@@ -293,7 +327,7 @@ struct BufferDesc {
     usize       size        = 0;
     BufferUsage usage       = BufferUsage::None;
     MemoryUsage memoryUsage = MemoryUsage::GPU_Only;
-    const char* debugName   = nullptr;
+    std::string debugName;
 };
 
 struct TextureDesc {
@@ -306,7 +340,7 @@ struct TextureDesc {
     TextureType  type       = TextureType::Tex2D;
     TextureUsage usage      = TextureUsage::ShaderRead;
     MemoryUsage  memoryUsage = MemoryUsage::GPU_Only;
-    const char*  debugName  = nullptr;
+    std::string  debugName;
 };
 
 struct SamplerDesc {
@@ -317,18 +351,23 @@ struct SamplerDesc {
     AddressMode addressV    = AddressMode::Repeat;
     AddressMode addressW    = AddressMode::Repeat;
     f32         mipLodBias  = 0.0f;
-    f32         maxAnisotropy = 16.0f;
+    u32         maxAnisotropy = 16;
     bool        enableAnisotropy = true;
     CompareOp   compareOp   = CompareOp::Never;
     bool        enableCompare = false;
+    f32         minLod = 0.0f;
+    f32         maxLod = 1000.0f;
+    bool        unnormalizedCoordinates = false;
+
+    bool operator==(const SamplerDesc& other) const = default;
 };
 
 struct ShaderDesc {
     const byte* bytecode     = nullptr;
     usize       bytecodeSize = 0;
     ShaderStage stage        = ShaderStage::Vertex;
-    const char* entryPoint   = "main";
-    const char* debugName    = nullptr;
+    std::string entryPoint   = "main";
+    std::string debugName;
 };
 
 // ─── Graphics Pipeline Descriptor ────────────────────────────────────────
@@ -348,13 +387,32 @@ struct VertexBinding {
 
 struct BlendAttachment {
     bool        enable      = false;
+    bool        blendEnable = false; // Alias for enable
     BlendFactor srcColor    = BlendFactor::SrcAlpha;
     BlendFactor dstColor    = BlendFactor::OneMinusSrcAlpha;
     BlendOp     colorOp     = BlendOp::Add;
     BlendFactor srcAlpha    = BlendFactor::One;
     BlendFactor dstAlpha    = BlendFactor::Zero;
     BlendOp     alphaOp     = BlendOp::Add;
+    u8          writeMask   = 0xF; // RGBA
 };
+
+enum class PolygonMode : u8 { Fill, Line, Point };
+
+enum class StencilOp : u8 {
+    Keep, Zero, Replace,
+    IncrClamp, DecrClamp,
+    Invert,
+    IncrWrap, DecrWrap,
+    // Aliases
+    IncrementClamp = IncrClamp,
+    DecrementClamp = DecrClamp,
+    IncrementWrap  = IncrWrap,
+    DecrementWrap  = DecrWrap,
+};
+
+// CompareFunc is an alias for CompareOp
+using CompareFunc = CompareOp;
 
 struct RenderTargetDesc {
     Format  format  = Format::RGBA8_UNORM;

@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_command_buffer_recycler.h"
 #include "engine/rhi/common/rhi_buffer_usage_tracker.h"
 
+using namespace nge;
 using namespace nge::rhi;
 
 // ─── Command Buffer Recycler Tests ───────────────────────────────────────

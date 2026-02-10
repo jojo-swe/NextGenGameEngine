@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/core/types.h"
+#include "engine/rhi/common/rhi_types.h"
 #include <vector>
 #include <string>
 #include <unordered_map>
@@ -22,16 +23,7 @@ namespace nge::rhi {
 //   - Notify listeners when a shader is reloaded
 //   - Stats: reloads, failures, watched files
 
-enum class ShaderStage : u8 {
-    Vertex,
-    Fragment,
-    Compute,
-    Geometry,
-    TessControl,
-    TessEval,
-    Mesh,
-    Task,
-};
+// ShaderStage is defined in rhi_types.h
 
 struct WatchedShader {
     u32                       shaderId;

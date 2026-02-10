@@ -217,22 +217,22 @@ void PhysicsWorld::SetAngularVelocity(BodyId id, const math::Vec3& vel) {
     m_impl->bodies[id].angularVelocity = vel;
 }
 
-math::pga::Motor PhysicsWorld::GetMotor(BodyId id) const {
-    if (!IsBodyValid(id)) return math::pga::Motor::Identity();
+pga::Motor PhysicsWorld::GetMotor(BodyId id) const {
+    if (!IsBodyValid(id)) return pga::Motor::Identity();
     const auto& b = m_impl->bodies[id];
     // Convert quaternion + position to PGA Motor
     // Motor = Translator * Rotor
-    math::pga::Motor rotor = math::pga::Motor::FromAxisAngle(
-        math::pga::Line{}, 0); // TODO: proper quaternion → rotor conversion
-    math::pga::Motor translator = math::pga::Motor::Translation(b.position.x, b.position.y, b.position.z);
-    return math::pga::Motor::Multiply(translator, rotor);
+    pga::Motor rotor = pga::Motor::FromAxisAngle(
+        pga::Line{}, 0); // TODO: proper quaternion → rotor conversion
+    pga::Motor translator = pga::Motor::Translation(b.position.x, b.position.y, b.position.z);
+    return pga::Motor::Multiply(translator, rotor);
 }
 
-void PhysicsWorld::SetMotor(BodyId id, const math::pga::Motor& motor) {
+void PhysicsWorld::SetMotor(BodyId id, const pga::Motor& motor) {
     if (!IsBodyValid(id)) return;
     // Extract position from motor
-    math::pga::Point origin{0, 0, 0};
-    math::pga::Point transformed = motor.Transform(origin);
+    pga::Point origin{0, 0, 0};
+    pga::Point transformed = motor.Transform(origin);
     m_impl->bodies[id].position = {transformed.x, transformed.y, transformed.z};
     // TODO: extract rotation from motor → quaternion
 }

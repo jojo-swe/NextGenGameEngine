@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_mipmap_scheduler.h"
 
+using namespace nge;
 using namespace nge::rhi;
 
 static MipGenRequest MakeRequest(u64 handle, u32 w, u32 h, MipFormat fmt = MipFormat::RGBA8_UNORM,

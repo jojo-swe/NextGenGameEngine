@@ -11,7 +11,7 @@ GraphicsPSOBuilder& GraphicsPSOBuilder::SetMeshShader(const std::string& path) {
 GraphicsPSOBuilder& GraphicsPSOBuilder::SetTaskShader(const std::string& path) { m_desc.taskShader = path; return *this; }
 
 GraphicsPSOBuilder& GraphicsPSOBuilder::AddVertexAttribute(u32 location, Format format, u32 offset, u32 binding) {
-    m_desc.vertexAttributes.push_back({location, format, offset, binding});
+    m_desc.vertexAttributes.push_back({location, binding, format, offset});
     return *this;
 }
 

@@ -19,12 +19,7 @@ namespace nge::rhi {
 //   - Wait on that value from another queue
 //   - No need for binary semaphores or fences for cross-queue sync
 
-enum class QueueType : u8 {
-    Graphics,
-    AsyncCompute,
-    Transfer,
-    Count
-};
+// QueueType is defined in rhi_types.h (included via rhi_device.h)
 
 struct QueueSyncPoint {
     QueueType queue;

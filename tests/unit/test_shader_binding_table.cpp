@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_shader_binding_table.h"
 #include <cstring>
 
+using namespace nge;
 using namespace nge::rhi;
 
 TEST(ShaderBindingTable, InitAndShutdown) {

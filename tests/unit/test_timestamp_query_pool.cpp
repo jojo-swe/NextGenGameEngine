@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_timestamp_query_pool.h"
 
+using namespace nge;
 using namespace nge::rhi;
 
 TEST(TimestampQueryPool, InitAndShutdown) {

@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_format_negotiator.h"
 #include "engine/rhi/common/rhi_occlusion_compactor.h"
 
+using namespace nge;
 using namespace nge::rhi;
 
 // ─── Format Negotiator Tests ─────────────────────────────────────────────

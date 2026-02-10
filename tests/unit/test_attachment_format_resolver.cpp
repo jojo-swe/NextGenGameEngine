@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_attachment_format_resolver.h"
 
+using namespace nge;
 using namespace nge::rhi;
 
 static void RegisterCommonFormats(AttachmentFormatResolver& resolver) {

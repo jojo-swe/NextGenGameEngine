@@ -22,31 +22,7 @@ namespace nge::rhi {
 //   4. Batch: group barriers by pipeline stage for fewer API calls
 //   5. Cross-queue: detect and flag queue ownership transfers
 
-enum class ResourceState : u32 {
-    Undefined          = 0,
-    VertexBuffer       = 0x001,
-    IndexBuffer        = 0x002,
-    UniformBuffer      = 0x004,
-    ShaderRead         = 0x008,
-    ShaderWrite        = 0x010,
-    RenderTarget       = 0x020,
-    DepthStencilWrite  = 0x040,
-    DepthStencilRead   = 0x080,
-    CopySrc            = 0x100,
-    CopyDst            = 0x200,
-    Present            = 0x400,
-    IndirectArgument   = 0x800,
-};
-
-inline ResourceState operator|(ResourceState a, ResourceState b) {
-    return static_cast<ResourceState>(static_cast<u32>(a) | static_cast<u32>(b));
-}
-inline ResourceState operator&(ResourceState a, ResourceState b) {
-    return static_cast<ResourceState>(static_cast<u32>(a) & static_cast<u32>(b));
-}
-inline bool HasState(ResourceState flags, ResourceState test) {
-    return (static_cast<u32>(flags) & static_cast<u32>(test)) != 0;
-}
+// ResourceState is defined in rhi_types.h (included via rhi_device.h)
 
 enum class BarrierType : u8 {
     Immediate,    // Full pipeline barrier

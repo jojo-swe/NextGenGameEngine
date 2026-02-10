@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/vulkan/vk_sparse_residency.h"
 #include "engine/rhi/common/rhi_barrier_batch_optimizer.h"
 
+using namespace nge;
 using namespace nge::rhi;
 using namespace nge::rhi::vulkan;
 

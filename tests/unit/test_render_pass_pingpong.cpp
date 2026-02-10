@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_render_pass_manager.h"
 #include "engine/rhi/common/rhi_ping_pong_buffer.h"
 
+using namespace nge;
 using namespace nge::rhi;
 
 // ─── Render Pass Manager Tests ───────────────────────────────────────────

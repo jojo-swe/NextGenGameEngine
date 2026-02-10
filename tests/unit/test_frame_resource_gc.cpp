@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_frame_resource_gc.h"
 
+using namespace nge;
 using namespace nge::rhi;
 
 TEST(FrameResourceGC, InitAndShutdown) {

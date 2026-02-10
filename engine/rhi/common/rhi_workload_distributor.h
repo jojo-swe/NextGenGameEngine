@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/core/types.h"
+#include "engine/rhi/common/rhi_types.h"
 #include <vector>
 #include <string>
 #include <unordered_map>
@@ -20,11 +21,7 @@ namespace nge::rhi {
 //   - Track per-queue occupancy for load balancing
 //   - Manage timeline semaphore sync between queues
 
-enum class QueueType : u8 {
-    Graphics,
-    Compute,
-    Transfer,
-};
+// QueueType is defined in rhi_types.h
 
 enum class WorkloadPriority : u8 {
     Low,

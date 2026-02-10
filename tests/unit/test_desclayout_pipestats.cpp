@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/vulkan/vk_descriptor_layout_cache.h"
 #include "engine/rhi/common/rhi_pipeline_stats_collector.h"
 
+using namespace nge;
 using namespace nge::rhi;
 using namespace nge::rhi::vulkan;
 

@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_dynamic_buffer.h"
 #include "engine/rhi/common/rhi_indirect_count.h"
 
+using namespace nge;
 using namespace nge::rhi;
 
 // ─── Dynamic Buffer Allocator Tests ──────────────────────────────────────
