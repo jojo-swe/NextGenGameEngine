@@ -205,7 +205,7 @@ bool SceneSerializer::LoadFromFile(const std::string& path, ecs::World& world) {
 
     bool result = LoadFromBuffer(buffer.data(), buffer.size(), world);
     if (result) {
-        NGE_LOG_INFO("Scene loaded from '{}' ({} bytes)", path, fileSize);
+        NGE_LOG_INFO("Scene loaded from '{}' ({} bytes)", path, static_cast<usize>(fileSize));
     }
     return result;
 }

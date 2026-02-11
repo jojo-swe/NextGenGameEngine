@@ -146,9 +146,10 @@ ecs::Entity PrefabManager::Instantiate(ecs::World& world, PrefabId id,
         auto& t = world.AddComponent<Transform>(entity);
         t.SetPosition(pos);
 
-        // Set parent
+        // Set parent via Transform component
         if (node.parentIndex != UINT32_MAX && node.parentIndex < i) {
-            world.SetParent(entity, entities[node.parentIndex]);
+            t.parent = entities[node.parentIndex];
+            t.dirty = true;
         }
 
         // Apply components

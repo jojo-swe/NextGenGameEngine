@@ -321,6 +321,10 @@ struct ClearValue {
         struct { f32 depth; u32 stencil; } depthStencil;
     };
 
+    static ClearValue Color() {
+        ClearValue v; v.color[0]=0; v.color[1]=0; v.color[2]=0; v.color[3]=1;
+        return v;
+    }
     static ClearValue Color(f32 r, f32 g, f32 b, f32 a = 1.0f) {
         ClearValue v; v.color[0]=r; v.color[1]=g; v.color[2]=b; v.color[3]=a;
         return v;
