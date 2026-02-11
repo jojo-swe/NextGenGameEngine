@@ -91,15 +91,15 @@ TEST(PoolAllocator, AllocFree) {
     alignas(64) byte buffer[4096];
     PoolAllocator<64> alloc(buffer, 4096, "TestPool");
 
-    void* p1 = alloc.Allocate(64);
+    void* p1 = alloc.Allocate(64, 64);
     EXPECT_NE(p1, nullptr);
 
-    void* p2 = alloc.Allocate(64);
+    void* p2 = alloc.Allocate(64, 64);
     EXPECT_NE(p2, nullptr);
     EXPECT_NE(p1, p2);
 
     alloc.Free(p1);
-    void* p3 = alloc.Allocate(64);
+    void* p3 = alloc.Allocate(64, 64);
     EXPECT_EQ(p3, p1); // Reuses freed block
 }
 
@@ -109,7 +109,7 @@ TEST(PoolAllocator, ExhaustAndReset) {
 
     std::vector<void*> ptrs;
     while (true) {
-        void* p = alloc.Allocate(64);
+        void* p = alloc.Allocate(64, 64);
         if (!p) break;
         ptrs.push_back(p);
     }

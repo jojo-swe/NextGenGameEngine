@@ -66,7 +66,7 @@ struct DrawIndirectValidatorConfig {
     u32  maxIndexCount = 30000000;       // 30M indices
     u32  maxInstanceCount = 100000;      // 100K instances
     u32  maxDispatchGroupsPerDim = 65535;
-    u32  maxTotalDispatchGroups = 65535 * 65535;
+    u32  maxTotalDispatchGroups = 65535u * 65535u;
     bool warnOnZeroCounts = true;
     bool clampToSafeValues = false;      // Auto-clamp instead of reject
     bool logAllDraws = false;            // Debug: log every draw call

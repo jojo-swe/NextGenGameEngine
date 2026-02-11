@@ -5,13 +5,13 @@ namespace nge::rhi::vulkan {
 
 // ─── Descriptor Layout Cache ─────────────────────────────────────────────
 
-bool DescriptorLayoutCache::Init(void* vkDevice) {
+bool DescriptorSetCache::Init(void* vkDevice) {
     m_device = vkDevice;
     NGE_LOG_INFO("Descriptor layout cache initialized");
     return true;
 }
 
-void DescriptorLayoutCache::Shutdown() {
+void DescriptorSetCache::Shutdown() {
     // TODO: vkDestroyDescriptorSetLayout for each cached layout
     // for (auto& [desc, handle] : m_cache) {
     //     vkDestroyDescriptorSetLayout(device, reinterpret_cast<VkDescriptorSetLayout>(handle), nullptr);
@@ -20,7 +20,7 @@ void DescriptorLayoutCache::Shutdown() {
     m_cache.clear();
 }
 
-VkLayoutHandle DescriptorLayoutCache::GetOrCreate(const DescriptorSetLayoutDesc& desc) {
+VkLayoutHandle DescriptorSetCache::GetOrCreate(const DescriptorSetLayoutDesc& desc) {
     std::lock_guard lock(m_mutex);
 
     auto it = m_cache.find(desc);

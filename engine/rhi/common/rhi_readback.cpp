@@ -106,7 +106,7 @@ u32 ReadbackRingBuffer::SubmitTexture(ICommandList* cmd, TextureHandle srcTextur
     slot.callback = std::move(callback);
     slot.active = true;
 
-    cmd->CopyTextureToBuffer(srcTexture, mipLevel, slot.stagingBuffer, 0);
+    cmd->CopyTextureToBuffer(srcTexture, slot.stagingBuffer, mipLevel, 0);
 
     m_nextSlot = (slotIdx + 1) % static_cast<u32>(m_slots.size());
     return slotIdx;

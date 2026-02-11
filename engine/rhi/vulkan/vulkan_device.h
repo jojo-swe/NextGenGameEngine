@@ -3,7 +3,6 @@
 #include "engine/rhi/common/rhi_device.h"
 #include "engine/core/logging/log.h"
 
-#define VK_NO_PROTOTYPES
 #include <vulkan/vulkan.h>
 
 #include <vector>
@@ -128,7 +127,7 @@ public:
 
     void TraceRays(u32 width, u32 height, u32 depth) override;
 
-    void CopyBuffer(BufferHandle src, BufferHandle dst, u64 srcOffset, u64 dstOffset, u64 size) override;
+    void CopyBuffer(BufferHandle src, u64 srcOffset, BufferHandle dst, u64 dstOffset, u64 size) override;
     void CopyBufferToTexture(BufferHandle src, TextureHandle dst, u32 mipLevel, u32 arrayLayer) override;
     void CopyTextureToBuffer(TextureHandle src, BufferHandle dst, u32 mipLevel, u32 arrayLayer) override;
 
@@ -209,6 +208,11 @@ public:
     const VulkanTexture& GetTexture(TextureHandle h) const { return m_textures[h.index]; }
     const VulkanPipeline& GetPipeline(PipelineHandle h) const { return m_pipelines[h.index]; }
 
+    VkFormat ToVkFormat(Format fmt) const;
+    VkImageLayout ToVkLayout(ResourceState state) const;
+    VkAccessFlags2 ToVkAccess(ResourceState state) const;
+    VkPipelineStageFlags2 ToVkStage(ResourceState state) const;
+
     // Vulkan function pointers (loaded via volk or manual)
     // For brevity we rely on global volk loading; in production we'd store these per-device.
 
@@ -221,11 +225,6 @@ private:
     bool CreateSyncObjects();
     bool CreateDescriptorPool();
     void ProbeCapabilities();
-
-    VkFormat ToVkFormat(Format fmt) const;
-    VkImageLayout ToVkLayout(ResourceState state) const;
-    VkAccessFlags2 ToVkAccess(ResourceState state) const;
-    VkPipelineStageFlags2 ToVkStage(ResourceState state) const;
 
     u32 FindMemoryType(u32 typeFilter, VkMemoryPropertyFlags properties) const;
     VkBuffer CreateVkBuffer(VkDeviceSize size, VkBufferUsageFlags usage);

@@ -3,6 +3,7 @@
 #include "engine/core/types.h"
 #include "engine/core/math/math_types.h"
 #include "engine/rhi/common/rhi_types.h"
+#include "engine/rhi/common/rhi_device.h"
 #include <vector>
 
 namespace nge::renderer {

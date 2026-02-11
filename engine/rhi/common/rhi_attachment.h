@@ -10,22 +10,7 @@ namespace nge::rhi {
 // Fluent builder for describing color/depth/resolve attachments.
 // Used by the render graph and Vulkan dynamic rendering (VK_KHR_dynamic_rendering).
 
-enum class LoadOp : u8 { Load, Clear, DontCare };
-enum class StoreOp : u8 { Store, DontCare };
-
-struct ClearValue {
-    union {
-        f32 color[4];
-        struct { f32 depth; u32 stencil; } depthStencil;
-    };
-
-    static ClearValue Color(f32 r = 0, f32 g = 0, f32 b = 0, f32 a = 1) {
-        ClearValue v; v.color[0] = r; v.color[1] = g; v.color[2] = b; v.color[3] = a; return v;
-    }
-    static ClearValue Depth(f32 d = 0.0f, u32 s = 0) {
-        ClearValue v; v.depthStencil.depth = d; v.depthStencil.stencil = s; return v;
-    }
-};
+// LoadOp, StoreOp, ClearValue are defined in rhi_types.h
 
 struct ColorAttachment {
     TextureHandle texture;

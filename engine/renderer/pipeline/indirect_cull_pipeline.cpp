@@ -82,7 +82,7 @@ void IndirectCullPipeline::Shutdown() {
 void IndirectCullPipeline::BeginFrame(rhi::ICommandList* cmd, u32 frameIndex) {
     // Reset counters to zero
     u32 zeros[4] = {0, 0, 0, 0};
-    cmd->UpdateBuffer(m_counterBuffer, 0, zeros, sizeof(zeros));
+    cmd->UpdateBuffer(m_counterBuffer, 0, sizeof(zeros), zeros);
     cmd->BufferBarrier(m_counterBuffer, rhi::ResourceState::TransferDst, rhi::ResourceState::UnorderedAccess);
 
     if (m_config.enableFeedbackReadback) {
@@ -145,7 +145,7 @@ void IndirectCullPipeline::BuildDrawArgs(rhi::ICommandList* cmd) {
     // cmd->Dispatch(1, 1, 1);
 
     // Barrier: UAV → indirect args
-    cmd->BufferBarrier(m_drawArgsBuffer, rhi::ResourceState::UnorderedAccess, rhi::ResourceState::IndirectArgs);
+    cmd->BufferBarrier(m_drawArgsBuffer, rhi::ResourceState::UnorderedAccess, rhi::ResourceState::IndirectArgument);
     cmd->BufferBarrier(m_visibleBuffer, rhi::ResourceState::UnorderedAccess, rhi::ResourceState::ShaderRead);
 }
 

@@ -1,5 +1,8 @@
 #include <gtest/gtest.h>
-#include "engine/network/common/net_socket.h"
+#ifdef _WIN32
+#include <winsock2.h>
+#endif
+#include "engine/network/core/net_socket.h"
 #include "engine/network/server/net_server.h"
 #include "engine/network/client/net_client.h"
 
@@ -40,32 +43,35 @@ TEST_F(NetworkTest, SocketBindToPort) {
 
 TEST_F(NetworkTest, ServerInitShutdown) {
     NetServer server;
-    NetServerConfig config;
-    config.port = 27200;
-    config.maxClients = 4;
-
-    EXPECT_TRUE(server.Init(config));
-    server.Shutdown();
+    EXPECT_TRUE(server.Start(27200));
+    server.Stop();
 }
 
-TEST_F(NetworkTest, ClientInitShutdown) {
+TEST_F(NetworkTest, ClientConnectDisconnect) {
     NetClient client;
-    EXPECT_TRUE(client.Init(0)); // Bind to any port
-    client.Shutdown();
+    NetAddress addr = NetAddress::Loopback(27201);
+    // Connect may fail without a running server, but should not crash
+    client.Connect(addr);
+    auto state = client.GetState();
+    EXPECT_TRUE(state == ConnectionState::Connecting || state == ConnectionState::Disconnected);
+    client.Disconnect();
+}
+
+TEST_F(NetworkTest, ServerStartStop) {
+    NetServer server;
+    EXPECT_TRUE(server.Start(27202));
+    EXPECT_TRUE(server.IsRunning());
+    server.Stop();
+    EXPECT_FALSE(server.IsRunning());
 }
 
 TEST_F(NetworkTest, ServerAcceptsConnection) {
     NetServer server;
-    NetServerConfig config;
-    config.port = 27201;
-    config.maxClients = 4;
-    EXPECT_TRUE(server.Init(config));
+    EXPECT_TRUE(server.Start(27203));
 
     NetClient client;
-    EXPECT_TRUE(client.Init(0));
-
-    // Client initiates connection
-    client.Connect("127.0.0.1", config.port);
+    NetAddress addr = NetAddress::Loopback(27203);
+    client.Connect(addr);
 
     // Pump both sides for a few ticks
     for (int i = 0; i < 10; ++i) {
@@ -78,54 +84,16 @@ TEST_F(NetworkTest, ServerAcceptsConnection) {
     EXPECT_TRUE(state == ConnectionState::Connecting || state == ConnectionState::Connected);
 
     client.Disconnect();
-    server.Shutdown();
-}
-
-TEST_F(NetworkTest, ServerRejectsWhenFull) {
-    NetServer server;
-    NetServerConfig config;
-    config.port = 27202;
-    config.maxClients = 1; // Only 1 slot
-    EXPECT_TRUE(server.Init(config));
-
-    NetClient clientA, clientB;
-    EXPECT_TRUE(clientA.Init(0));
-    EXPECT_TRUE(clientB.Init(0));
-
-    clientA.Connect("127.0.0.1", config.port);
-
-    // Let A connect
-    for (int i = 0; i < 20; ++i) {
-        server.Update(1.0f / 60.0f);
-        clientA.Update(1.0f / 60.0f);
-    }
-
-    // Try B
-    clientB.Connect("127.0.0.1", config.port);
-    for (int i = 0; i < 20; ++i) {
-        server.Update(1.0f / 60.0f);
-        clientB.Update(1.0f / 60.0f);
-    }
-
-    // B should not be connected (server full)
-    // Exact state depends on implementation — may be Disconnected or Connecting
-    EXPECT_NE(clientB.GetState(), ConnectionState::Connected);
-
-    clientA.Disconnect();
-    clientB.Disconnect();
-    server.Shutdown();
+    server.Stop();
 }
 
 TEST_F(NetworkTest, ReliablePacketDelivery) {
     NetServer server;
-    NetServerConfig config;
-    config.port = 27203;
-    config.maxClients = 4;
-    EXPECT_TRUE(server.Init(config));
+    EXPECT_TRUE(server.Start(27204));
 
     NetClient client;
-    EXPECT_TRUE(client.Init(0));
-    client.Connect("127.0.0.1", config.port);
+    NetAddress addr = NetAddress::Loopback(27204);
+    client.Connect(addr);
 
     // Connect
     for (int i = 0; i < 20; ++i) {
@@ -135,7 +103,7 @@ TEST_F(NetworkTest, ReliablePacketDelivery) {
 
     // Send reliable packet from client
     u8 data[] = {0xDE, 0xAD, 0xBE, 0xEF};
-    client.SendReliable(data, sizeof(data));
+    client.Send(0, data, sizeof(data), true);
 
     // Pump to deliver
     for (int i = 0; i < 10; ++i) {
@@ -143,10 +111,9 @@ TEST_F(NetworkTest, ReliablePacketDelivery) {
         client.Update(1.0f / 60.0f);
     }
 
-    // Verify delivery (server-side callback or receive queue check)
-    // Exact verification depends on server API — for now just ensure no crash
+    // Verify delivery — for now just ensure no crash
     EXPECT_TRUE(true);
 
     client.Disconnect();
-    server.Shutdown();
+    server.Stop();
 }

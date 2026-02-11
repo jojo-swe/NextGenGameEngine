@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/rhi/common/rhi_spec_constants.h"
 #include "engine/rhi/common/rhi_push_constants.h"
 
+using namespace nge;
 using namespace nge::rhi;
 
 // ─── Specialization Constant Tests ───────────────────────────────────────

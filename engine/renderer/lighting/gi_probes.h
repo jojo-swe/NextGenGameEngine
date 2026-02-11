@@ -67,7 +67,7 @@ struct alignas(16) GPUProbeData {
     SH9 shR;    // 36 bytes
     SH9 shG;    // 36 bytes
     SH9 shB;    // 36 bytes
-    f32 pad[7]; // Pad to 128 bytes for alignment
+    f32 pad[5]; // Pad to 128 bytes (108 + 20 = 128)
 };
 
 static_assert(sizeof(GPUProbeData) == 128, "GPUProbeData must be 128 bytes");

@@ -13,6 +13,15 @@ std::string GraphVisualizer::ToDot(const FrameGraphCompiler& compiler, const Gra
     dot << "  edge [fontname=\"Helvetica\", fontsize=10];\n\n";
 
     const auto& result = compiler.GetResult();
+    const auto& passes = compiler.GetPasses();
+    const auto& resources = compiler.GetResources();
+
+    auto passName = [&](u32 passId) -> std::string {
+        return (passId < passes.size()) ? passes[passId].name : "Unknown";
+    };
+    auto passType = [&](const CompiledPass& cp) -> PassType {
+        return cp.queueType;
+    };
 
     // Async compute cluster
     if (config.clusterByQueue && config.showAsyncCompute) {
@@ -20,10 +29,11 @@ std::string GraphVisualizer::ToDot(const FrameGraphCompiler& compiler, const Gra
         dot << "    label=\"Graphics Queue\";\n";
         dot << "    style=dashed;\n";
         dot << "    color=blue;\n";
-        for (const auto& pass : result.orderedPasses) {
-            if (pass.type != PassType::AsyncCompute) {
-                dot << "    \"" << EscapeDot(pass.name) << "\" [fillcolor=\""
-                    << PassColor(pass.type) << "\", label=\"" << EscapeDot(pass.name) << "\"];\n";
+        for (const auto& cp : result.passes) {
+            if (passType(cp) != PassType::AsyncCompute) {
+                std::string name = passName(cp.passId);
+                dot << "    \"" << EscapeDot(name) << "\" [fillcolor=\""
+                    << PassColor(passType(cp)) << "\", label=\"" << EscapeDot(name) << "\"];\n";
             }
         }
         dot << "  }\n\n";
@@ -32,57 +42,49 @@ std::string GraphVisualizer::ToDot(const FrameGraphCompiler& compiler, const Gra
         dot << "    label=\"Async Compute Queue\";\n";
         dot << "    style=dashed;\n";
         dot << "    color=red;\n";
-        for (const auto& pass : result.orderedPasses) {
-            if (pass.type == PassType::AsyncCompute) {
-                dot << "    \"" << EscapeDot(pass.name) << "\" [fillcolor=\""
-                    << PassColor(pass.type) << "\", label=\"" << EscapeDot(pass.name) << "\"];\n";
+        for (const auto& cp : result.passes) {
+            if (passType(cp) == PassType::AsyncCompute) {
+                std::string name = passName(cp.passId);
+                dot << "    \"" << EscapeDot(name) << "\" [fillcolor=\""
+                    << PassColor(passType(cp)) << "\", label=\"" << EscapeDot(name) << "\"];\n";
             }
         }
         dot << "  }\n\n";
     } else {
-        for (const auto& pass : result.orderedPasses) {
-            dot << "  \"" << EscapeDot(pass.name) << "\" [fillcolor=\""
-                << PassColor(pass.type) << "\", label=\"" << EscapeDot(pass.name) << "\"];\n";
+        for (const auto& cp : result.passes) {
+            std::string name = passName(cp.passId);
+            dot << "  \"" << EscapeDot(name) << "\" [fillcolor=\""
+                << PassColor(passType(cp)) << "\", label=\"" << EscapeDot(name) << "\"];\n";
         }
         dot << "\n";
     }
 
-    // Dependencies (edges)
-    for (const auto& pass : result.orderedPasses) {
-        for (const auto& dep : pass.dependencies) {
-            dot << "  \"" << EscapeDot(dep) << "\" -> \"" << EscapeDot(pass.name) << "\";\n";
+    // Dependencies (edges from syncBefore)
+    for (const auto& cp : result.passes) {
+        for (u32 dep : cp.syncBefore) {
+            dot << "  \"" << EscapeDot(passName(dep)) << "\" -> \"" << EscapeDot(passName(cp.passId)) << "\";\n";
         }
     }
 
     // Resource lifetimes as notes
     if (config.showResourceLifetimes) {
         dot << "\n  // Resource lifetimes\n";
-        for (const auto& res : result.resources) {
+        for (size_t i = 0; i < resources.size(); ++i) {
+            const auto& res = resources[i];
             dot << "  \"res_" << EscapeDot(res.name) << "\" [shape=ellipse, style=filled, "
-                << "fillcolor=\"" << ResourceColor(res.usage) << "\", "
-                << "label=\"" << EscapeDot(res.name) << "\\n"
-                << res.width << "x" << res.height << "\"];\n";
-        }
-
-        // Connect resources to passes
-        for (const auto& res : result.resources) {
-            if (!res.producerPass.empty()) {
-                dot << "  \"" << EscapeDot(res.producerPass) << "\" -> \"res_"
-                    << EscapeDot(res.name) << "\" [style=dashed, color=gray];\n";
-            }
-            for (const auto& consumer : res.consumerPasses) {
-                dot << "  \"res_" << EscapeDot(res.name) << "\" -> \""
-                    << EscapeDot(consumer) << "\" [style=dashed, color=gray];\n";
-            }
+                << "fillcolor=\"#E0FFE0\", "
+                << "label=\"" << EscapeDot(res.name) << "\"];\n";
         }
     }
 
     // Barriers
     if (config.showBarriers) {
         dot << "\n  // Barriers\n";
-        for (const auto& barrier : result.barriers) {
-            dot << "  // Barrier: " << barrier.resourceName << " "
-                << barrier.beforePass << " -> " << barrier.afterPass << "\n";
+        for (const auto& cp : result.passes) {
+            for (const auto& b : cp.barriers) {
+                std::string resName = (b.resourceId < resources.size()) ? resources[b.resourceId].name : "?";
+                dot << "  // Barrier: " << resName << " at pass " << passName(cp.passId) << "\n";
+            }
         }
     }
 
@@ -106,39 +108,31 @@ bool GraphVisualizer::ToFile(const FrameGraphCompiler& compiler, const std::stri
 std::string GraphVisualizer::ToTextReport(const FrameGraphCompiler& compiler) {
     std::ostringstream report;
     const auto& result = compiler.GetResult();
+    const auto& passes = compiler.GetPasses();
 
     report << "=== Render Graph Report ===\n";
-    report << "Passes: " << result.orderedPasses.size() << "\n";
-    report << "Resources: " << result.resources.size() << "\n";
-    report << "Barriers: " << result.barriers.size() << "\n\n";
+    report << "Passes: " << result.passes.size() << "\n";
+    report << "Eliminated: " << result.eliminatedPasses.size() << "\n";
+    report << "Async: " << result.asyncPassCount << "\n\n";
 
     report << "--- Pass Execution Order ---\n";
-    for (size_t i = 0; i < result.orderedPasses.size(); ++i) {
-        const auto& pass = result.orderedPasses[i];
+    for (const auto& cp : result.passes) {
         const char* typeStr = "Graphics";
-        if (pass.type == PassType::Compute) typeStr = "Compute";
-        if (pass.type == PassType::AsyncCompute) typeStr = "AsyncCompute";
-        if (pass.type == PassType::Transfer) typeStr = "Transfer";
+        if (cp.queueType == PassType::Compute) typeStr = "Compute";
+        if (cp.queueType == PassType::AsyncCompute) typeStr = "AsyncCompute";
+        if (cp.queueType == PassType::Transfer) typeStr = "Transfer";
 
-        report << "  [" << i << "] " << pass.name << " (" << typeStr << ")";
-        if (!pass.dependencies.empty()) {
-            report << " depends on: ";
-            for (size_t d = 0; d < pass.dependencies.size(); ++d) {
+        std::string name = (cp.passId < passes.size()) ? passes[cp.passId].name : "Unknown";
+        report << "  [" << cp.executionOrder << "] " << name << " (" << typeStr << ")";
+        if (!cp.syncBefore.empty()) {
+            report << " waits on: ";
+            for (size_t d = 0; d < cp.syncBefore.size(); ++d) {
                 if (d > 0) report << ", ";
-                report << pass.dependencies[d];
+                u32 depId = cp.syncBefore[d];
+                report << ((depId < passes.size()) ? passes[depId].name : "?");
             }
         }
         report << "\n";
-    }
-
-    report << "\n--- Resource Lifetimes ---\n";
-    for (const auto& res : result.resources) {
-        report << "  " << res.name << ": produced by '" << res.producerPass << "', consumed by [";
-        for (size_t c = 0; c < res.consumerPasses.size(); ++c) {
-            if (c > 0) report << ", ";
-            report << res.consumerPasses[c];
-        }
-        report << "]\n";
     }
 
     return report.str();
@@ -147,27 +141,32 @@ std::string GraphVisualizer::ToTextReport(const FrameGraphCompiler& compiler) {
 std::string GraphVisualizer::ToMermaid(const FrameGraphCompiler& compiler) {
     std::ostringstream mermaid;
     const auto& result = compiler.GetResult();
+    const auto& passes = compiler.GetPasses();
 
     mermaid << "```mermaid\ngraph TD\n";
 
     // Passes
-    for (const auto& pass : result.orderedPasses) {
-        std::string shape = (pass.type == PassType::Compute || pass.type == PassType::AsyncCompute)
-            ? "{" + pass.name + "}" : "[" + pass.name + "]";
-        mermaid << "  " << EscapeDot(pass.name) << shape << "\n";
+    for (const auto& cp : result.passes) {
+        std::string name = (cp.passId < passes.size()) ? passes[cp.passId].name : "Unknown";
+        std::string shape = (cp.queueType == PassType::Compute || cp.queueType == PassType::AsyncCompute)
+            ? "{" + name + "}" : "[" + name + "]";
+        mermaid << "  " << EscapeDot(name) << shape << "\n";
     }
 
     // Edges
-    for (const auto& pass : result.orderedPasses) {
-        for (const auto& dep : pass.dependencies) {
-            mermaid << "  " << EscapeDot(dep) << " --> " << EscapeDot(pass.name) << "\n";
+    for (const auto& cp : result.passes) {
+        std::string name = (cp.passId < passes.size()) ? passes[cp.passId].name : "Unknown";
+        for (u32 dep : cp.syncBefore) {
+            std::string depName = (dep < passes.size()) ? passes[dep].name : "?";
+            mermaid << "  " << EscapeDot(depName) << " --> " << EscapeDot(name) << "\n";
         }
     }
 
     // Style async compute
-    for (const auto& pass : result.orderedPasses) {
-        if (pass.type == PassType::AsyncCompute) {
-            mermaid << "  style " << EscapeDot(pass.name) << " fill:#f96\n";
+    for (const auto& cp : result.passes) {
+        if (cp.queueType == PassType::AsyncCompute) {
+            std::string name = (cp.passId < passes.size()) ? passes[cp.passId].name : "Unknown";
+            mermaid << "  style " << EscapeDot(name) << " fill:#f96\n";
         }
     }
 
@@ -187,12 +186,13 @@ std::string GraphVisualizer::PassColor(PassType type) {
 
 std::string GraphVisualizer::ResourceColor(ResourceUsage usage) {
     switch (usage) {
-        case ResourceUsage::ColorAttachment:  return "#FFDAB9";
-        case ResourceUsage::DepthAttachment:  return "#D8BFD8";
-        case ResourceUsage::ShaderRead:       return "#E0FFE0";
-        case ResourceUsage::ShaderWrite:      return "#FFE0E0";
-        case ResourceUsage::TransferSrc:      return "#E0E0FF";
-        case ResourceUsage::TransferDst:      return "#FFFFE0";
+        case ResourceUsage::ColorAttachmentWrite:  return "#FFDAB9";
+        case ResourceUsage::DepthAttachmentWrite:  return "#D8BFD8";
+        case ResourceUsage::ShaderRead:            return "#E0FFE0";
+        case ResourceUsage::ShaderWrite:           return "#FFE0E0";
+        case ResourceUsage::TransferSrc:           return "#E0E0FF";
+        case ResourceUsage::TransferDst:           return "#FFFFE0";
+        case ResourceUsage::Present:               return "#E0FFFF";
     }
     return "#F0F0F0";
 }

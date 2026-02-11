@@ -6,6 +6,8 @@
 #include "engine/core/ecs/entity.h"
 #include "engine/core/containers/array.h"
 
+namespace nge::ecs { class World; }
+
 namespace nge::scene {
 
 // ─── Transform Component ─────────────────────────────────────────────────

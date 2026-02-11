@@ -38,11 +38,8 @@ void ViewportStateManager::Pop() {
 }
 
 void ViewportStateManager::Apply(ICommandList* cmd) const {
-    cmd->SetViewport(m_current.viewport.x, m_current.viewport.y,
-                     m_current.viewport.width, m_current.viewport.height,
-                     m_current.viewport.minDepth, m_current.viewport.maxDepth);
-    cmd->SetScissor(m_current.scissor.x, m_current.scissor.y,
-                    m_current.scissor.width, m_current.scissor.height);
+    cmd->SetViewport(m_current.viewport);
+    cmd->SetScissor(m_current.scissor);
 }
 
 void ViewportStateManager::SetMultiViewport(const std::vector<Viewport>& viewports,

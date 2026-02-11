@@ -7,6 +7,12 @@
 
 namespace nge::rhi::vulkan {
 
+using nge::rhi::Filter;
+using nge::rhi::FilterMode;
+using nge::rhi::AddressMode;
+using nge::rhi::CompareOp;
+using nge::rhi::BorderColor;
+
 // ─── Sampler Cache ───────────────────────────────────────────────────────
 // Deduplicates VkSampler objects by hashing sampler descriptions.
 // Most engines only need ~20-50 unique sampler configurations.

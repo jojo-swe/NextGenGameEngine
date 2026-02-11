@@ -101,6 +101,9 @@ public:
     // Compile phase
     CompiledGraph Compile();
 
+    // Get last compiled result
+    const CompiledGraph& GetResult() const { return m_lastResult; }
+
     // Reset for next frame
     void Reset();
 
@@ -121,6 +124,7 @@ private:
 
     std::vector<GraphPass> m_passes;
     std::vector<GraphResource> m_resources;
+    CompiledGraph m_lastResult;
 };
 
 } // namespace nge::renderer

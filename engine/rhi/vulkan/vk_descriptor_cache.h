@@ -12,12 +12,18 @@ namespace nge::rhi::vulkan {
 // Deduplicates VkDescriptorSetLayout objects by hashing binding descriptions.
 // Shared layouts are ref-counted and destroyed only when no longer referenced.
 
+enum class DescriptorBindingType : u8 {
+    Sampler, CombinedImageSampler, SampledImage, StorageImage,
+    UniformBuffer, StorageBuffer, UniformBufferDynamic, StorageBufferDynamic,
+    InputAttachment,
+};
+
 struct DescriptorBinding {
-    u32              binding;
-    DescriptorType   type;
-    u32              count;
-    ShaderStageFlags stages;
-    bool             bindless = false; // Variable descriptor count (Vulkan 1.2+)
+    u32                binding;
+    DescriptorBindingType type;
+    u32                count;
+    ShaderStage        stages;
+    bool               bindless = false; // Variable descriptor count (Vulkan 1.2+)
 
     bool operator==(const DescriptorBinding& o) const {
         return binding == o.binding && type == o.type && count == o.count &&
@@ -55,7 +61,7 @@ struct DescriptorSetLayoutDescHash {
 
 using VkLayoutHandle = u64; // VkDescriptorSetLayout cast
 
-class DescriptorLayoutCache {
+class DescriptorSetCache {
 public:
     bool Init(void* vkDevice);
     void Shutdown();

@@ -168,6 +168,10 @@ class RenderGraph {
 public:
     explicit RenderGraph(rhi::IDevice* device);
     ~RenderGraph();
+    RenderGraph(const RenderGraph&) = delete;
+    RenderGraph& operator=(const RenderGraph&) = delete;
+    RenderGraph(RenderGraph&&) = default;
+    RenderGraph& operator=(RenderGraph&&) = default;
 
     // Build phase: add passes and declare resources
     RGPassBuilder& AddPass(const std::string& name, PassType type = PassType::Graphics);

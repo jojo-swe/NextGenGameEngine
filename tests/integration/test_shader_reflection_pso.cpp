@@ -23,11 +23,11 @@ TEST(ShaderReflection, BindingTypeNames) {
 }
 
 TEST(ShaderReflection, StageNames) {
-    EXPECT_STREQ(ShaderReflector::StageName(ShaderStage::Vertex), "Vertex");
-    EXPECT_STREQ(ShaderReflector::StageName(ShaderStage::Fragment), "Fragment");
-    EXPECT_STREQ(ShaderReflector::StageName(ShaderStage::Compute), "Compute");
-    EXPECT_STREQ(ShaderReflector::StageName(ShaderStage::Mesh), "Mesh");
-    EXPECT_STREQ(ShaderReflector::StageName(ShaderStage::RayGen), "RayGen");
+    EXPECT_STREQ(ShaderReflector::StageName(assets::ShaderStage::Vertex), "Vertex");
+    EXPECT_STREQ(ShaderReflector::StageName(assets::ShaderStage::Fragment), "Fragment");
+    EXPECT_STREQ(ShaderReflector::StageName(assets::ShaderStage::Compute), "Compute");
+    EXPECT_STREQ(ShaderReflector::StageName(assets::ShaderStage::Mesh), "Mesh");
+    EXPECT_STREQ(ShaderReflector::StageName(assets::ShaderStage::RayGen), "RayGen");
 }
 
 TEST(ShaderReflection, RejectInvalidSPIRV) {
@@ -52,20 +52,20 @@ TEST(ShaderReflection, MergeBindingsEmpty) {
 
 TEST(ShaderReflection, MergeBindingsDeduplicates) {
     ShaderReflectionData vs;
-    vs.stage = ShaderStage::Vertex;
+    vs.stage = assets::ShaderStage::Vertex;
     ReflectedBinding b1;
     b1.name = "CameraUBO";
     b1.type = BindingType::UniformBuffer;
     b1.set = 0;
     b1.binding = 0;
     b1.count = 1;
-    b1.stage = ShaderStage::Vertex;
+    b1.stage = assets::ShaderStage::Vertex;
     vs.bindings.push_back(b1);
 
     ShaderReflectionData fs;
-    fs.stage = ShaderStage::Fragment;
+    fs.stage = assets::ShaderStage::Fragment;
     ReflectedBinding b2 = b1;
-    b2.stage = ShaderStage::Fragment;
+    b2.stage = assets::ShaderStage::Fragment;
     fs.bindings.push_back(b2);
 
     auto merged = ShaderReflector::MergeBindings({vs, fs});

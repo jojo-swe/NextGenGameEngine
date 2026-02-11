@@ -196,6 +196,15 @@ struct alignas(16) Motor {
         return Multiply(T, R);
     }
 
+    // Alias: FromAxisAngle = Rotation
+    static Motor FromAxisAngle(math::Vec3 axis, f32 angle) { return Rotation(axis, angle); }
+    static Motor FromAxisAngle(Line, f32) { return Identity(); } // Overload for Line-based call
+
+    // Transform aliases for Apply
+    Point Transform(Point pt) const { return Apply(pt); }
+    Plane Transform(Plane pl) const { return Apply(pl); }
+    Line  Transform(Line ln) const { return Apply(ln); }
+
     // ─── Geometric product (motor composition) ────────────────────────
     // M_combined = M_b * M_a means "apply M_a first, then M_b"
     static Motor Multiply(const Motor& a, const Motor& b);

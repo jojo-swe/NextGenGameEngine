@@ -154,7 +154,8 @@ void ActionMap::Update(f32 deltaTime) {
 
         if (axis.positive.type == BindingType::MouseAxis) {
             // Mouse axis: read delta directly
-            auto [mx, my] = platform::Input::GetMouseDelta();
+            f32 mx = platform::Input::GetMouseDeltaX();
+            f32 my = platform::Input::GetMouseDeltaY();
             f32 delta = (axis.positive.mouseAxis == 0) ? mx : my;
             target = delta * axis.sensitivity;
         } else {
@@ -184,7 +185,7 @@ bool ActionMap::EvaluateBinding(const InputBinding& binding) const {
         case BindingType::Key:
             return platform::Input::IsKeyDown(binding.key);
         case BindingType::MouseButton:
-            return platform::Input::IsMouseButtonDown(binding.mouseButton);
+            return platform::Input::IsMouseDown(binding.mouseButton);
         default:
             return false;
     }
@@ -195,7 +196,7 @@ bool ActionMap::EvaluateBindingPressed(const InputBinding& binding) const {
         case BindingType::Key:
             return platform::Input::IsKeyPressed(binding.key);
         case BindingType::MouseButton:
-            return platform::Input::IsMouseButtonPressed(binding.mouseButton);
+            return platform::Input::IsMousePressed(binding.mouseButton);
         default:
             return false;
     }
@@ -206,7 +207,7 @@ bool ActionMap::EvaluateBindingReleased(const InputBinding& binding) const {
         case BindingType::Key:
             return platform::Input::IsKeyReleased(binding.key);
         case BindingType::MouseButton:
-            return platform::Input::IsMouseButtonReleased(binding.mouseButton);
+            return platform::Input::IsMouseReleased(binding.mouseButton);
         default:
             return false;
     }

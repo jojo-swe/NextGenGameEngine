@@ -1,4 +1,5 @@
 #include "engine/scene/prefab/prefab_system.h"
+#include "engine/scene/transform/transform.h"
 #include "engine/core/logging/log.h"
 #include <fstream>
 #include <cstring>
@@ -28,11 +29,12 @@ PrefabId PrefabManager::CreateFromEntity(ecs::World& world, ecs::Entity rootEnti
     node.name = world.GetEntityName(rootEntity);
     node.parentIndex = UINT32_MAX;
 
-    auto* transform = world.GetTransform(rootEntity);
+    auto* transform = world.GetComponent<Transform>(rootEntity);
     if (transform) {
-        node.position = transform->position;
-        node.rotation = transform->rotation;
-        node.scale = transform->scale;
+        node.position = transform->GetLocalPosition();
+        // PGA motors don't store quaternion/scale separately; use defaults
+        node.rotation = {0, 0, 0, 1};
+        node.scale = {1, 1, 1};
     }
 
     // TODO: Serialize each component on the entity into ComponentBlobs
@@ -125,7 +127,8 @@ ecs::Entity PrefabManager::Instantiate(ecs::World& world, PrefabId id,
     for (u32 i = 0; i < static_cast<u32>(data.nodes.size()); ++i) {
         const auto& node = data.nodes[i];
 
-        ecs::Entity entity = world.CreateEntity(node.name);
+        ecs::Entity entity = world.CreateEntity();
+        world.SetEntityName(entity, node.name);
         entities[i] = entity;
 
         // Compute transform (root gets params override, children use prefab-local)
@@ -140,7 +143,8 @@ ecs::Entity PrefabManager::Instantiate(ecs::World& world, PrefabId id,
             scl = {scl.x * params.scale.x, scl.y * params.scale.y, scl.z * params.scale.z};
         }
 
-        world.SetTransform(entity, pos, rot, scl);
+        auto& t = world.AddComponent<Transform>(entity);
+        t.SetPosition(pos);
 
         // Set parent
         if (node.parentIndex != UINT32_MAX && node.parentIndex < i) {

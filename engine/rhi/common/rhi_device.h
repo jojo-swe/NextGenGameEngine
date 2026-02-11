@@ -70,7 +70,7 @@ public:
     // ─── Buffer utilities ────────────────────────────────────────────
     virtual void FillBuffer(BufferHandle buffer, u64 offset, u64 size, u32 value) = 0;
     virtual void UpdateBuffer(BufferHandle buffer, u64 offset, u64 size, const void* data) = 0;
-    virtual void BlitTexture(TextureHandle src, TextureHandle dst) = 0;
+    virtual void BlitTexture(TextureHandle src, TextureHandle dst, u32 dstWidth = 0, u32 dstHeight = 0) = 0;
 
     // ─── Dynamic state ──────────────────────────────────────────────
     virtual void SetViewport(const Viewport& viewport) = 0;
@@ -135,6 +135,7 @@ public:
 
     // ─── Command lists ────────────────────────────────────────────────
     virtual ICommandList* GetCommandList(QueueType queue = QueueType::Graphics) = 0;
+    ICommandList* GetAsyncComputeCommandList() { return GetCommandList(QueueType::AsyncCompute); }
     virtual void SubmitCommandList(ICommandList* cmdList, QueueType queue = QueueType::Graphics) = 0;
 
     // ─── Capabilities ─────────────────────────────────────────────────

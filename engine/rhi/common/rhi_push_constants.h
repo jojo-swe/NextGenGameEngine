@@ -17,21 +17,7 @@ namespace nge::rhi {
 
 static constexpr u32 MAX_PUSH_CONSTANT_SIZE = 128; // Vulkan guaranteed min
 
-enum class ShaderStage : u32 {
-    Vertex   = 0x01,
-    Fragment = 0x10,
-    Compute  = 0x20,
-    Geometry = 0x08,
-    TessCtrl = 0x02,
-    TessEval = 0x04,
-    Mesh     = 0x40,
-    Task     = 0x80,
-    All      = 0x7F,
-};
-
-inline ShaderStage operator|(ShaderStage a, ShaderStage b) {
-    return static_cast<ShaderStage>(static_cast<u32>(a) | static_cast<u32>(b));
-}
+// ShaderStage enum is defined in rhi_types.h (included via rhi_device.h)
 
 struct PushConstantRange {
     ShaderStage stageFlags;

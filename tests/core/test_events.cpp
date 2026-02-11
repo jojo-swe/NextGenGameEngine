@@ -82,7 +82,8 @@ TEST(EventSystem, EmitHelper) {
     int received = 0;
 
     bus.Subscribe<TestEvent>([&](const TestEvent& e) { received = e.value; });
-    bus.Emit<TestEvent>(TestEvent{.value = 77});
+    TestEvent te; te.value = 77;
+    bus.Emit<TestEvent>(te);
 
     EXPECT_EQ(received, 77);
 }

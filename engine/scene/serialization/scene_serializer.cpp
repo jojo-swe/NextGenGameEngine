@@ -1,4 +1,5 @@
 #include "engine/scene/serialization/scene_serializer.h"
+#include "engine/scene/transform/transform.h"
 #include "engine/core/logging/log.h"
 #include "engine/core/assert.h"
 #include <fstream>
@@ -147,11 +148,11 @@ bool SceneSerializer::SaveToBuffer(std::vector<u8>& outBuffer, ecs::World& world
         WriteString(outBuffer, name);
 
         // Transform (always serialized)
-        auto* transform = world.GetTransform(entity);
+        auto* transform = world.GetComponent<scene::Transform>(entity);
         if (transform) {
-            WriteVec3(outBuffer, transform->position);
-            WriteVec4(outBuffer, transform->rotation);
-            WriteVec3(outBuffer, transform->scale);
+            WriteVec3(outBuffer, transform->GetLocalPosition());
+            WriteVec4(outBuffer, {0, 0, 0, 1}); // PGA motor doesn't store quat directly
+            WriteVec3(outBuffer, {1, 1, 1});     // PGA motor doesn't store scale directly
         } else {
             WriteVec3(outBuffer, {0, 0, 0});
             WriteVec4(outBuffer, {0, 0, 0, 1});
@@ -241,14 +242,17 @@ bool SceneSerializer::LoadFromBuffer(const u8* data, usize size, ecs::World& wor
         std::string name = reader.ReadString();
 
         // Create entity
-        ecs::Entity entity = world.CreateEntity(name);
+        ecs::Entity entity = world.CreateEntity();
+        world.SetEntityName(entity, name);
         idMap[oldId] = entity;
 
         // Transform
         math::Vec3 position = reader.ReadVec3();
         math::Vec4 rotation = reader.ReadVec4();
         math::Vec3 scale = reader.ReadVec3();
-        world.SetTransform(entity, position, rotation, scale);
+        (void)rotation; (void)scale; // PGA motors don't use quat/scale directly
+        auto& t = world.AddComponent<scene::Transform>(entity);
+        t.SetPosition(position);
 
         // Parent reparenting (deferred — parent may not exist yet)
         (void)parentId;

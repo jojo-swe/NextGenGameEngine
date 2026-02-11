@@ -60,7 +60,7 @@ void QueueFamilyArbiter::SetDedicated(u32 familyIndex, u32 queueIndex, bool dedi
     }
 }
 
-QueueAssignment QueueFamilyArbiter::RequestQueue(const WorkRequest& request) const {
+QueueAssignment QueueFamilyArbiter::RequestQueue(const WorkRequest& request) {
     std::lock_guard lock(m_mutex);
 
     QueueAssignment best;

@@ -7,6 +7,7 @@
 // volk will replace this when vcpkg dependencies are installed.
 
 #if defined(NGE_PLATFORM_WINDOWS)
+    #include <windows.h>
     #include <vulkan/vulkan_win32.h>
 #endif
 
@@ -1164,7 +1165,7 @@ PipelineHandle VulkanDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& 
     pipelineInfo.layout              = m_globalPipelineLayout;
 
     VkPipeline pipeline;
-    if (vkCreateGraphicsPipeline(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
+    if (vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
         return PipelineHandle{};
     }
 
@@ -1367,12 +1368,16 @@ VkPipelineStageFlags2 VulkanDevice::ToVkStage(ResourceState state) const {
     }
 }
 
+} // namespace nge::rhi::vulkan
+
 // ─── Device Factory ──────────────────────────────────────────────────────
+
+namespace nge::rhi {
 
 std::unique_ptr<IDevice> IDevice::Create(GraphicsAPI api) {
     switch (api) {
         case GraphicsAPI::Vulkan:
-            return std::make_unique<VulkanDevice>();
+            return std::make_unique<vulkan::VulkanDevice>();
         case GraphicsAPI::DirectX12:
             NGE_LOG_ERROR("DX12 backend not yet implemented");
             return nullptr;
@@ -1380,4 +1385,4 @@ std::unique_ptr<IDevice> IDevice::Create(GraphicsAPI api) {
     return nullptr;
 }
 
-} // namespace nge::rhi::vulkan
+} // namespace nge::rhi

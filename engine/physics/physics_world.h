@@ -113,8 +113,10 @@ struct PhysicsWorldConfig {
 
 class PhysicsWorld {
 public:
-    PhysicsWorld() = default;
+    PhysicsWorld();
     ~PhysicsWorld();
+    PhysicsWorld(PhysicsWorld&&) noexcept;
+    PhysicsWorld& operator=(PhysicsWorld&&) noexcept;
 
     bool Init(const PhysicsWorldConfig& config = {});
     void Shutdown();

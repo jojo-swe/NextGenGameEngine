@@ -112,6 +112,7 @@ CompiledGraph FrameGraphCompiler::Compile() {
                  result.passes.size(), result.eliminatedPasses.size(), result.asyncPassCount,
                  result.peakMemory / 1024, result.aliasedMemory / 1024);
 
+    m_lastResult = result;
     return result;
 }
 

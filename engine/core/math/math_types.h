@@ -31,6 +31,7 @@ inline f32 Ceil(f32 x)  { return std::ceil(x); }
 inline f32 Fmod(f32 x, f32 y) { return std::fmod(x, y); }
 inline f32 Exp(f32 x)   { return std::exp(x); }
 inline f32 Log(f32 x)   { return std::log(x); }
+inline f32 Log2(f32 x)  { return std::log2(x); }
 inline f32 Pow(f32 base, f32 exp) { return std::pow(base, exp); }
 
 template <typename T>

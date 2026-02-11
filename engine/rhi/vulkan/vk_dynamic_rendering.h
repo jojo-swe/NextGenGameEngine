@@ -18,22 +18,9 @@ namespace nge::rhi {
 //   - Simpler render graph barrier management
 //   - Direct attachment specification at begin time
 
-enum class AttachmentLoadOp : u8 { Load, Clear, DontCare };
-enum class AttachmentStoreOp : u8 { Store, DontCare };
-
-struct ClearValue {
-    union {
-        struct { f32 r, g, b, a; } color;
-        struct { f32 depth; u32 stencil; } depthStencil;
-    };
-
-    static ClearValue Color(f32 r = 0, f32 g = 0, f32 b = 0, f32 a = 1) {
-        ClearValue cv; cv.color = {r, g, b, a}; return cv;
-    }
-    static ClearValue Depth(f32 d = 0.0f, u32 s = 0) {
-        ClearValue cv; cv.depthStencil = {d, s}; return cv;
-    }
-};
+// ClearValue, LoadOp, StoreOp are defined in rhi_types.h (included via rhi_device.h)
+using AttachmentLoadOp = LoadOp;
+using AttachmentStoreOp = StoreOp;
 
 struct DynamicColorAttachment {
     TextureHandle    imageView;

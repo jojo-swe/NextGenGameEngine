@@ -7,6 +7,7 @@
 #include "engine/core/containers/array.h"
 #include "engine/core/assert.h"
 #include <vector>
+#include <string>
 #include <unordered_map>
 #include <memory>
 #include <functional>
@@ -220,6 +221,28 @@ public:
         }
     }
 
+    // ─── Entity metadata ──────────────────────────────────────────────
+    std::string GetEntityName(Entity entity) const {
+        auto it = m_entityNames.find(entity.id);
+        return (it != m_entityNames.end()) ? it->second : "";
+    }
+
+    void SetEntityName(Entity entity, const std::string& name) {
+        m_entityNames[entity.id] = name;
+    }
+
+    std::vector<Entity> GetAllEntities() const {
+        std::vector<Entity> result;
+        result.reserve(m_entityRecords.size());
+        for (const auto& [id, record] : m_entityRecords) {
+            u32 idx = static_cast<u32>(id & 0xFFFFFFFF);
+            if (idx < m_generations.size()) {
+                result.push_back(Entity(idx, m_generations[idx]));
+            }
+        }
+        return result;
+    }
+
     // ─── Stats ────────────────────────────────────────────────────────
     usize GetEntityCount() const { return m_entityRecords.size(); }
     usize GetArchetypeCount() const { return m_archetypes.size(); }
@@ -285,6 +308,7 @@ private:
     ComponentRegistry                                          m_registry;
     std::unordered_map<u64, std::unique_ptr<Archetype>>       m_archetypes;
     std::unordered_map<u64, EntityRecord>                      m_entityRecords;
+    std::unordered_map<u64, std::string>                       m_entityNames;
     std::vector<u32>                                           m_generations;
     Array<u32>                                                 m_freeEntities;
 };

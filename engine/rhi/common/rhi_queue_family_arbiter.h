@@ -110,7 +110,7 @@ public:
     void SetDedicated(u32 familyIndex, u32 queueIndex, bool dedicated);
 
     // Request optimal queue for a workload
-    QueueAssignment RequestQueue(const WorkRequest& request) const;
+    QueueAssignment RequestQueue(const WorkRequest& request);
 
     // Update queue load after submission
     void RecordSubmission(u32 familyIndex, u32 queueIndex, u64 cost);

@@ -1,8 +1,10 @@
 #include <gtest/gtest.h>
 #include "engine/animation/animation_system.h"
+#include "engine/renderer/lighting/gi_probes.h"
 
 using namespace nge;
 using namespace nge::animation;
+using namespace nge::renderer;
 
 class AnimationTest : public ::testing::Test {
 protected:
@@ -16,16 +18,16 @@ protected:
         Bone root;
         root.name = "Root";
         root.parentIndex = -1;
-        root.bindPose = math::pga::Motor::Identity();
-        root.invBindPose = math::pga::Motor::Identity();
+        root.bindPose = pga::Motor::Identity();
+        root.invBindPose = pga::Motor::Identity();
         skel.bones.push_back(root);
         skel.boneNameToIndex["Root"] = 0;
 
         Bone child;
         child.name = "Child";
         child.parentIndex = 0;
-        child.bindPose = math::pga::Motor::Translation(0, 1, 0);
-        child.invBindPose = math::pga::Motor::Translation(0, -1, 0);
+        child.bindPose = pga::Motor::Translation(0, 1, 0);
+        child.invBindPose = pga::Motor::Translation(0, -1, 0);
         skel.bones.push_back(child);
         skel.boneNameToIndex["Child"] = 1;
 
@@ -57,8 +59,8 @@ TEST_F(AnimationTest, RegisterClip) {
 
     BoneChannel channel;
     channel.boneIndex = 0;
-    channel.keyframes.push_back({0.0f, math::pga::Motor::Identity()});
-    channel.keyframes.push_back({1.0f, math::pga::Motor::Translation(5, 0, 0)});
+    channel.keyframes.push_back({0.0f, pga::Motor::Identity()});
+    channel.keyframes.push_back({1.0f, pga::Motor::Translation(5, 0, 0)});
     clip.channels.push_back(channel);
 
     u32 clipId = m_system.RegisterClip(clip);
@@ -84,8 +86,8 @@ TEST_F(AnimationTest, SampleClipAtTime) {
 
     BoneChannel channel;
     channel.boneIndex = 0;
-    channel.keyframes.push_back({0.0f, math::pga::Motor::Identity()});
-    channel.keyframes.push_back({1.0f, math::pga::Motor::Translation(10, 0, 0)});
+    channel.keyframes.push_back({0.0f, pga::Motor::Identity()});
+    channel.keyframes.push_back({1.0f, pga::Motor::Translation(10, 0, 0)});
     clip.channels.push_back(channel);
 
     auto* skel = m_system.GetSkeleton(m_skelId);
@@ -116,8 +118,8 @@ TEST_F(AnimationTest, PlayAndUpdate) {
 
     BoneChannel channel;
     channel.boneIndex = 0;
-    channel.keyframes.push_back({0.0f, math::pga::Motor::Identity()});
-    channel.keyframes.push_back({2.0f, math::pga::Motor::Translation(4, 0, 0)});
+    channel.keyframes.push_back({0.0f, pga::Motor::Identity()});
+    channel.keyframes.push_back({2.0f, pga::Motor::Translation(4, 0, 0)});
     clip.channels.push_back(channel);
 
     u32 clipId = m_system.RegisterClip(clip);

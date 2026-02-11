@@ -47,9 +47,12 @@ struct PhysicsWorld::Impl {
     u32               activeCount = 0;
 };
 
+PhysicsWorld::PhysicsWorld() = default;
 PhysicsWorld::~PhysicsWorld() {
     Shutdown();
 }
+PhysicsWorld::PhysicsWorld(PhysicsWorld&&) noexcept = default;
+PhysicsWorld& PhysicsWorld::operator=(PhysicsWorld&&) noexcept = default;
 
 bool PhysicsWorld::Init(const PhysicsWorldConfig& config) {
     m_config = config;

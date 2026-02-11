@@ -12,17 +12,8 @@ namespace nge::rhi {
 // rendering scenarios: cascaded shadow maps, split-screen, VR stereo,
 // cubemap face rendering, and UI overlay viewports.
 
-struct Viewport {
-    f32 x = 0, y = 0;
-    f32 width = 0, height = 0;
-    f32 minDepth = 0.0f;
-    f32 maxDepth = 1.0f;
-};
-
-struct ScissorRect {
-    i32 x = 0, y = 0;
-    u32 width = 0, height = 0;
-};
+// Viewport, Scissor are defined in rhi_types.h (included via rhi_device.h)
+using ScissorRect = Scissor;
 
 struct ViewportScissorPair {
     Viewport    viewport;

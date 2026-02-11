@@ -19,6 +19,7 @@ struct Handle {
         u32 id;
     };
     Handle() : index(UINT32_MAX) {}
+    explicit Handle(u32 idx) : index(idx) {}
     constexpr u32 GetId() const { return index; }
     constexpr bool IsValid() const { return index != UINT32_MAX; }
     constexpr bool operator==(Handle o) const { return index == o.index; }
@@ -75,6 +76,10 @@ enum class Format : u32 {
     RG16_FLOAT, RG16_UINT,
     RGBA16_FLOAT, RGBA16_UINT,
 
+    // Packed
+    R11G11B10_FLOAT,
+    RGB10A2_UNORM,
+
     // 32-bit
     R32_FLOAT, R32_UINT, R32_SINT,
     RG32_FLOAT, RG32_UINT,
@@ -89,6 +94,7 @@ enum class Format : u32 {
 
     // Compressed
     BC1_UNORM, BC1_SRGB,
+    BC2_UNORM, BC2_SRGB,
     BC3_UNORM, BC3_SRGB,
     BC4_UNORM, BC4_SNORM,
     BC5_UNORM, BC5_SNORM,
@@ -175,6 +181,7 @@ enum class ShaderStage : u32 {
     RayAnyHit      = 1 << 11,
     RayIntersection = 1 << 12,
     Callable       = 1 << 13,
+    All            = 0x3FFF,   // All stages combined
 };
 
 inline ShaderStage operator|(ShaderStage a, ShaderStage b) {
@@ -197,9 +204,11 @@ enum class CompareOp : u8 {
     Less,
     Equal,
     LessEqual,
+    LessOrEqual = LessEqual,       // Alias
     Greater,
     NotEqual,
     GreaterEqual,
+    GreaterOrEqual = GreaterEqual,  // Alias
     Always,
 };
 
@@ -243,6 +252,16 @@ enum class FilterMode : u8 {
     Linear,
     Anisotropic,
 };
+using Filter = FilterMode; // Alias
+
+enum class BorderColor : u8 {
+    FloatTransparentBlack,
+    FloatOpaqueBlack,
+    FloatOpaqueWhite,
+    IntTransparentBlack,
+    IntOpaqueBlack,
+    IntOpaqueWhite,
+};
 
 enum class AddressMode : u8 {
     Repeat,
@@ -273,7 +292,9 @@ enum class ResourceState : u32 {
     DepthStencilWrite,
     DepthStencilRead,
     TransferSrc,
+    CopySrc = TransferSrc,     // Alias
     TransferDst,
+    CopyDst = TransferDst,     // Alias
     HostRead,          // CPU readback
     Present,
     AccelStructRead,
@@ -308,6 +329,9 @@ struct ClearValue {
         ClearValue v; v.depthStencil = {depth, stencil};
         return v;
     }
+    static ClearValue Depth(f32 depth = 0.0f, u32 stencil = 0) {
+        return DepthStencil(depth, stencil);
+    }
 };
 
 struct Viewport {
@@ -335,11 +359,12 @@ struct TextureDesc {
     u32          height     = 1;
     u32          depth      = 1;
     u32          mipLevels  = 1;
-    u32          arrayLayers = 1;
     Format       format     = Format::RGBA8_UNORM;
     TextureType  type       = TextureType::Tex2D;
     TextureUsage usage      = TextureUsage::ShaderRead;
     MemoryUsage  memoryUsage = MemoryUsage::GPU_Only;
+    u32          arrayLayers = 1;
+    u32          sampleCount = 1;
     std::string  debugName;
 };
 
@@ -414,7 +439,7 @@ enum class StencilOp : u8 {
 // CompareFunc is an alias for CompareOp
 using CompareFunc = CompareOp;
 
-struct RenderTargetDesc {
+struct RenderTargetFormat {
     Format  format  = Format::RGBA8_UNORM;
     LoadOp  loadOp  = LoadOp::Clear;
     StoreOp storeOp = StoreOp::Store;
@@ -448,7 +473,7 @@ struct GraphicsPipelineDesc {
     BlendAttachment       blendAttachments[8] = {};
     u32                   blendAttachmentCount = 0;
 
-    RenderTargetDesc      renderTargets[8] = {};
+    RenderTargetFormat    renderTargets[8] = {};
     u32                   renderTargetCount = 0;
     DepthStencilDesc      depthStencil;
     bool                  hasDepthStencil = true;

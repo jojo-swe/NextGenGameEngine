@@ -104,9 +104,7 @@ void StagingManager::Flush(ICommandList* cmd) {
 
     // Texture copies
     for (const auto& copy : m_textureCopies) {
-        cmd->CopyBufferToTexture(m_stagingBuffer, copy.srcOffset,
-                                  copy.dstTexture, copy.mipLevel, copy.arrayLayer,
-                                  copy.width, copy.height);
+        cmd->CopyBufferToTexture(m_stagingBuffer, copy.dstTexture, copy.mipLevel, copy.arrayLayer);
     }
 
     NGE_LOG_DEBUG("Staging flush: {} buffer copies, {} texture copies, {} KB used",
