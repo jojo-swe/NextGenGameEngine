@@ -133,6 +133,16 @@ public:
 
     void BuildAccelerationStructure(AccelStructHandle accelStruct) override;
 
+    void FillBuffer(BufferHandle buffer, u64 offset, u64 size, u32 value) override;
+    void UpdateBuffer(BufferHandle buffer, u64 offset, u64 size, const void* data) override;
+    void BlitTexture(TextureHandle src, TextureHandle dst, u32 dstWidth, u32 dstHeight) override;
+
+    void SetViewport(const Viewport& viewport) override;
+    void SetScissor(const Scissor& scissor) override;
+
+    void WaitSemaphore(u64 semaphore, u64 value) override;
+    void SignalSemaphore(u64 semaphore, u64 value) override;
+
     void BeginDebugLabel(const char* name, f32 r, f32 g, f32 b) override;
     void EndDebugLabel() override;
 

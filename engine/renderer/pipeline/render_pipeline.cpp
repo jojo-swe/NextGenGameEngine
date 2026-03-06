@@ -1,6 +1,74 @@
 #include "engine/renderer/pipeline/render_pipeline.h"
+#include "engine/assets/shader/shader_compiler.h"
 #include "engine/core/logging/log.h"
 #include "engine/core/assert.h"
+
+#include <array>
+#include <cstddef>
+#include <filesystem>
+#include <vector>
+
+namespace fs = std::filesystem;
+
+namespace {
+
+struct DemoVertex {
+    nge::math::Vec3 position;
+    nge::math::Vec3 color;
+};
+
+struct DemoPushConstants {
+    nge::math::Mat4 viewProj;
+    nge::math::Vec4 cameraPos;
+    nge::u32 frameIndex;
+    nge::u32 screenWidth;
+    nge::u32 screenHeight;
+    nge::u32 pad0;
+    float time;
+    float deltaTime;
+    nge::u32 pad1;
+    nge::u32 pad2;
+};
+
+nge::math::Mat4 Transpose(const nge::math::Mat4& matrix) {
+    nge::math::Mat4 result{};
+    for (int row = 0; row < 4; ++row) {
+        for (int column = 0; column < 4; ++column) {
+            result.m[row][column] = matrix.m[column][row];
+        }
+    }
+    return result;
+}
+
+fs::path FindShaderRoot() {
+    fs::path current = fs::current_path();
+
+    while (!current.empty()) {
+        const fs::path candidate = current / "shaders";
+        if (fs::exists(candidate / "mesh" / "triangle.vert.hlsl") &&
+            fs::exists(candidate / "mesh" / "triangle.frag.hlsl")) {
+            return candidate;
+        }
+
+        if (current == current.root_path()) {
+            break;
+        }
+
+        current = current.parent_path();
+    }
+
+    return {};
+}
+
+template <typename HandleT, typename DestroyFn>
+void ResetHandle(HandleT& handle, DestroyFn&& destroyFn) {
+    if (handle.IsValid()) {
+        destroyFn(handle);
+        handle = HandleT{};
+    }
+}
+
+} 
 
 namespace nge::renderer {
 
@@ -36,6 +104,12 @@ bool RenderPipeline::Init(rhi::IDevice* device, u32 width, u32 height) {
 void RenderPipeline::Shutdown() {
     m_profiler.Shutdown();
     if (m_renderGraph) { m_renderGraph->Reset(); m_renderGraph.reset(); }
+    ResetHandle(m_demoVertexBuffer, [this](rhi::BufferHandle handle) { m_device->DestroyBuffer(handle); });
+    ResetHandle(m_demoIndexBuffer, [this](rhi::BufferHandle handle) { m_device->DestroyBuffer(handle); });
+    ResetHandle(m_visBufferPipeline, [this](rhi::PipelineHandle handle) { m_device->DestroyPipeline(handle); });
+    ResetHandle(m_demoVertexShader, [this](rhi::ShaderHandle handle) { m_device->DestroyShader(handle); });
+    ResetHandle(m_demoFragmentShader, [this](rhi::ShaderHandle handle) { m_device->DestroyShader(handle); });
+    m_demoIndexCount = 0;
     DestroyRenderTargets();
     m_device = nullptr;
 }
@@ -253,12 +327,30 @@ void RenderPipeline::PassVisibilityBuffer(rhi::ICommandList* cmd, const FrameRen
     rhi::Viewport viewport{0, 0, static_cast<f32>(data.screenWidth), static_cast<f32>(data.screenHeight), 0, 1};
     rhi::Scissor scissor{0, 0, data.screenWidth, data.screenHeight};
 
-    // For now, render directly to swapchain (vis buffer path will be added)
     cmd->TextureBarrier(swapchain, rhi::ResourceState::Present, rhi::ResourceState::RenderTarget);
+    if (!m_depthBufferInitialized) {
+        cmd->TextureBarrier(m_depthBuffer, rhi::ResourceState::Undefined, rhi::ResourceState::DepthWrite);
+        m_depthBufferInitialized = true;
+    }
     rhi::LoadOp loadOp = rhi::LoadOp::Clear;
-    cmd->BeginRendering(&swapchain, 1, rhi::TextureHandle{}, &clearColor, viewport, scissor, &loadOp);
+    cmd->BeginRendering(&swapchain, 1, m_depthBuffer, &clearColor, viewport, scissor, &loadOp);
 
-    // TODO: Bind mesh shader pipeline or fallback vertex pipeline, draw meshlets
+    if (m_visBufferPipeline.IsValid() && m_demoVertexBuffer.IsValid() && m_demoIndexBuffer.IsValid() && m_demoIndexCount > 0) {
+        DemoPushConstants pushConstants{};
+        pushConstants.viewProj = Transpose(data.viewProjMatrix);
+        pushConstants.cameraPos = {data.cameraPosition.x, data.cameraPosition.y, data.cameraPosition.z, 1.0f};
+        pushConstants.frameIndex = data.frameIndex;
+        pushConstants.screenWidth = data.screenWidth;
+        pushConstants.screenHeight = data.screenHeight;
+        pushConstants.time = data.time;
+        pushConstants.deltaTime = data.deltaTime;
+
+        cmd->BindGraphicsPipeline(m_visBufferPipeline);
+        cmd->BindVertexBuffer(m_demoVertexBuffer);
+        cmd->BindIndexBuffer(m_demoIndexBuffer, rhi::IndexType::UInt16);
+        cmd->SetPushConstants(&pushConstants, static_cast<u32>(sizeof(pushConstants)));
+        cmd->DrawIndexed(m_demoIndexCount);
+    }
 
     cmd->EndRendering();
     cmd->EndDebugLabel();
@@ -360,6 +452,8 @@ void RenderPipeline::CreateRenderTargets(u32 width, u32 height) {
         m_hzbTexture = m_device->CreateTexture(hzbDesc);
     }
 
+    m_depthBufferInitialized = false;
+
     NGE_LOG_INFO("Render targets created: {}x{}", width, height);
 }
 
@@ -386,9 +480,117 @@ void RenderPipeline::DestroyRenderTargets() {
 }
 
 void RenderPipeline::CreatePipelines() {
-    // TODO: Load shaders and create pipelines
-    // This will be done when the shader compilation pipeline is integrated
-    NGE_LOG_INFO("Render pipelines created (stubs)");
+    assets::ShaderCompiler::Init();
+
+    const fs::path shaderRoot = FindShaderRoot();
+    if (shaderRoot.empty()) {
+        NGE_LOG_ERROR("Failed to locate shader directory for render pipeline");
+        return;
+    }
+
+    const fs::path cacheDir = shaderRoot / "cache";
+
+    auto createShader = [&](const fs::path& path, rhi::ShaderStage stage) -> rhi::ShaderHandle {
+        assets::ShaderCompileOptions options;
+        options.sourcePath = path.string();
+        options.stage = stage;
+        options.includeDirs.push_back(shaderRoot.string());
+        options.includeDirs.push_back((shaderRoot / "common").string());
+
+        const std::string spvPath = assets::ShaderCompiler::CompileAndCache(options, cacheDir.string());
+        if (spvPath.empty()) {
+            return {};
+        }
+
+        std::vector<byte> bytecode;
+        if (!assets::ShaderCompiler::LoadSPIRV(spvPath, bytecode)) {
+            NGE_LOG_ERROR("Failed to load compiled shader bytecode: {}", spvPath);
+            return {};
+        }
+
+        rhi::ShaderDesc desc{};
+        desc.bytecode = bytecode.data();
+        desc.bytecodeSize = bytecode.size();
+        desc.stage = stage;
+        desc.debugName = path.filename().string();
+        return m_device->CreateShader(desc);
+    };
+
+    m_demoVertexShader = createShader(shaderRoot / "mesh" / "triangle.vert.hlsl", rhi::ShaderStage::Vertex);
+    m_demoFragmentShader = createShader(shaderRoot / "mesh" / "triangle.frag.hlsl", rhi::ShaderStage::Fragment);
+    if (!m_demoVertexShader.IsValid() || !m_demoFragmentShader.IsValid()) {
+        NGE_LOG_ERROR("Failed to create demo shaders for render pipeline");
+        return;
+    }
+
+    rhi::GraphicsPipelineDesc pipelineDesc{};
+    pipelineDesc.vertexShader = m_demoVertexShader;
+    pipelineDesc.fragmentShader = m_demoFragmentShader;
+    pipelineDesc.vertexBindingCount = 1;
+    pipelineDesc.vertexBindings[0].binding = 0;
+    pipelineDesc.vertexBindings[0].stride = sizeof(DemoVertex);
+    pipelineDesc.vertexAttributeCount = 2;
+    pipelineDesc.vertexAttributes[0].location = 0;
+    pipelineDesc.vertexAttributes[0].binding = 0;
+    pipelineDesc.vertexAttributes[0].format = rhi::Format::RGB32_FLOAT;
+    pipelineDesc.vertexAttributes[0].offset = 0;
+    pipelineDesc.vertexAttributes[1].location = 1;
+    pipelineDesc.vertexAttributes[1].binding = 0;
+    pipelineDesc.vertexAttributes[1].format = rhi::Format::RGB32_FLOAT;
+    pipelineDesc.vertexAttributes[1].offset = static_cast<u32>(offsetof(DemoVertex, color));
+    pipelineDesc.renderTargetCount = 1;
+    pipelineDesc.renderTargets[0].format = m_device->GetSwapchainFormat();
+    pipelineDesc.hasDepthStencil = true;
+    pipelineDesc.depthStencil.format = rhi::Format::D32_FLOAT;
+    pipelineDesc.depthStencil.depthTest = true;
+    pipelineDesc.depthStencil.depthWrite = true;
+    pipelineDesc.depthStencil.depthCompare = rhi::CompareOp::Less;
+    pipelineDesc.cullMode = rhi::CullMode::Back;
+    pipelineDesc.frontFace = rhi::FrontFace::CounterClockwise;
+    pipelineDesc.debugName = "RenderPipelineDemo";
+    m_visBufferPipeline = m_device->CreateGraphicsPipeline(pipelineDesc);
+
+    const std::array<DemoVertex, 8> vertices{{
+        {{-1.0f, 0.0f, -1.0f}, {1.0f, 0.2f, 0.2f}},
+        {{ 1.0f, 0.0f, -1.0f}, {0.2f, 1.0f, 0.2f}},
+        {{ 1.0f, 2.0f, -1.0f}, {0.2f, 0.2f, 1.0f}},
+        {{-1.0f, 2.0f, -1.0f}, {1.0f, 1.0f, 0.2f}},
+        {{-1.0f, 0.0f,  1.0f}, {1.0f, 0.2f, 1.0f}},
+        {{ 1.0f, 0.0f,  1.0f}, {0.2f, 1.0f, 1.0f}},
+        {{ 1.0f, 2.0f,  1.0f}, {1.0f, 1.0f, 1.0f}},
+        {{-1.0f, 2.0f,  1.0f}, {0.2f, 0.2f, 0.2f}},
+    }};
+
+    const std::array<u16, 36> indices{{
+        0, 1, 2, 0, 2, 3,
+        4, 6, 5, 4, 7, 6,
+        4, 5, 1, 4, 1, 0,
+        3, 2, 6, 3, 6, 7,
+        1, 5, 6, 1, 6, 2,
+        4, 0, 3, 4, 3, 7,
+    }};
+
+    rhi::BufferDesc vertexBufferDesc{};
+    vertexBufferDesc.size = sizeof(vertices);
+    vertexBufferDesc.usage = rhi::BufferUsage::Vertex;
+    vertexBufferDesc.memoryUsage = rhi::MemoryUsage::CPU_To_GPU;
+    vertexBufferDesc.debugName = "RenderPipelineDemoVertices";
+    m_demoVertexBuffer = m_device->CreateBuffer(vertexBufferDesc);
+
+    rhi::BufferDesc indexBufferDesc{};
+    indexBufferDesc.size = sizeof(indices);
+    indexBufferDesc.usage = rhi::BufferUsage::Index;
+    indexBufferDesc.memoryUsage = rhi::MemoryUsage::CPU_To_GPU;
+    indexBufferDesc.debugName = "RenderPipelineDemoIndices";
+    m_demoIndexBuffer = m_device->CreateBuffer(indexBufferDesc);
+
+    if (m_demoVertexBuffer.IsValid() && m_demoIndexBuffer.IsValid()) {
+        m_device->UpdateBuffer(m_demoVertexBuffer, vertices.data(), sizeof(vertices));
+        m_device->UpdateBuffer(m_demoIndexBuffer, indices.data(), sizeof(indices));
+        m_demoIndexCount = static_cast<u32>(indices.size());
+    }
+
+    NGE_LOG_INFO("Render pipelines created");
 }
 
 } // namespace nge::renderer

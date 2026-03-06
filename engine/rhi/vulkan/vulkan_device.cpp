@@ -1326,6 +1326,9 @@ VkImageLayout VulkanDevice::ToVkLayout(ResourceState state) const {
         case ResourceState::ShaderRead:         return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         case ResourceState::ShaderWrite:        return VK_IMAGE_LAYOUT_GENERAL;
         case ResourceState::RenderTarget:       return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        case ResourceState::ColorAttachment:    return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        case ResourceState::DepthWrite:         return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        case ResourceState::DepthAttachment:    return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         case ResourceState::DepthStencilWrite:  return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         case ResourceState::DepthStencilRead:   return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
         case ResourceState::TransferSrc:        return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
@@ -1343,6 +1346,9 @@ VkAccessFlags2 VulkanDevice::ToVkAccess(ResourceState state) const {
         case ResourceState::ShaderRead:         return VK_ACCESS_2_SHADER_READ_BIT;
         case ResourceState::ShaderWrite:        return VK_ACCESS_2_SHADER_WRITE_BIT;
         case ResourceState::RenderTarget:       return VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+        case ResourceState::ColorAttachment:    return VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+        case ResourceState::DepthWrite:         return VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        case ResourceState::DepthAttachment:    return VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         case ResourceState::DepthStencilWrite:  return VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         case ResourceState::TransferSrc:        return VK_ACCESS_2_TRANSFER_READ_BIT;
         case ResourceState::TransferDst:        return VK_ACCESS_2_TRANSFER_WRITE_BIT;
@@ -1359,6 +1365,9 @@ VkPipelineStageFlags2 VulkanDevice::ToVkStage(ResourceState state) const {
         case ResourceState::ShaderRead:
         case ResourceState::ShaderWrite:        return VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
         case ResourceState::RenderTarget:       return VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+        case ResourceState::ColorAttachment:    return VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+        case ResourceState::DepthWrite:
+        case ResourceState::DepthAttachment:    return VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT;
         case ResourceState::DepthStencilWrite:
         case ResourceState::DepthStencilRead:   return VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT;
         case ResourceState::TransferSrc:

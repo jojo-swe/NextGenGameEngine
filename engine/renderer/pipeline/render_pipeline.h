@@ -164,6 +164,13 @@ private:
     rhi::BufferHandle m_drawCommandBuffer;     // Indirect draw commands
     rhi::BufferHandle m_instanceDataBuffer;    // Per-instance transforms + bounds
 
+    rhi::BufferHandle m_demoVertexBuffer;
+    rhi::BufferHandle m_demoIndexBuffer;
+    rhi::ShaderHandle m_demoVertexShader;
+    rhi::ShaderHandle m_demoFragmentShader;
+    u32 m_demoIndexCount = 0;
+    bool m_depthBufferInitialized = false;
+
     // ─── Render graph ────────────────────────────────────────────────
     std::unique_ptr<RenderGraph> m_renderGraph;
     rhi::GPUProfiler m_profiler;

@@ -1,4 +1,5 @@
 #include "engine/rhi/vulkan/vulkan_device.h"
+#include "engine/rhi/common/rhi_format_utils.h"
 #include "engine/core/assert.h"
 #include <cstring>
 
@@ -50,7 +51,7 @@ void VulkanCommandList::TextureBarrier(TextureHandle texture, ResourceState befo
     barrier.oldLayout     = m_device->ToVkLayout(before);
     barrier.newLayout     = m_device->ToVkLayout(after);
     barrier.image         = tex.image;
-    barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.aspectMask     = static_cast<VkImageAspectFlags>(FormatUtils::GetAspectFlags(tex.format));
     barrier.subresourceRange.baseMipLevel   = 0;
     barrier.subresourceRange.levelCount     = VK_REMAINING_MIP_LEVELS;
     barrier.subresourceRange.baseArrayLayer = 0;
@@ -262,6 +263,67 @@ void VulkanCommandList::CopyTextureToBuffer(TextureHandle src, BufferHandle dst,
 
 void VulkanCommandList::BuildAccelerationStructure(AccelStructHandle /*accelStruct*/) {
     // TODO: Implement BLAS/TLAS build
+}
+
+void VulkanCommandList::FillBuffer(BufferHandle buffer, u64 offset, u64 size, u32 value) {
+    const auto& buf = m_device->GetBuffer(buffer);
+    vkCmdFillBuffer(m_cb, buf.buffer, offset, size, value);
+}
+
+void VulkanCommandList::UpdateBuffer(BufferHandle buffer, u64 offset, u64 size, const void* data) {
+    const auto& buf = m_device->GetBuffer(buffer);
+    vkCmdUpdateBuffer(m_cb, buf.buffer, offset, size, data);
+}
+
+void VulkanCommandList::BlitTexture(TextureHandle src, TextureHandle dst, u32 dstWidth, u32 dstHeight) {
+    const auto& srcTex = m_device->GetTexture(src);
+    const auto& dstTex = m_device->GetTexture(dst);
+
+    VkImageBlit region{};
+    region.srcSubresource.aspectMask = static_cast<VkImageAspectFlags>(FormatUtils::GetAspectFlags(srcTex.format));
+    region.srcSubresource.mipLevel = 0;
+    region.srcSubresource.baseArrayLayer = 0;
+    region.srcSubresource.layerCount = 1;
+    region.srcOffsets[1] = { static_cast<i32>(srcTex.width), static_cast<i32>(srcTex.height), 1 };
+    region.dstSubresource.aspectMask = static_cast<VkImageAspectFlags>(FormatUtils::GetAspectFlags(dstTex.format));
+    region.dstSubresource.mipLevel = 0;
+    region.dstSubresource.baseArrayLayer = 0;
+    region.dstSubresource.layerCount = 1;
+    region.dstOffsets[1] = {
+        static_cast<i32>(dstWidth == 0 ? dstTex.width : dstWidth),
+        static_cast<i32>(dstHeight == 0 ? dstTex.height : dstHeight),
+        1
+    };
+
+    vkCmdBlitImage(
+        m_cb,
+        srcTex.image,
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        dstTex.image,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        1,
+        &region,
+        VK_FILTER_LINEAR);
+}
+
+void VulkanCommandList::SetViewport(const Viewport& viewport) {
+    VkViewport vkViewport{viewport.x, viewport.y, viewport.width, viewport.height, viewport.minDepth, viewport.maxDepth};
+    vkCmdSetViewport(m_cb, 0, 1, &vkViewport);
+}
+
+void VulkanCommandList::SetScissor(const Scissor& scissor) {
+    VkRect2D vkScissor{{scissor.x, scissor.y}, {scissor.width, scissor.height}};
+    vkCmdSetScissor(m_cb, 0, 1, &vkScissor);
+}
+
+void VulkanCommandList::WaitSemaphore(u64 semaphore, u64 value) {
+    (void)semaphore;
+    (void)value;
+}
+
+void VulkanCommandList::SignalSemaphore(u64 semaphore, u64 value) {
+    (void)semaphore;
+    (void)value;
 }
 
 void VulkanCommandList::BeginDebugLabel(const char* name, f32 r, f32 g, f32 b) {
