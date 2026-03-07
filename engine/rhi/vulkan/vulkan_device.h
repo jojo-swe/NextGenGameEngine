@@ -78,7 +78,6 @@ struct FrameData {
     VkCommandPool   commandPool   = VK_NULL_HANDLE;
     VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
     VkSemaphore     imageAvailable = VK_NULL_HANDLE;
-    VkSemaphore     renderFinished = VK_NULL_HANDLE;
     VkFence         inFlightFence  = VK_NULL_HANDLE;
 };
 
@@ -223,8 +222,10 @@ public:
     VkAccessFlags2 ToVkAccess(ResourceState state) const;
     VkPipelineStageFlags2 ToVkStage(ResourceState state) const;
 
-    // Vulkan function pointers (loaded via volk or manual)
-    // For brevity we rely on global volk loading; in production we'd store these per-device.
+    VkDescriptorSetLayout GetBindlessLayout() const { return m_bindlessLayout; }
+    VkPipelineLayout GetGlobalPipelineLayout() const { return m_globalPipelineLayout; }
+    bool IsSwapchainImageInitialized(u32 imageIndex) const;
+    void MarkSwapchainImageInitialized(u32 imageIndex);
 
 private:
     bool CreateInstance();
@@ -260,6 +261,8 @@ private:
     std::vector<VkImage>     m_swapchainImages;
     std::vector<VkImageView> m_swapchainViews;
     std::vector<TextureHandle> m_swapchainTextureHandles;
+    std::vector<VkSemaphore> m_swapchainRenderFinishedSemaphores;
+    std::vector<bool>        m_swapchainImageInitialized;
     VkFormat                 m_swapchainFormat = VK_FORMAT_B8G8R8A8_SRGB;
     VkExtent2D               m_swapchainExtent = {};
     u32                      m_currentImageIndex = 0;

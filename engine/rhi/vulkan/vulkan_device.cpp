@@ -87,7 +87,6 @@ void VulkanDevice::Shutdown() {
     for (auto& frame : m_frames) {
         if (frame.commandPool)    vkDestroyCommandPool(m_device, frame.commandPool, nullptr);
         if (frame.imageAvailable) vkDestroySemaphore(m_device, frame.imageAvailable, nullptr);
-        if (frame.renderFinished) vkDestroySemaphore(m_device, frame.renderFinished, nullptr);
         if (frame.inFlightFence)  vkDestroyFence(m_device, frame.inFlightFence, nullptr);
     }
 
@@ -493,6 +492,11 @@ bool VulkanDevice::CreateSwapchain(u32 width, u32 height) {
     // Create image views and register as textures
     m_swapchainViews.resize(imageCount);
     m_swapchainTextureHandles.resize(imageCount);
+    m_swapchainRenderFinishedSemaphores.resize(imageCount, VK_NULL_HANDLE);
+    m_swapchainImageInitialized.assign(imageCount, false);
+
+    VkSemaphoreCreateInfo semInfo{};
+    semInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
     for (u32 i = 0; i < imageCount; ++i) {
         VkImageViewCreateInfo viewInfo{};
@@ -520,6 +524,17 @@ bool VulkanDevice::CreateSwapchain(u32 width, u32 height) {
         m_textures[texIdx].isSwapchainImage = true;
         m_textures[texIdx].alive = true;
         m_swapchainTextureHandles[i] = TextureHandle{texIdx};
+
+        if (vkCreateSemaphore(m_device, &semInfo, nullptr, &m_swapchainRenderFinishedSemaphores[i]) != VK_SUCCESS) {
+            for (VkSemaphore semaphore : m_swapchainRenderFinishedSemaphores) {
+                if (semaphore) {
+                    vkDestroySemaphore(m_device, semaphore, nullptr);
+                }
+            }
+            m_swapchainRenderFinishedSemaphores.clear();
+            NGE_LOG_ERROR("Failed to create swapchain render-finished semaphores");
+            return false;
+        }
     }
 
     NGE_LOG_INFO("Swapchain created: {}x{}, {} images", m_swapchainExtent.width, m_swapchainExtent.height, imageCount);
@@ -527,6 +542,14 @@ bool VulkanDevice::CreateSwapchain(u32 width, u32 height) {
 }
 
 void VulkanDevice::CleanupSwapchain() {
+    for (auto semaphore : m_swapchainRenderFinishedSemaphores) {
+        if (semaphore) {
+            vkDestroySemaphore(m_device, semaphore, nullptr);
+        }
+    }
+    m_swapchainRenderFinishedSemaphores.clear();
+    m_swapchainImageInitialized.clear();
+
     for (auto view : m_swapchainViews) {
         if (view) vkDestroyImageView(m_device, view, nullptr);
     }
@@ -579,7 +602,6 @@ bool VulkanDevice::CreateSyncObjects() {
         vkAllocateCommandBuffers(m_device, &allocInfo, &frame.commandBuffer);
 
         vkCreateSemaphore(m_device, &semInfo, nullptr, &frame.imageAvailable);
-        vkCreateSemaphore(m_device, &semInfo, nullptr, &frame.renderFinished);
         vkCreateFence(m_device, &fenceInfo, nullptr, &frame.inFlightFence);
     }
 
@@ -726,12 +748,12 @@ bool VulkanDevice::AcquireNextImage() {
 }
 
 void VulkanDevice::Present() {
-    auto& frame = m_frames[m_frameIndex];
+    VkSemaphore renderFinished = m_swapchainRenderFinishedSemaphores[m_currentImageIndex];
 
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores    = &frame.renderFinished;
+    presentInfo.pWaitSemaphores    = &renderFinished;
     presentInfo.swapchainCount     = 1;
     presentInfo.pSwapchains        = &m_swapchain;
     presentInfo.pImageIndices      = &m_currentImageIndex;
@@ -741,6 +763,16 @@ void VulkanDevice::Present() {
 
 void VulkanDevice::EndFrame() {
     m_frameIndex = (m_frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
+}
+
+bool VulkanDevice::IsSwapchainImageInitialized(u32 imageIndex) const {
+    return imageIndex < m_swapchainImageInitialized.size() && m_swapchainImageInitialized[imageIndex];
+}
+
+void VulkanDevice::MarkSwapchainImageInitialized(u32 imageIndex) {
+    if (imageIndex < m_swapchainImageInitialized.size()) {
+        m_swapchainImageInitialized[imageIndex] = true;
+    }
 }
 
 TextureHandle VulkanDevice::GetSwapchainTexture() {
@@ -1246,6 +1278,7 @@ ICommandList* VulkanDevice::GetCommandList(QueueType /*queue*/) {
 
 void VulkanDevice::SubmitCommandList(ICommandList* /*cmdList*/, QueueType /*queue*/) {
     auto& frame = m_frames[m_frameIndex];
+    VkSemaphore renderFinished = m_swapchainRenderFinishedSemaphores[m_currentImageIndex];
 
     VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
@@ -1257,7 +1290,7 @@ void VulkanDevice::SubmitCommandList(ICommandList* /*cmdList*/, QueueType /*queu
     submitInfo.commandBufferCount   = 1;
     submitInfo.pCommandBuffers      = &frame.commandBuffer;
     submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores    = &frame.renderFinished;
+    submitInfo.pSignalSemaphores    = &renderFinished;
 
     vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, frame.inFlightFence);
 }

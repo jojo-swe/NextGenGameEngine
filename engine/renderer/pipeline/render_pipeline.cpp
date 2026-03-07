@@ -323,7 +323,7 @@ void RenderPipeline::PassVisibilityBuffer(rhi::ICommandList* cmd, const FrameRen
     cmd->BeginDebugLabel("Visibility Buffer", 0.3f, 0.3f, 0.9f);
 
     rhi::TextureHandle swapchain = m_device->GetSwapchainTexture();
-    rhi::ClearValue clearColor = rhi::ClearValue::Color(0.0f, 0.0f, 0.0f, 1.0f);
+    rhi::ClearValue clearColor = rhi::ClearValue::Color(1.0f, 0.0f, 1.0f, 1.0f);
     rhi::Viewport viewport{0, 0, static_cast<f32>(data.screenWidth), static_cast<f32>(data.screenHeight), 0, 1};
     rhi::Scissor scissor{0, 0, data.screenWidth, data.screenHeight};
 

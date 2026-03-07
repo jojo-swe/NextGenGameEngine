@@ -41,14 +41,18 @@ void VulkanCommandList::BufferBarrier(BufferHandle buffer, ResourceState before,
 
 void VulkanCommandList::TextureBarrier(TextureHandle texture, ResourceState before, ResourceState after) {
     const auto& tex = m_device->GetTexture(texture);
+    ResourceState actualBefore = before;
+    if (tex.isSwapchainImage && before == ResourceState::Present && !m_device->IsSwapchainImageInitialized(texture.index)) {
+        actualBefore = ResourceState::Undefined;
+    }
 
     VkImageMemoryBarrier2 barrier{};
     barrier.sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-    barrier.srcStageMask  = m_device->ToVkStage(before);
-    barrier.srcAccessMask = m_device->ToVkAccess(before);
+    barrier.srcStageMask  = m_device->ToVkStage(actualBefore);
+    barrier.srcAccessMask = m_device->ToVkAccess(actualBefore);
     barrier.dstStageMask  = m_device->ToVkStage(after);
     barrier.dstAccessMask = m_device->ToVkAccess(after);
-    barrier.oldLayout     = m_device->ToVkLayout(before);
+    barrier.oldLayout     = m_device->ToVkLayout(actualBefore);
     barrier.newLayout     = m_device->ToVkLayout(after);
     barrier.image         = tex.image;
     barrier.subresourceRange.aspectMask     = static_cast<VkImageAspectFlags>(FormatUtils::GetAspectFlags(tex.format));
@@ -63,6 +67,10 @@ void VulkanCommandList::TextureBarrier(TextureHandle texture, ResourceState befo
     depInfo.pImageMemoryBarriers    = &barrier;
 
     vkCmdPipelineBarrier2(m_cb, &depInfo);
+
+    if (tex.isSwapchainImage) {
+        m_device->MarkSwapchainImageInitialized(texture.index);
+    }
 }
 
 void VulkanCommandList::BeginRendering(
