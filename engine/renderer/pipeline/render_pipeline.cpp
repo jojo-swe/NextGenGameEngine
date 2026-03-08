@@ -328,16 +328,13 @@ void RenderPipeline::PassVisibilityBuffer(rhi::ICommandList* cmd, const FrameRen
     rhi::Scissor scissor{0, 0, data.screenWidth, data.screenHeight};
 
     cmd->TextureBarrier(swapchain, rhi::ResourceState::Present, rhi::ResourceState::RenderTarget);
-    if (!m_depthBufferInitialized) {
-        cmd->TextureBarrier(m_depthBuffer, rhi::ResourceState::Undefined, rhi::ResourceState::DepthWrite);
-        m_depthBufferInitialized = true;
-    }
+    cmd->TextureBarrier(m_depthBuffer, rhi::ResourceState::Undefined, rhi::ResourceState::DepthWrite);
     rhi::LoadOp loadOp = rhi::LoadOp::Clear;
     cmd->BeginRendering(&swapchain, 1, m_depthBuffer, &clearColor, viewport, scissor, &loadOp);
 
     if (m_visBufferPipeline.IsValid() && m_demoVertexBuffer.IsValid() && m_demoIndexBuffer.IsValid() && m_demoIndexCount > 0) {
         DemoPushConstants pushConstants{};
-        pushConstants.viewProj = Transpose(data.viewProjMatrix);
+        pushConstants.viewProj = data.viewMatrix * data.projMatrix;
         pushConstants.cameraPos = {data.cameraPosition.x, data.cameraPosition.y, data.cameraPosition.z, 1.0f};
         pushConstants.frameIndex = data.frameIndex;
         pushConstants.screenWidth = data.screenWidth;
@@ -544,8 +541,8 @@ void RenderPipeline::CreatePipelines() {
     pipelineDesc.depthStencil.format = rhi::Format::D32_FLOAT;
     pipelineDesc.depthStencil.depthTest = true;
     pipelineDesc.depthStencil.depthWrite = true;
-    pipelineDesc.depthStencil.depthCompare = rhi::CompareOp::Less;
-    pipelineDesc.cullMode = rhi::CullMode::Back;
+    pipelineDesc.depthStencil.depthCompare = rhi::CompareOp::Greater;
+    pipelineDesc.cullMode = rhi::CullMode::None;
     pipelineDesc.frontFace = rhi::FrontFace::CounterClockwise;
     pipelineDesc.debugName = "RenderPipelineDemo";
     m_visBufferPipeline = m_device->CreateGraphicsPipeline(pipelineDesc);

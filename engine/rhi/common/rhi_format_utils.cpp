@@ -51,8 +51,11 @@ static const FormatInfo s_formatTable[] = {
 static constexpr u32 FORMAT_COUNT = sizeof(s_formatTable) / sizeof(s_formatTable[0]);
 
 const FormatInfo& GetFormatInfo(Format format) {
-    u32 idx = static_cast<u32>(format);
-    if (idx < FORMAT_COUNT) return s_formatTable[idx];
+    for (u32 i = 0; i < FORMAT_COUNT; ++i) {
+        if (s_formatTable[i].format == format) {
+            return s_formatTable[i];
+        }
+    }
     return s_formatTable[0]; // Undefined
 }
 

@@ -112,7 +112,7 @@ void VulkanCommandList::BeginRendering(
         depthAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         depthAttachment.loadOp      = toVkLoadOp(depthLoadOp);
         depthAttachment.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
-        depthAttachment.clearValue.depthStencil = {1.0f, 0};
+        depthAttachment.clearValue.depthStencil = {0.0f, 0};
     }
 
     VkRenderingInfo renderInfo{};

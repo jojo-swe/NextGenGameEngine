@@ -7,6 +7,10 @@
 #include <array>
 #include <sstream>
 
+#if defined(NGE_PLATFORM_WINDOWS)
+#include <windows.h>
+#endif
+
 namespace fs = std::filesystem;
 
 namespace nge::assets {
@@ -120,33 +124,84 @@ ShaderCompileResult ShaderCompiler::Compile(const ShaderCompileOptions& options)
 
     cmd << " -Fo \"" << tempOutput << "\"";
     cmd << " \"" << options.sourcePath << "\"";
-    cmd << " 2>&1";
 
     std::string cmdStr = cmd.str();
     NGE_LOG_DEBUG("Compiling shader: {}", cmdStr);
 
-    // Execute DXC
-    std::array<char, 4096> buffer;
     std::string output;
 
 #if defined(NGE_PLATFORM_WINDOWS)
-    FILE* pipe = _popen(cmdStr.c_str(), "r");
-#else
-    FILE* pipe = popen(cmdStr.c_str(), "r");
-#endif
+    SECURITY_ATTRIBUTES sa{};
+    sa.nLength = sizeof(sa);
+    sa.bInheritHandle = TRUE;
 
+    HANDLE readPipe = nullptr;
+    HANDLE writePipe = nullptr;
+    if (!CreatePipe(&readPipe, &writePipe, &sa, 0)) {
+        result.errorMessage = "Failed to create DXC output pipe";
+        return result;
+    }
+
+    SetHandleInformation(readPipe, HANDLE_FLAG_INHERIT, 0);
+
+    STARTUPINFOA startupInfo{};
+    startupInfo.cb = sizeof(startupInfo);
+    startupInfo.dwFlags = STARTF_USESTDHANDLES;
+    startupInfo.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+    startupInfo.hStdOutput = writePipe;
+    startupInfo.hStdError = writePipe;
+
+    PROCESS_INFORMATION processInfo{};
+    std::vector<char> mutableCmd(cmdStr.begin(), cmdStr.end());
+    mutableCmd.push_back('\0');
+
+    const BOOL created = CreateProcessA(
+        nullptr,
+        mutableCmd.data(),
+        nullptr,
+        nullptr,
+        TRUE,
+        CREATE_NO_WINDOW,
+        nullptr,
+        nullptr,
+        &startupInfo,
+        &processInfo);
+
+    CloseHandle(writePipe);
+
+    if (!created) {
+        CloseHandle(readPipe);
+        result.errorMessage = "Failed to execute DXC";
+        return result;
+    }
+
+    std::array<char, 4096> buffer{};
+    DWORD bytesRead = 0;
+    while (ReadFile(readPipe, buffer.data(), static_cast<DWORD>(buffer.size()), &bytesRead, nullptr) && bytesRead > 0) {
+        output.append(buffer.data(), bytesRead);
+    }
+
+    CloseHandle(readPipe);
+
+    WaitForSingleObject(processInfo.hProcess, INFINITE);
+    DWORD exitCode = 0;
+    GetExitCodeProcess(processInfo.hProcess, &exitCode);
+    CloseHandle(processInfo.hThread);
+    CloseHandle(processInfo.hProcess);
+#else
+    cmd << " 2>&1";
+    cmdStr = cmd.str();
+    FILE* pipe = popen(cmdStr.c_str(), "r");
     if (!pipe) {
         result.errorMessage = "Failed to execute DXC";
         return result;
     }
 
+    std::array<char, 4096> buffer{};
     while (fgets(buffer.data(), static_cast<int>(buffer.size()), pipe) != nullptr) {
         output += buffer.data();
     }
 
-#if defined(NGE_PLATFORM_WINDOWS)
-    int exitCode = _pclose(pipe);
-#else
     int exitCode = pclose(pipe);
 #endif
 
