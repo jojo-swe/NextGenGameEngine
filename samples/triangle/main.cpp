@@ -28,18 +28,7 @@ public:
         m_world.RegisterComponent<scene::FreeFlyController>("FreeFlyController");
 
         // Add free-fly controller to camera
-        auto& controller = m_world.AddComponent<scene::FreeFlyController>(m_cameraEntity);
-        controller.yaw = 0.38f;
-        controller.pitch = -0.10f;
-
-        if (auto* transform = m_world.GetComponent<scene::Transform>(m_cameraEntity)) {
-            pga::Motor translation = pga::Motor::Translation({-2.0f, 1.5f, 5.0f});
-            pga::Motor rotY = pga::Motor::Rotation({0, 1, 0}, controller.yaw);
-            pga::Motor rotX = pga::Motor::Rotation({1, 0, 0}, controller.pitch);
-            pga::Motor rotation = pga::Motor::Multiply(rotY, rotX);
-            transform->localMotor = pga::Motor::Multiply(translation, rotation);
-            transform->dirty = true;
-        }
+        m_world.AddComponent<scene::FreeFlyController>(m_cameraEntity);
     }
 
     void OnUpdate(f32 deltaTime) override {

@@ -352,6 +352,8 @@ bool VulkanDevice::CreateLogicalDevice() {
     vk12Features.descriptorIndexing                    = VK_TRUE;
     vk12Features.runtimeDescriptorArray                = VK_TRUE;
     vk12Features.descriptorBindingPartiallyBound       = VK_TRUE;
+    vk12Features.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
+    vk12Features.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
     vk12Features.descriptorBindingVariableDescriptorCount = VK_TRUE;
     vk12Features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
     vk12Features.shaderStorageBufferArrayNonUniformIndexing = VK_TRUE;
