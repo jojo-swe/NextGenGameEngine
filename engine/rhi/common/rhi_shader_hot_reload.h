@@ -32,6 +32,7 @@ struct WatchedShader {
     u64                       lastModifiedTime;
     u64                       compiledHash;
     std::vector<std::string>  includePaths;
+    std::unordered_map<std::string, u64> includeModifiedTimes;
     bool                      needsReload;
     u32                       reloadCount;
     u32                       failCount;
@@ -100,6 +101,7 @@ public:
     ShaderHotReloadStats GetStats() const;
 
 private:
+    static u64 GetFileTimestamp(const std::string& path);
     void CheckIncludeDependencies(const std::string& changedInclude);
 
     ShaderHotReloadConfig m_config;

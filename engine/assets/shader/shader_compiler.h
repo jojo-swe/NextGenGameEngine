@@ -3,6 +3,7 @@
 #include "engine/core/types.h"
 #include "engine/rhi/common/rhi_types.h"
 #include "engine/rhi/common/rhi_device.h"
+#include "engine/rhi/common/rhi_shader_hot_reload.h"
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -103,6 +104,7 @@ private:
         std::string cachePath;
         rhi::ShaderStage stage;
         rhi::ShaderHandle handle;
+        u32 watchId = 0;
         u64 lastModifiedTime = 0;
     };
 
@@ -110,6 +112,8 @@ private:
     std::string   m_shaderDir;
     std::string   m_cacheDir;
     std::unordered_map<std::string, ShaderEntry> m_shaders;
+    rhi::ShaderHotReloadManager m_hotReload;
+    u32 m_nextWatchId = 1;
 };
 
 } // namespace nge::assets

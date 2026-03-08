@@ -1,6 +1,7 @@
 #include "engine/rhi/common/rhi_shader_hot_reload.h"
 #include "engine/core/logging/log.h"
 #include <algorithm>
+#include <filesystem>
 
 namespace nge::rhi {
 
@@ -32,9 +33,12 @@ bool ShaderHotReloadManager::WatchShader(u32 shaderId, const std::string& source
     shader.shaderId = shaderId;
     shader.sourcePath = sourcePath;
     shader.stage = stage;
-    shader.lastModifiedTime = 0;
+    shader.lastModifiedTime = GetFileTimestamp(sourcePath);
     shader.compiledHash = 0;
     shader.includePaths = includes;
+    for (const auto& includePath : includes) {
+        shader.includeModifiedTimes[includePath] = GetFileTimestamp(includePath);
+    }
     shader.needsReload = false;
     shader.reloadCount = 0;
     shader.failCount = 0;
@@ -56,11 +60,26 @@ void ShaderHotReloadManager::UnwatchShader(u32 shaderId) {
 u32 ShaderHotReloadManager::PollChanges() {
     std::lock_guard lock(m_mutex);
 
-    u32 changesDetected = 0;
-
     for (auto& [id, shader] : m_shaders) {
-        // In a real implementation, we'd stat the file here.
-        // For now, changes are detected via SimulateFileChange or MarkDirty.
+        const u64 sourceTimestamp = GetFileTimestamp(shader.sourcePath);
+        if (sourceTimestamp != shader.lastModifiedTime) {
+            shader.lastModifiedTime = sourceTimestamp;
+            shader.needsReload = true;
+            CheckIncludeDependencies(shader.sourcePath);
+        }
+
+        for (const auto& includePath : shader.includePaths) {
+            const u64 includeTimestamp = GetFileTimestamp(includePath);
+            u64& trackedTimestamp = shader.includeModifiedTimes[includePath];
+            if (includeTimestamp != trackedTimestamp) {
+                trackedTimestamp = includeTimestamp;
+                shader.needsReload = true;
+            }
+        }
+    }
+
+    u32 changesDetected = 0;
+    for (const auto& [id, shader] : m_shaders) {
         if (shader.needsReload) {
             changesDetected++;
         }
@@ -199,11 +218,18 @@ ShaderHotReloadStats ShaderHotReloadManager::GetStats() const {
     return stats;
 }
 
+u64 ShaderHotReloadManager::GetFileTimestamp(const std::string& path) {
+    std::error_code ec;
+    const auto fileTime = std::filesystem::last_write_time(path, ec);
+    if (ec) {
+        return 0;
+    }
+    return static_cast<u64>(fileTime.time_since_epoch().count());
+}
+
 void ShaderHotReloadManager::CheckIncludeDependencies(const std::string& changedInclude) {
-    // If a file that changed is listed as an include of another shader,
-    // mark that shader as dirty too
     for (auto& [id, shader] : m_shaders) {
-        if (shader.needsReload) continue; // Already dirty
+        if (shader.needsReload) continue;
 
         for (const auto& inc : shader.includePaths) {
             if (inc == changedInclude) {
