@@ -13,6 +13,74 @@
 
 namespace fs = std::filesystem;
 
+namespace {
+
+nge::u64 HashBytecode(const std::vector<nge::byte>& data) {
+    const auto* bytes = reinterpret_cast<const unsigned char*>(data.data());
+    nge::u64 hash = 1469598103934665603ull;
+    for (nge::usize i = 0; i < data.size(); ++i) {
+        hash ^= static_cast<nge::u64>(bytes[i]);
+        hash *= 1099511628211ull;
+    }
+    return hash;
+}
+
+std::vector<std::string> CollectDirectIncludePaths(
+    const std::string& sourcePath,
+    const std::vector<std::string>& includeDirs)
+{
+    std::ifstream file(sourcePath);
+    if (!file.is_open()) {
+        return {};
+    }
+
+    const fs::path sourceDir = fs::path(sourcePath).parent_path();
+    std::vector<std::string> includePaths;
+    std::string line;
+    while (std::getline(file, line)) {
+        const auto includePos = line.find("#include");
+        if (includePos == std::string::npos) {
+            continue;
+        }
+
+        const auto firstQuote = line.find('"', includePos);
+        if (firstQuote == std::string::npos) {
+            continue;
+        }
+
+        const auto secondQuote = line.find('"', firstQuote + 1);
+        if (secondQuote == std::string::npos) {
+            continue;
+        }
+
+        const std::string includeName = line.substr(firstQuote + 1, secondQuote - firstQuote - 1);
+
+        fs::path resolvedPath = sourceDir / includeName;
+        if (!fs::exists(resolvedPath)) {
+            for (const auto& includeDir : includeDirs) {
+                const fs::path candidate = fs::path(includeDir) / includeName;
+                if (fs::exists(candidate)) {
+                    resolvedPath = candidate;
+                    break;
+                }
+            }
+        }
+
+        if (!fs::exists(resolvedPath)) {
+            continue;
+        }
+
+        const std::string resolved = resolvedPath.lexically_normal().string();
+        if (std::find(includePaths.begin(), includePaths.end(), resolved) == includePaths.end()) {
+            includePaths.push_back(resolved);
+        }
+    }
+
+    return includePaths;
+}
+
+}
+
 namespace nge::assets {
 
 bool ShaderCompiler::Init(const std::string& dxcPath) {
@@ -299,9 +367,11 @@ void ShaderLibrary::Init(rhi::IDevice* device, const std::string& shaderDir, con
     m_device    = device;
     m_shaderDir = shaderDir;
     m_cacheDir  = cacheDir;
+    m_nextWatchId = 1;
 
     ShaderCompiler::Init();
     fs::create_directories(cacheDir);
+    m_hotReload.Init();
 
     NGE_LOG_INFO("Shader library initialized: src='{}', cache='{}'", shaderDir, cacheDir);
 }
@@ -313,6 +383,8 @@ void ShaderLibrary::Shutdown() {
         }
     }
     m_shaders.clear();
+    m_hotReload.Shutdown();
+    m_nextWatchId = 1;
     ShaderCompiler::Shutdown();
 }
 
@@ -337,6 +409,7 @@ rhi::ShaderHandle ShaderLibrary::GetShader(const std::string& name, rhi::ShaderS
     options.stage = stage;
     options.includeDirs.push_back(m_shaderDir);
     options.includeDirs.push_back(m_shaderDir + "/common");
+    const auto includePaths = CollectDirectIncludePaths(sourcePath, options.includeDirs);
 
     std::string spvPath = ShaderCompiler::CompileAndCache(options, m_cacheDir);
     if (spvPath.empty()) return rhi::ShaderHandle{};
@@ -361,42 +434,66 @@ rhi::ShaderHandle ShaderLibrary::GetShader(const std::string& name, rhi::ShaderS
     entry.cachePath  = spvPath;
     entry.stage      = stage;
     entry.handle     = handle;
+    entry.watchId    = m_nextWatchId++;
+    m_hotReload.WatchShader(entry.watchId, entry.sourcePath, entry.stage, includePaths);
     m_shaders[key]   = entry;
 
     return handle;
 }
 
 void ShaderLibrary::HotReload() {
-    for (auto& [key, entry] : m_shaders) {
-        if (!ShaderCompiler::NeedsRecompile(entry.sourcePath, entry.cachePath)) continue;
+    if (m_hotReload.PollChanges() == 0) {
+        return;
+    }
 
-        NGE_LOG_INFO("Hot-reloading shader: {}", entry.sourcePath);
+    const auto pending = m_hotReload.GetPendingReloads();
+    for (u32 watchId : pending) {
+        ShaderEntry* entry = nullptr;
+        for (auto& [key, candidate] : m_shaders) {
+            if (candidate.watchId == watchId) {
+                entry = &candidate;
+                break;
+            }
+        }
+        if (!entry) {
+            continue;
+        }
+
+        NGE_LOG_INFO("Hot-reloading shader: {}", entry->sourcePath);
 
         ShaderCompileOptions options;
-        options.sourcePath = entry.sourcePath;
-        options.stage = entry.stage;
+        options.sourcePath = entry->sourcePath;
+        options.stage = entry->stage;
         options.includeDirs.push_back(m_shaderDir);
         options.includeDirs.push_back(m_shaderDir + "/common");
+        const auto includePaths = CollectDirectIncludePaths(entry->sourcePath, options.includeDirs);
 
         std::string spvPath = ShaderCompiler::CompileAndCache(options, m_cacheDir);
-        if (spvPath.empty()) continue;
+        if (spvPath.empty()) {
+            m_hotReload.MarkFailed(watchId);
+            continue;
+        }
 
         std::vector<byte> bytecode;
-        if (!ShaderCompiler::LoadSPIRV(spvPath, bytecode)) continue;
+        if (!ShaderCompiler::LoadSPIRV(spvPath, bytecode)) {
+            m_hotReload.MarkFailed(watchId);
+            continue;
+        }
 
-        // Destroy old shader
-        if (entry.handle.IsValid()) {
-            m_device->DestroyShader(entry.handle);
+        if (entry->handle.IsValid()) {
+            m_device->DestroyShader(entry->handle);
         }
 
         rhi::ShaderDesc desc;
         desc.bytecode     = bytecode.data();
         desc.bytecodeSize = bytecode.size();
-        desc.stage        = entry.stage;
-        desc.debugName    = entry.sourcePath.c_str();
+        desc.stage        = entry->stage;
+        desc.debugName    = entry->sourcePath.c_str();
 
-        entry.handle    = m_device->CreateShader(desc);
-        entry.cachePath = spvPath;
+        entry->handle    = m_device->CreateShader(desc);
+        entry->cachePath = spvPath;
+        m_hotReload.WatchShader(entry->watchId, entry->sourcePath, entry->stage, includePaths);
+        m_hotReload.MarkReloaded(watchId, HashBytecode(bytecode));
     }
 }
 

@@ -1,9 +1,29 @@
 #include <gtest/gtest.h>
 #include "engine/core/types.h"
 #include "engine/rhi/common/rhi_shader_hot_reload.h"
+#include <chrono>
+#include <filesystem>
+#include <fstream>
 
 using namespace nge;
 using namespace nge::rhi;
+
+namespace {
+
+std::filesystem::path MakeTempShaderHotReloadDir() {
+    const auto uniqueId = std::chrono::steady_clock::now().time_since_epoch().count();
+    auto dir = std::filesystem::temp_directory_path() /
+               ("nge_shader_hot_reload_" + std::to_string(uniqueId));
+    std::filesystem::create_directories(dir);
+    return dir;
+}
+
+void WriteTextFile(const std::filesystem::path& path, const std::string& contents) {
+    std::ofstream file(path, std::ios::binary | std::ios::trunc);
+    file << contents;
+}
+
+}
 
 TEST(ShaderHotReload, InitAndShutdown) {
     ShaderHotReloadManager mgr;
@@ -201,6 +221,54 @@ TEST(ShaderHotReload, PollChangesCount) {
     mgr.MarkDirty(1);
     EXPECT_EQ(mgr.PollChanges(), 2u);
 
+    mgr.Shutdown();
+}
+
+TEST(ShaderHotReload, PollChangesDetectsSourceFileModificationOnDisk) {
+    ShaderHotReloadManager mgr;
+    mgr.Init();
+
+    const auto dir = MakeTempShaderHotReloadDir();
+    const auto shaderPath = dir / "source.hlsl";
+    WriteTextFile(shaderPath, "float4 main() : SV_Target { return 1.0; }");
+
+    mgr.WatchShader(0, shaderPath.string(), ShaderStage::Fragment);
+    EXPECT_EQ(mgr.PollChanges(), 0u);
+
+    const auto originalTime = std::filesystem::last_write_time(shaderPath);
+    WriteTextFile(shaderPath, "float4 main() : SV_Target { return 0.0; }");
+    std::filesystem::last_write_time(shaderPath, originalTime + std::chrono::seconds(1));
+
+    EXPECT_EQ(mgr.PollChanges(), 1u);
+    EXPECT_TRUE(mgr.NeedsReload(0));
+
+    std::error_code ec;
+    std::filesystem::remove_all(dir, ec);
+    mgr.Shutdown();
+}
+
+TEST(ShaderHotReload, PollChangesDetectsIncludeFileModificationOnDisk) {
+    ShaderHotReloadManager mgr;
+    mgr.Init();
+
+    const auto dir = MakeTempShaderHotReloadDir();
+    const auto shaderPath = dir / "source.hlsl";
+    const auto includePath = dir / "common.hlsl";
+    WriteTextFile(shaderPath, "#include \"common.hlsl\"");
+    WriteTextFile(includePath, "float4 Helper() { return 1.0; }");
+
+    mgr.WatchShader(0, shaderPath.string(), ShaderStage::Fragment, {includePath.string()});
+    EXPECT_EQ(mgr.PollChanges(), 0u);
+
+    const auto originalTime = std::filesystem::last_write_time(includePath);
+    WriteTextFile(includePath, "float4 Helper() { return 0.0; }");
+    std::filesystem::last_write_time(includePath, originalTime + std::chrono::seconds(1));
+
+    EXPECT_EQ(mgr.PollChanges(), 1u);
+    EXPECT_TRUE(mgr.NeedsReload(0));
+
+    std::error_code ec;
+    std::filesystem::remove_all(dir, ec);
     mgr.Shutdown();
 }
 
