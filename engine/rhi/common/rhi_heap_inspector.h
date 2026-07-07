@@ -44,7 +44,7 @@ struct AllocationRecord {
     bool               alive;
 };
 
-struct HeapInfo {
+struct InspectorHeapInfo {
     u32  index;
     u64  totalSize;
     u64  usedSize;
@@ -98,10 +98,10 @@ public:
     void UpdateBudget();
 
     // Get info for all heaps
-    std::vector<HeapInfo> GetHeapInfos() const;
+    std::vector<InspectorHeapInfo> GetHeapInfos() const;
 
     // Get info for a specific heap
-    HeapInfo GetHeapInfo(u32 heapIndex) const;
+    InspectorHeapInfo GetHeapInfo(u32 heapIndex) const;
 
     // Get visualization blocks for a heap (for memory waterfall display)
     std::vector<HeapVisualizationBlock> GetVisualizationBlocks(u32 heapIndex) const;
@@ -130,7 +130,7 @@ private:
     HeapInspectorConfig m_config;
 
     std::unordered_map<u64, AllocationRecord> m_allocations;
-    std::vector<HeapInfo> m_heaps;
+    std::vector<InspectorHeapInfo> m_heaps;
     u64 m_currentFrame = 0;
 
     mutable std::mutex m_mutex;

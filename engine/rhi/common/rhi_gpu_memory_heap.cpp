@@ -6,7 +6,9 @@ namespace nge::rhi {
 
 bool GPUMemoryHeapManager::Init(const HeapManagerConfig& config) {
     m_config = config;
+    m_heaps.clear();
     m_heaps.reserve(config.maxHeaps);
+    m_allocations.clear();
     m_nextAllocId = 1;
 
     NGE_LOG_INFO("GPU memory heap manager initialized: maxHeaps={}, trackFrag={}, respectBudget={}",
@@ -27,24 +29,22 @@ u32 GPUMemoryHeapManager::RegisterHeap(HeapType type, u64 totalSize, u64 budgetS
     std::lock_guard lock(m_mutex);
 
     if (m_heaps.size() >= m_config.maxHeaps) {
-        NGE_LOG_ERROR("GPU memory heap manager: max heaps reached ({})", m_config.maxHeaps);
         return UINT32_MAX;
     }
 
-    HeapInfo info;
-    info.heapIndex = static_cast<u32>(m_heaps.size());
-    info.type = type;
-    info.totalSize = totalSize;
-    info.usedSize = 0;
-    info.budgetSize = budgetSize > 0 ? budgetSize : totalSize;
-    info.peakUsed = 0;
-    info.allocationCount = 0;
-    info.peakAllocations = 0;
-    info.fragmentation = 0.0f;
-    info.debugName = name;
-
-    u32 index = info.heapIndex;
-    m_heaps.push_back(std::move(info));
+    u32 index = static_cast<u32>(m_heaps.size());
+    m_heaps.emplace_back(HeapInfo{
+        index,        // heapIndex
+        type,         // type
+        totalSize,    // totalSize
+        0,            // usedSize
+        budgetSize > 0 ? budgetSize : totalSize, // budgetSize
+        0,            // peakUsed
+        0,            // allocationCount
+        0,            // peakAllocations
+        0.0f,         // fragmentation
+        name          // debugName
+    });
 
     return index;
 }

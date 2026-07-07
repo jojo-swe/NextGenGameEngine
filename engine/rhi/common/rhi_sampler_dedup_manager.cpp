@@ -6,23 +6,6 @@ namespace nge::rhi {
 
 // ─── SamplerDesc Implementation ─────────────────────────────────────────
 
-bool SamplerDesc::operator==(const SamplerDesc& other) const {
-    return magFilter == other.magFilter &&
-           minFilter == other.minFilter &&
-           mipMode == other.mipMode &&
-           addressU == other.addressU &&
-           addressV == other.addressV &&
-           addressW == other.addressW &&
-           mipLodBias == other.mipLodBias &&
-           anisotropyEnable == other.anisotropyEnable &&
-           maxAnisotropy == other.maxAnisotropy &&
-           compareOp == other.compareOp &&
-           minLod == other.minLod &&
-           maxLod == other.maxLod &&
-           borderColor == other.borderColor &&
-           unnormalizedCoords == other.unnormalizedCoords;
-}
-
 u64 SamplerDesc::ComputeHash() const {
     // FNV-1a hash over sampler state
     u64 hash = 14695981039346656037ULL;

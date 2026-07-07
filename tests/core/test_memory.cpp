@@ -5,6 +5,7 @@
 #include "engine/core/memory/tlsf_allocator.h"
 #include <vector>
 #include <cstring>
+#include <memory>
 
 using namespace nge;
 
@@ -138,8 +139,10 @@ TEST(TLSFAllocator, BasicAllocFree) {
 }
 
 TEST(TLSFAllocator, ManyAllocations) {
-    alignas(64) byte buffer[1024 * 1024]; // 1 MB
-    TLSFAllocator alloc(buffer, sizeof(buffer));
+    auto bufferStorage = std::make_unique<std::byte[]>(1024 * 1024);
+    void* buffer = bufferStorage.get();
+    alignas(64) std::byte* alignedBuffer = static_cast<std::byte*>(buffer);
+    TLSFAllocator alloc(alignedBuffer, 1024 * 1024);
 
     std::vector<void*> ptrs;
     for (int i = 0; i < 100; ++i) {

@@ -22,7 +22,7 @@ bool HeapInspector::Init(IDevice* device, const HeapInspectorConfig& config) {
     // }
 
     // Stub: create two heaps (device-local + host-visible)
-    HeapInfo deviceHeap;
+    InspectorHeapInfo deviceHeap;
     deviceHeap.index = 0;
     deviceHeap.totalSize = 8ULL * 1024 * 1024 * 1024; // 8 GB
     deviceHeap.usedSize = 0;
@@ -35,7 +35,7 @@ bool HeapInspector::Init(IDevice* device, const HeapInspectorConfig& config) {
     deviceHeap.fragmentationPercent = 0.0f;
     m_heaps.push_back(deviceHeap);
 
-    HeapInfo hostHeap;
+    InspectorHeapInfo hostHeap;
     hostHeap.index = 1;
     hostHeap.totalSize = 16ULL * 1024 * 1024 * 1024; // 16 GB
     hostHeap.usedSize = 0;
@@ -121,12 +121,12 @@ void HeapInspector::UpdateBudget() {
     // }
 }
 
-std::vector<HeapInfo> HeapInspector::GetHeapInfos() const {
+std::vector<InspectorHeapInfo> HeapInspector::GetHeapInfos() const {
     std::lock_guard lock(m_mutex);
     return m_heaps;
 }
 
-HeapInfo HeapInspector::GetHeapInfo(u32 heapIndex) const {
+InspectorHeapInfo HeapInspector::GetHeapInfo(u32 heapIndex) const {
     std::lock_guard lock(m_mutex);
     if (heapIndex < m_heaps.size()) return m_heaps[heapIndex];
     return {};

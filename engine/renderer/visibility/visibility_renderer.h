@@ -3,7 +3,6 @@
 #include "engine/core/types.h"
 #include "engine/rhi/common/rhi_device.h"
 #include "engine/renderer/geometry/virtual_geometry.h"
-#include "engine/renderer/materials/material.h"
 
 namespace nge::renderer {
 

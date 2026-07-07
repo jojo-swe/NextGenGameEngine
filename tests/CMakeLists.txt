@@ -16,7 +16,6 @@ target_link_libraries(EngineTests
     PRIVATE
         NextGenEngine
         GTest::gtest
-        GTest::gtest_main
 )
 
 include(GoogleTest)

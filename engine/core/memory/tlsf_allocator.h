@@ -128,7 +128,7 @@ public:
 
     void Reset() override {
         m_usedSize = 0;
-        std::memset(m_flBitmap, 0, sizeof(m_flBitmap));
+        std::memset(&m_flBitmapTop, 0, sizeof(m_flBitmapTop));
         std::memset(m_slBitmap, 0, sizeof(m_slBitmap));
         std::memset(m_freeBlocks, 0, sizeof(m_freeBlocks));
         m_flBitmapTop = 0;

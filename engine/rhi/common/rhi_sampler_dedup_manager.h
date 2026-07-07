@@ -74,7 +74,22 @@ struct SamplerDesc {
     bool               unnormalizedCoords = false;
     std::string        debugName;
 
-    bool operator==(const SamplerDesc& other) const;
+    bool operator==(const SamplerDesc& other) const {
+        return magFilter == other.magFilter &&
+               minFilter == other.minFilter &&
+               mipMode == other.mipMode &&
+               addressU == other.addressU &&
+               addressV == other.addressV &&
+               addressW == other.addressW &&
+               mipLodBias == other.mipLodBias &&
+               anisotropyEnable == other.anisotropyEnable &&
+               maxAnisotropy == other.maxAnisotropy &&
+               compareOp == other.compareOp &&
+               minLod == other.minLod &&
+               maxLod == other.maxLod &&
+               borderColor == other.borderColor &&
+               unnormalizedCoords == other.unnormalizedCoords;
+    }
     u64 ComputeHash() const;
 };
 
