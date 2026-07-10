@@ -1,90 +1,11 @@
 #include <gtest/gtest.h>
 #include "engine/core/types.h"
 #include "engine/rhi/common/rhi_desc_set_layout_optimizer.h"
-#include <cstdio>
 
 using namespace nge;
 using namespace nge::rhi;
 
-// Verify ABI consistency
-static_assert(sizeof(DescriptorBinding) == 64, "DescriptorBinding size mismatch");
-static_assert(sizeof(DescriptorSetLayout) == 96, "DescriptorSetLayout size mismatch");
-static_assert(sizeof(DescriptorSetLayoutOptimizer) == 224, "DescriptorSetLayoutOptimizer size mismatch");
-
 TEST(DescSetLayoutOptimizer, InitAndShutdown) {
-    // Test 1: bare std::string
-    {
-        std::fprintf(stderr, "[TEST] Creating std::string...\n");
-        std::string s = "DirectTest";
-        std::fprintf(stderr, "[TEST] string OK: '%s'\n", s.c_str());
-    }
-    // Test 2: bare std::vector<DescriptorBinding>
-    {
-        std::fprintf(stderr, "[TEST] Creating std::vector<DescriptorBinding>...\n");
-        std::vector<DescriptorBinding> v;
-        std::fprintf(stderr, "[TEST] vector OK: size=%zu\n", v.size());
-    }
-    // Test 3b: Simple struct with vector + string
-    {
-        struct SimpleStruct {
-            u32 a;
-            u32 b;
-            std::vector<int> v;
-            u64 c;
-            u32 d;
-            std::string s;
-        };
-        std::fprintf(stderr, "[TEST] sizeof(SimpleStruct)=%zu\n", sizeof(SimpleStruct));
-        SimpleStruct ss;
-        ss.s = "SimpleTest";
-        std::fprintf(stderr, "[TEST] simple struct OK: '%s'\n", ss.s.c_str());
-    }
-    // Test 3c: Same layout as DescriptorSetLayout but with vector<int>
-    {
-        struct SimilarStruct {
-            u32 layoutId;
-            u32 setIndex;
-            std::vector<int> bindings;
-            u64 layoutHash;
-            u32 refCount;
-            std::string debugName;
-        };
-        std::fprintf(stderr, "[TEST] sizeof(SimilarStruct)=%zu\n", sizeof(SimilarStruct));
-        SimilarStruct ss;
-        ss.debugName = "SimilarTest";
-        std::fprintf(stderr, "[TEST] similar struct OK: '%s'\n", ss.debugName.c_str());
-    }
-    // Test 4: DescriptorSetLayout on heap - check offsets
-    {
-        std::fprintf(stderr, "[TEST] sizeof(vector<DescriptorBinding>)=%zu, sizeof(string)=%zu\n",
-            sizeof(std::vector<DescriptorBinding>), sizeof(std::string));
-        auto* layout = new DescriptorSetLayout();
-        std::fprintf(stderr, "[TEST] offsets: layoutId=%td setIndex=%td bindings=%td layoutHash=%td refCount=%td debugName=%td\n",
-            (char*)&layout->layoutId - (char*)layout,
-            (char*)&layout->setIndex - (char*)layout,
-            (char*)&layout->bindings - (char*)layout,
-            (char*)&layout->layoutHash - (char*)layout,
-            (char*)&layout->refCount - (char*)layout,
-            (char*)&layout->debugName - (char*)layout);
-        layout->debugName = "HeapTest";
-        std::fprintf(stderr, "[TEST] heap layout OK: '%s'\n", layout->debugName.c_str());
-        delete layout;
-    }
-    // Test 5: DescriptorSetLayout on stack - construct only
-    {
-        std::fprintf(stderr, "[TEST] Constructing DescriptorSetLayout on stack...\n");
-        DescriptorSetLayout layout;
-        std::fprintf(stderr, "[TEST] stack construct OK, sizeof=%zu\n", sizeof(layout));
-    }
-    // Test 6: DescriptorSetLayout on stack - assign debugName
-    {
-        std::fprintf(stderr, "[TEST] Assigning debugName...\n");
-        DescriptorSetLayout layout;
-        std::fprintf(stderr, "[TEST]  constructed\n");
-        layout.debugName = "DirectTest";
-        std::fprintf(stderr, "[TEST] layout OK: '%s'\n", layout.debugName.c_str());
-    }
-
     DescriptorSetLayoutOptimizer opt;
     EXPECT_TRUE(opt.Init());
     EXPECT_EQ(opt.GetLayoutCount(), 0u);

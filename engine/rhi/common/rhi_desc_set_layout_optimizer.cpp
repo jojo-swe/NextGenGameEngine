@@ -1,9 +1,6 @@
 #include "engine/rhi/common/rhi_desc_set_layout_optimizer.h"
 #include "engine/core/logging/log.h"
 #include <algorithm>
-#include <cstring>
-#include <cstdio>
-#include <memory>
 
 namespace nge::rhi {
 
@@ -28,85 +25,36 @@ void DescriptorSetLayoutOptimizer::DeclareBinding(u32 setIndex, u32 binding, Des
                                                      u32 count, u32 stageFlags,
                                                      UpdateFrequency frequency,
                                                      const std::string& name) {
-    std::fprintf(stderr, "[DBG] ENGINE sizeof(vector<DescriptorBinding>)=%zu, sizeof(string)=%zu\n",
-        sizeof(std::vector<DescriptorBinding>), sizeof(std::string));
-    std::fprintf(stderr, "[DBG] ENGINE sizeof(DescriptorBinding)=%zu, sizeof(DescriptorSetLayout)=%zu\n",
-        sizeof(DescriptorBinding), sizeof(DescriptorSetLayout));
-    std::fprintf(stderr, "[DBG] ENGINE offsetof debugName=%td\n",
-        (char*)&((DescriptorSetLayout*)nullptr)->debugName - (char*)nullptr);
     std::lock_guard lock(m_mutex);
-    std::fprintf(stderr, "[DBG]  locked, sizeof(DescriptorBinding)=%zu\n", sizeof(DescriptorBinding));
 
     DescriptorBinding desc;
-    std::fprintf(stderr, "[DBG]  desc constructed\n");
     desc.binding = binding;
     desc.type = type;
     desc.count = count;
     desc.stageFlags = stageFlags;
     desc.frequency = frequency;
     desc.debugName = name;
-    std::fprintf(stderr, "[DBG]  desc filled, debugName='%s'\n", desc.debugName.c_str());
-
-    m_declaredBindings[setIndex];
-    std::fprintf(stderr, "[DBG]  operator[] done\n");
-
-    // Test 1: can we create a DescriptorBinding (also has std::string) here?
-    {
-        DescriptorBinding testBinding;
-        testBinding.debugName = "TestBinding";
-        std::fprintf(stderr, "[DBG]  test binding OK: '%s'\n", testBinding.debugName.c_str());
-    }
-
-    // Test 2: can we create a DescriptorSetLayout here?
-    {
-        DescriptorSetLayout testLayout;
-        testLayout.debugName = "TestAfterOp";
-        std::fprintf(stderr, "[DBG]  test layout after op[] OK: '%s'\n", testLayout.debugName.c_str());
-    }
 
     m_declaredBindings[setIndex].push_back(std::move(desc));
-    std::fprintf(stderr, "[DBG]  pushed, map size=%zu\n", m_declaredBindings.size());
-
-    // Test: can we create a DescriptorSetLayout here?
-    {
-        DescriptorSetLayout testLayout;
-        testLayout.debugName = "TestAfterPush";
-        std::fprintf(stderr, "[DBG]  test layout after push OK: '%s'\n", testLayout.debugName.c_str());
-    }
 }
 
 std::vector<DescriptorSetLayout> DescriptorSetLayoutOptimizer::BuildOptimizedLayouts() {
-    std::fprintf(stderr, "[DBG] sizeof(DescriptorSetLayoutOptimizer)=%zu\n", sizeof(DescriptorSetLayoutOptimizer));
     std::lock_guard lock(m_mutex);
-    std::fprintf(stderr, "[DBG] BuildOptimizedLayouts: start, declared=%zu\n", m_declaredBindings.size());
-
-    // EARLY TEST: create a DescriptorSetLayout before any other work
-    {
-        DescriptorSetLayout testLayout;
-        testLayout.debugName = "EarlyTest";
-        std::fprintf(stderr, "[DBG] early test layout OK: '%s'\n", testLayout.debugName.c_str());
-    }
 
     m_layouts.clear();
 
     if (m_config.sortByFrequency) {
-        std::fprintf(stderr, "[DBG] sortByFrequency path\n");
         // Reorganize bindings into sets by update frequency
-        // Use heap-allocated map to avoid stack corruption
-        auto frequencySets = std::make_unique<std::unordered_map<u32, std::vector<DescriptorBinding>>>();
+        std::unordered_map<u32, std::vector<DescriptorBinding>> frequencySets;
 
         for (auto& [setIdx, bindings] : m_declaredBindings) {
-            std::fprintf(stderr, "[DBG] declared set %u: %zu bindings\n", setIdx, bindings.size());
             for (auto& b : bindings) {
                 u32 targetSet = static_cast<u32>(b.frequency);
-                std::fprintf(stderr, "[DBG]  binding %u -> freq set %u\n", b.binding, targetSet);
-                (*frequencySets)[targetSet].push_back(b);
+                frequencySets[targetSet].push_back(b);
             }
         }
-        std::fprintf(stderr, "[DBG] frequencySets size=%zu\n", frequencySets->size());
 
-        for (auto& [setIdx, bindings] : *frequencySets) {
-            std::fprintf(stderr, "[DBG] freq set %u: %zu bindings\n", setIdx, bindings.size());
+        for (auto& [setIdx, bindings] : frequencySets) {
             if (m_config.enableCompaction) {
                 u32 origSize = static_cast<u32>(bindings.size());
                 CompactBindings(bindings);
@@ -118,26 +66,17 @@ std::vector<DescriptorSetLayout> DescriptorSetLayoutOptimizer::BuildOptimizedLay
                 bindings[i].binding = i;
             }
 
-            std::fprintf(stderr, "[DBG] creating layout for set %u\n", setIdx);
             DescriptorSetLayout layout;
-            std::fprintf(stderr, "[DBG]  layout constructed, sizeof=%zu\n", sizeof(layout));
-            layout.debugName = "Test";
-            std::fprintf(stderr, "[DBG]  debugName assigned first\n");
             layout.layoutId = static_cast<u32>(m_layouts.size());
             layout.setIndex = setIdx;
-            std::fprintf(stderr, "[DBG]  setIndex=%u\n", setIdx);
-            // layout.bindings = bindings;  // SKIP for debugging
-            std::fprintf(stderr, "[DBG]  bindings SKIPPED\n");
+            layout.bindings = bindings;
             layout.layoutHash = ComputeLayoutHash(bindings);
-            std::fprintf(stderr, "[DBG]  hash computed\n");
             layout.refCount = 1;
-            std::fprintf(stderr, "[DBG]  refCount set\n");
+            layout.debugName = "Set" + std::to_string(setIdx);
 
             m_layouts.push_back(std::move(layout));
-            std::fprintf(stderr, "[DBG] layout pushed, total=%zu\n", m_layouts.size());
         }
     } else {
-        std::fprintf(stderr, "[DBG] non-sortByFrequency path\n");
         // Keep original set assignments
         for (auto& [setIdx, bindings] : m_declaredBindings) {
             if (m_config.enableCompaction) {
@@ -157,7 +96,6 @@ std::vector<DescriptorSetLayout> DescriptorSetLayoutOptimizer::BuildOptimizedLay
             m_layouts.push_back(std::move(layout));
         }
     }
-    std::fprintf(stderr, "[DBG] before merge, layouts=%zu\n", m_layouts.size());
 
     // Merge compatible layouts
     if (m_config.enableMerging) {
@@ -187,7 +125,6 @@ std::vector<DescriptorSetLayout> DescriptorSetLayoutOptimizer::BuildOptimizedLay
 
         m_layouts = std::move(merged);
     }
-    std::fprintf(stderr, "[DBG] before sort, layouts=%zu\n", m_layouts.size());
 
     // Sort by set index
     std::sort(m_layouts.begin(), m_layouts.end(),
@@ -195,7 +132,6 @@ std::vector<DescriptorSetLayout> DescriptorSetLayoutOptimizer::BuildOptimizedLay
                   return a.setIndex < b.setIndex;
               });
 
-    std::fprintf(stderr, "[DBG] returning, layouts=%zu\n", m_layouts.size());
     return m_layouts;
 }
 
