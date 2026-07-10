@@ -229,14 +229,14 @@ u32 MeshLODSelector::SelectLODInternal(const MeshLODChain& mesh, float distance,
     // Screen-space error selection: find the coarsest LOD whose error is below threshold
     float adjustedThreshold = m_config.errorThreshold / std::max(mesh.importance, 0.01f);
 
-    for (u32 i = 0; i < static_cast<u32>(mesh.lods.size()); ++i) {
+    for (i32 i = static_cast<i32>(mesh.lods.size()) - 1; i >= 0; --i) {
         const auto& lod = mesh.lods[i];
 
         // Project screen-space error based on distance
         float projectedError = lod.screenSpaceError * mesh.boundingSphereRadius / std::max(distance, 0.1f);
 
         if (projectedError <= adjustedThreshold) {
-            return i;
+            return static_cast<u32>(i);
         }
     }
 

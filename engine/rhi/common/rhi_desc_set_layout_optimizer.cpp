@@ -70,7 +70,7 @@ std::vector<DescriptorSetLayout> DescriptorSetLayoutOptimizer::BuildOptimizedLay
             layout.layoutId = static_cast<u32>(m_layouts.size());
             layout.setIndex = setIdx;
             layout.bindings = bindings;
-            layout.layoutHash = ComputeLayoutHash(bindings);
+            layout.layoutHash = ComputeLayoutHash(bindings) ^ (static_cast<u64>(setIdx) * 0x9E3779B97F4A7C15ULL);
             layout.refCount = 1;
             layout.debugName = "Set" + std::to_string(setIdx);
 
@@ -89,7 +89,7 @@ std::vector<DescriptorSetLayout> DescriptorSetLayoutOptimizer::BuildOptimizedLay
             layout.layoutId = static_cast<u32>(m_layouts.size());
             layout.setIndex = setIdx;
             layout.bindings = bindings;
-            layout.layoutHash = ComputeLayoutHash(bindings);
+            layout.layoutHash = ComputeLayoutHash(bindings) ^ (static_cast<u64>(setIdx) * 0x9E3779B97F4A7C15ULL);
             layout.refCount = 1;
             layout.debugName = "Set" + std::to_string(setIdx);
 

@@ -118,16 +118,21 @@ void FrameResourceTracker::EndFrame(u32 frameIndex) {
         m_history.erase(m_history.begin());
     }
 
-    // Periodic leak check
+    // Periodic leak check (inlined to avoid recursive mutex lock)
     if (m_config.leakCheckInterval > 0 && frameIndex % m_config.leakCheckInterval == 0) {
-        auto leaks = GetPotentialLeaks(frameIndex, m_config.leakCheckInterval);
-        if (!leaks.empty()) {
-            NGE_LOG_WARN("Frame {}: {} potential resource leaks detected", frameIndex, leaks.size());
-            for (const auto& leak : leaks) {
+        u32 leakCount = 0;
+        for (const auto& [handle, res] : m_resources) {
+            if (res.isTransient) continue;
+            if (frameIndex - res.frameCreated >= m_config.leakCheckInterval &&
+                frameIndex - res.frameLastUsed >= m_config.leakCheckInterval) {
+                ++leakCount;
                 NGE_LOG_WARN("  Leak: '{}' (type={}, {}B, created frame {})",
-                             leak.debugName, static_cast<int>(leak.type),
-                             leak.sizeBytes, leak.frameCreated);
+                             res.debugName, static_cast<int>(res.type),
+                             res.sizeBytes, res.frameCreated);
             }
+        }
+        if (leakCount > 0) {
+            NGE_LOG_WARN("Frame {}: {} potential resource leaks detected", frameIndex, leakCount);
         }
     }
 

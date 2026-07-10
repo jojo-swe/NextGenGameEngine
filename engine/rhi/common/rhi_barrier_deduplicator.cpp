@@ -138,10 +138,10 @@ bool BarrierDeduplicator::AreOnSameResource(const BarrierDesc& a, const BarrierD
 
     // For images, also check subresource overlap
     if (a.resourceType == BarrierResourceType::Image) {
-        bool mipOverlap = !(a.baseMipLevel + a.mipCount <= b.baseMipLevel ||
-                             b.baseMipLevel + b.mipCount <= a.baseMipLevel);
-        bool layerOverlap = !(a.baseArrayLayer + a.layerCount <= b.baseArrayLayer ||
-                               b.baseArrayLayer + b.layerCount <= a.baseArrayLayer);
+        bool mipOverlap = !(a.baseMipLevel + a.mipCount < b.baseMipLevel ||
+                             b.baseMipLevel + b.mipCount < a.baseMipLevel);
+        bool layerOverlap = !(a.baseArrayLayer + a.layerCount < b.baseArrayLayer ||
+                               b.baseArrayLayer + b.layerCount < a.baseArrayLayer);
         return mipOverlap && layerOverlap;
     }
 

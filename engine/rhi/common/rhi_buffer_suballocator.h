@@ -17,10 +17,10 @@ namespace nge::rhi {
 // adjacent free blocks. Supports alignment requirements.
 
 struct SubAllocation {
-    BufferHandle buffer;      // Parent buffer
-    u64          offset;      // Byte offset within parent buffer
-    u64          size;        // Allocated size (may be > requested due to alignment)
-    u32          heapIndex;   // Which heap this came from
+    BufferHandle buffer{};   // Parent buffer
+    u64          offset = 0;      // Byte offset within parent buffer
+    u64          size = 0;        // Allocated size (may be > requested due to alignment)
+    u32          heapIndex = 0;   // Which heap this came from
     bool         valid = false;
 };
 

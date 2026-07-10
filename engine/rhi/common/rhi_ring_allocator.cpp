@@ -136,7 +136,6 @@ u64 DynamicRingAllocator::GetFreeSpace() const {
 }
 
 u64 DynamicRingAllocator::GetUsedSpace() const {
-    std::lock_guard lock(m_mutex);
     return m_config.bufferSize - GetFreeSpace();
 }
 

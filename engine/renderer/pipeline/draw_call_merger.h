@@ -77,7 +77,6 @@ inline void DrawCallMerger::Sort() {
     std::sort(m_draws.begin(), m_draws.end(), [](const DrawCall& a, const DrawCall& b) {
         if (a.pipelineId != b.pipelineId) return a.pipelineId < b.pipelineId;
         if (a.materialId != b.materialId) return a.materialId < b.materialId;
-        if (a.meshId != b.meshId) return a.meshId < b.meshId;
         return a.sortKey < b.sortKey;
     });
 }

@@ -85,7 +85,7 @@ private:
     BindlessTextureConfig m_config;
 
     std::vector<BindlessTextureSlot> m_slots;
-    std::queue<u32> m_freeSlots;
+    std::stack<u32> m_freeSlots;
     std::vector<u32> m_pendingUpdates; // Slots needing descriptor writes
 
     u64 m_descriptorSet = 0;  // VkDescriptorSet for the global array

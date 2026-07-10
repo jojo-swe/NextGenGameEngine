@@ -40,10 +40,11 @@ std::vector<math::Vec3> NavMesh::FindPath(u32 startNode, u32 endNode) const {
         AStarNode current = openSet.top();
         openSet.pop();
 
-        if (current.index == endNode) break;
         if (closed[current.index]) continue;
         closed[current.index] = true;
         parents[current.index] = current.parent;
+
+        if (current.index == endNode) break;
 
         for (u32 neighborIdx : m_nodes[current.index].neighbors) {
             if (closed[neighborIdx]) continue;
