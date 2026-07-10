@@ -5,8 +5,8 @@
 using namespace nge;
 using namespace nge::rhi;
 
-static RenderPassDesc MakePass(u32 id, const std::string& name, u32 w, u32 h, u32 samples = 1) {
-    RenderPassDesc pass;
+static MergeRenderPassDesc MakePass(u32 id, const std::string& name, u32 w, u32 h, u32 samples = 1) {
+    MergeRenderPassDesc pass;
     pass.passId = id;
     pass.name = name;
     pass.width = w;
@@ -16,10 +16,10 @@ static RenderPassDesc MakePass(u32 id, const std::string& name, u32 w, u32 h, u3
     return pass;
 }
 
-static PassAttachment MakeAttachment(u32 attId, u32 format, bool isInput, bool isOutput,
+static MergePassAttachment MakeAttachment(u32 attId, u32 format, bool isInput, bool isOutput,
                                       PassAttachmentOp loadOp = PassAttachmentOp::Load,
                                       PassStoreOp storeOp = PassStoreOp::Store) {
-    PassAttachment att;
+    MergePassAttachment att;
     att.attachmentId = attId;
     att.format = format;
     att.loadOp = loadOp;

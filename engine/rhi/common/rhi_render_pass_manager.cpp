@@ -19,7 +19,7 @@ void RenderPassManager::Shutdown() {
     m_passCache.clear();
 }
 
-void RenderPassManager::SubmitPassSequence(const std::vector<RenderPassDesc>& passes) {
+void RenderPassManager::SubmitPassSequence(const std::vector<RPMRenderPassDesc>& passes) {
     std::lock_guard lock(m_mutex);
     m_submittedPasses = passes;
     m_mergedPasses.clear();
@@ -175,7 +175,7 @@ const MergedRenderPass* RenderPassManager::GetMergedPass(u64 hash) const {
     return nullptr;
 }
 
-bool RenderPassManager::CanMerge(const RenderPassDesc& a, const RenderPassDesc& b) const {
+bool RenderPassManager::CanMerge(const RPMRenderPassDesc& a, const RPMRenderPassDesc& b) const {
     // Must have same resolution and sample count
     if (a.width != b.width || a.height != b.height) return false;
     if (a.samples != b.samples) return false;
@@ -192,7 +192,7 @@ bool RenderPassManager::CanMerge(const RenderPassDesc& a, const RenderPassDesc& 
     return true;
 }
 
-MergedRenderPass RenderPassManager::MergePasses(const RenderPassDesc& a, const RenderPassDesc& b) const {
+MergedRenderPass RenderPassManager::MergePasses(const RPMRenderPassDesc& a, const RPMRenderPassDesc& b) const {
     MergedRenderPass merged;
     merged.subpasses = {a, b};
     merged.dependencies = {BuildDependency(0, 1, a, b)};
@@ -265,7 +265,7 @@ u64 RenderPassManager::HashPass(const MergedRenderPass& pass) const {
     return hash;
 }
 
-bool RenderPassManager::AttachmentsCompatible(const RenderPassDesc& a, const RenderPassDesc& b) const {
+bool RenderPassManager::AttachmentsCompatible(const RPMRenderPassDesc& a, const RPMRenderPassDesc& b) const {
     // Check if any attachment is shared (input attachment pattern)
     for (const auto& attA : a.colorAttachments) {
         for (const auto& attB : b.colorAttachments) {
@@ -283,8 +283,8 @@ bool RenderPassManager::AttachmentsCompatible(const RenderPassDesc& a, const Ren
 }
 
 SubpassDependency RenderPassManager::BuildDependency(u32 srcSubpass, u32 dstSubpass,
-                                                       const RenderPassDesc& src,
-                                                       const RenderPassDesc& dst) const {
+                                                       const RPMRenderPassDesc& src,
+                                                       const RPMRenderPassDesc& dst) const {
     SubpassDependency dep;
     dep.srcSubpass = srcSubpass;
     dep.dstSubpass = dstSubpass;

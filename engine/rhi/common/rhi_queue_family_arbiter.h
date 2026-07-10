@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/core/types.h"
+#include "engine/rhi/common/rhi_queue_capabilities.h"
 #include <vector>
 #include <string>
 #include <unordered_map>
@@ -19,22 +20,6 @@ namespace nge::rhi {
 //   - Async compute overlap with graphics
 //   - Dedicated transfer queue for DMA uploads
 
-enum class QueueCapability : u32 {
-    Graphics    = 0x01,
-    Compute     = 0x02,
-    Transfer    = 0x04,
-    SparseBinding = 0x08,
-    Present     = 0x10,
-};
-
-inline QueueCapability operator|(QueueCapability a, QueueCapability b) {
-    return static_cast<QueueCapability>(static_cast<u32>(a) | static_cast<u32>(b));
-}
-
-inline bool HasCapability(QueueCapability caps, QueueCapability flag) {
-    return (static_cast<u32>(caps) & static_cast<u32>(flag)) != 0;
-}
-
 enum class WorkPriority : u8 {
     Low,
     Normal,
@@ -42,7 +27,7 @@ enum class WorkPriority : u8 {
     Critical,
 };
 
-struct QueueFamilyInfo {
+struct ArbiterQueueFamilyInfo {
     u32              familyIndex;
     QueueCapability  capabilities;
     u32              queueCount;        // Number of queues in this family
@@ -101,7 +86,7 @@ public:
     void Shutdown();
 
     // Register available queue families from device
-    void RegisterFamily(const QueueFamilyInfo& family);
+    void RegisterFamily(const ArbiterQueueFamilyInfo& family);
 
     // Register individual queue instances
     void RegisterQueue(u32 familyIndex, u32 queueIndex, const std::string& debugName = "");
@@ -149,7 +134,7 @@ private:
     };
 
     QueueFamilyArbiterConfig m_config;
-    std::vector<QueueFamilyInfo> m_families;
+    std::vector<ArbiterQueueFamilyInfo> m_families;
     std::unordered_map<QueueKey, QueueInstance, QueueKeyHash> m_queues;
 
     u32 m_totalAssignments = 0;

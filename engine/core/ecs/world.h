@@ -102,6 +102,9 @@ public:
 
         m_entityRecords.erase(it);
 
+        // Increment generation so IsAlive returns false for destroyed entity
+        m_generations[entity.Index()]++;
+
         // Recycle entity index
         m_freeEntities.PushBack(entity.Index());
     }

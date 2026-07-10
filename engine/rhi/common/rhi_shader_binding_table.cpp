@@ -46,8 +46,6 @@ u32 ShaderBindingTableManager::AddCallableRecord(u64 shaderGroupHandle, const vo
 }
 
 SBTLayout ShaderBindingTableManager::BuildLayout() const {
-    std::lock_guard lock(m_mutex);
-
     SBTLayout layout{};
     u64 offset = 0;
 

@@ -62,7 +62,7 @@ u32 BindlessTextureManager::Register(TextureHandle texture, const std::string& d
         return GetErrorTextureIndex();
     }
 
-    u32 slot = m_freeSlots.front();
+    u32 slot = m_freeSlots.top();
     m_freeSlots.pop();
 
     m_slots[slot].texture = texture;

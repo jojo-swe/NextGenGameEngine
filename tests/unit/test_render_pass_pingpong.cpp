@@ -14,7 +14,7 @@ TEST(RenderPassManager, InitNoMerge) {
     config.enableAutoMerge = false;
     EXPECT_TRUE(mgr.Init(nullptr, config));
 
-    RenderPassDesc passA;
+    RPMRenderPassDesc passA;
     passA.name = "GBuffer";
     passA.width = 1920;
     passA.height = 1080;
@@ -35,15 +35,15 @@ TEST(RenderPassManager, MergeCompatiblePasses) {
     config.tileBasedGPU = true; // More aggressive merging
     mgr.Init(nullptr, config);
 
-    PassAttachment sharedColor = {100, 44, AttachmentLoadOp::Clear, AttachmentStoreOp::Store, false, "color"};
+    RPMPassAttachment sharedColor = {100, 44, AttachmentLoadOp::Clear, AttachmentStoreOp::Store, false, "color"};
 
-    RenderPassDesc passA;
+    RPMRenderPassDesc passA;
     passA.name = "GBuffer";
     passA.width = 1920;
     passA.height = 1080;
     passA.colorAttachments.push_back(sharedColor);
 
-    RenderPassDesc passB;
+    RPMRenderPassDesc passB;
     passB.name = "Lighting";
     passB.width = 1920;
     passB.height = 1080;
@@ -67,13 +67,13 @@ TEST(RenderPassManager, NoMergeResolutionMismatch) {
     config.tileBasedGPU = true;
     mgr.Init(nullptr, config);
 
-    RenderPassDesc passA;
+    RPMRenderPassDesc passA;
     passA.name = "FullRes";
     passA.width = 1920;
     passA.height = 1080;
     passA.colorAttachments.push_back({1, 44, AttachmentLoadOp::Clear, AttachmentStoreOp::Store, false, "a"});
 
-    RenderPassDesc passB;
+    RPMRenderPassDesc passB;
     passB.name = "HalfRes";
     passB.width = 960;
     passB.height = 540;
@@ -92,16 +92,16 @@ TEST(RenderPassManager, AnalyzeMergeOpportunities) {
     config.enableAutoMerge = false;
     mgr.Init(nullptr, config);
 
-    PassAttachment sharedDepth = {200, 24, AttachmentLoadOp::Clear, AttachmentStoreOp::Store, true, "depth"};
+    RPMPassAttachment sharedDepth = {200, 24, AttachmentLoadOp::Clear, AttachmentStoreOp::Store, true, "depth"};
 
-    RenderPassDesc passA;
+    RPMRenderPassDesc passA;
     passA.name = "DepthPrepass";
     passA.width = 1920;
     passA.height = 1080;
     passA.hasDepth = true;
     passA.depthAttachment = sharedDepth;
 
-    RenderPassDesc passB;
+    RPMRenderPassDesc passB;
     passB.name = "GBuffer";
     passB.width = 1920;
     passB.height = 1080;
@@ -124,13 +124,13 @@ TEST(RenderPassManager, StatsTracking) {
     config.tileBasedGPU = true;
     mgr.Init(nullptr, config);
 
-    PassAttachment shared = {100, 44, AttachmentLoadOp::Clear, AttachmentStoreOp::Store, false, "rt"};
+    RPMPassAttachment shared = {100, 44, AttachmentLoadOp::Clear, AttachmentStoreOp::Store, false, "rt"};
 
-    RenderPassDesc p1; p1.name = "A"; p1.width = 1920; p1.height = 1080;
+    RPMRenderPassDesc p1; p1.name = "A"; p1.width = 1920; p1.height = 1080;
     p1.colorAttachments.push_back(shared);
-    RenderPassDesc p2; p2.name = "B"; p2.width = 1920; p2.height = 1080;
+    RPMRenderPassDesc p2; p2.name = "B"; p2.width = 1920; p2.height = 1080;
     p2.colorAttachments.push_back(shared);
-    RenderPassDesc p3; p3.name = "C"; p3.width = 960; p3.height = 540;
+    RPMRenderPassDesc p3; p3.name = "C"; p3.width = 960; p3.height = 540;
     p3.colorAttachments.push_back({200, 44, AttachmentLoadOp::Clear, AttachmentStoreOp::Store, false, "rt2"});
 
     mgr.SubmitPassSequence({p1, p2, p3});
@@ -146,7 +146,7 @@ TEST(RenderPassManager, ClearResetsState) {
     RenderPassManager mgr;
     mgr.Init(nullptr);
 
-    RenderPassDesc pass;
+    RPMRenderPassDesc pass;
     pass.name = "Test";
     pass.width = 1920;
     pass.height = 1080;

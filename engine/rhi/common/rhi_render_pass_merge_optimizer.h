@@ -32,7 +32,7 @@ enum class PassStoreOp : u8 {
     DontCare,
 };
 
-struct PassAttachment {
+struct MergePassAttachment {
     u32              attachmentId;
     u32              format;          // Opaque format identifier
     PassAttachmentOp loadOp;
@@ -41,10 +41,10 @@ struct PassAttachment {
     bool             isOutput;        // Written to in this pass
 };
 
-struct RenderPassDesc {
+struct MergeRenderPassDesc {
     u32                        passId;
     std::string                name;
-    std::vector<PassAttachment> attachments;
+    std::vector<MergePassAttachment> attachments;
     std::vector<u32>           dependsOn;    // Pass IDs this pass depends on
     bool                       usesDepth;
     u32                        width;
@@ -86,7 +86,7 @@ public:
     void Shutdown();
 
     // Register a render pass
-    bool AddPass(const RenderPassDesc& pass);
+    bool AddPass(const MergeRenderPassDesc& pass);
 
     // Run merge optimization
     void Optimize();
@@ -107,7 +107,7 @@ public:
     u32 GetGroupForPass(u32 passId) const;
 
     // Get original pass info
-    const RenderPassDesc* GetPass(u32 passId) const;
+    const MergeRenderPassDesc* GetPass(u32 passId) const;
 
     u32 GetPassCount() const;
 
@@ -117,13 +117,13 @@ public:
     RenderPassMergeStats GetStats() const;
 
 private:
-    bool CanMerge(const RenderPassDesc& a, const RenderPassDesc& b) const;
+    bool CanMerge(const MergeRenderPassDesc& a, const MergeRenderPassDesc& b) const;
     bool HasDependency(u32 fromPass, u32 toPass) const;
     u32 CountLoadOpsSaved(const MergedPassGroup& group) const;
     u32 CountStoreOpsSaved(const MergedPassGroup& group) const;
 
     RenderPassMergeConfig m_config;
-    std::unordered_map<u32, RenderPassDesc> m_passes;
+    std::unordered_map<u32, MergeRenderPassDesc> m_passes;
     std::vector<u32> m_passOrder; // Insertion order
     std::vector<MergedPassGroup> m_mergedGroups;
     std::unordered_map<u32, u32> m_passToGroup; // passId -> group index

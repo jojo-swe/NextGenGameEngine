@@ -21,7 +21,7 @@ void QueueFamilyArbiter::Shutdown() {
     m_queues.clear();
 }
 
-void QueueFamilyArbiter::RegisterFamily(const QueueFamilyInfo& family) {
+void QueueFamilyArbiter::RegisterFamily(const ArbiterQueueFamilyInfo& family) {
     std::lock_guard lock(m_mutex);
 
     if (m_families.size() >= m_config.maxQueueFamilies) {

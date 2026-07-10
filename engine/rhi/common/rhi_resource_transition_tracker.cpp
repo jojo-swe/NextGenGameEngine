@@ -58,8 +58,11 @@ bool ResourceTransitionTracker::RequestTransition(u32 resourceId, ResourceLayout
     auto& res = it->second;
 
     // Check for redundant transition
-    if (res.currentLayout == newLayout && res.lastAccess == access) {
+    if (res.currentLayout == newLayout &&
+        (res.lastAccess == access || res.lastAccess == ResourceAccessType::None)) {
         m_redundantTransitions++;
+        res.lastAccess = access;
+        res.lastAccessPass = passIndex;
         return true; // No-op but not an error
     }
 

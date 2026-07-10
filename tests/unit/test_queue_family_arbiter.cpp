@@ -18,7 +18,7 @@ TEST(QueueFamilyArbiter, RegisterFamilyAndQueue) {
     QueueFamilyArbiter arbiter;
     arbiter.Init();
 
-    QueueFamilyInfo gfxFamily;
+    ArbiterQueueFamilyInfo gfxFamily;
     gfxFamily.familyIndex = 0;
     gfxFamily.capabilities = QueueCapability::Graphics | QueueCapability::Compute | QueueCapability::Transfer;
     gfxFamily.queueCount = 2;
@@ -40,7 +40,7 @@ TEST(QueueFamilyArbiter, RequestGraphicsQueue) {
     QueueFamilyArbiter arbiter;
     arbiter.Init();
 
-    QueueFamilyInfo family;
+    ArbiterQueueFamilyInfo family;
     family.familyIndex = 0;
     family.capabilities = QueueCapability::Graphics | QueueCapability::Compute | QueueCapability::Transfer;
     family.queueCount = 1;
@@ -69,14 +69,14 @@ TEST(QueueFamilyArbiter, PreferAsyncComputeFamily) {
     arbiter.Init(config);
 
     // Family 0: Graphics + Compute + Transfer (universal)
-    QueueFamilyInfo gfx;
+    ArbiterQueueFamilyInfo gfx;
     gfx.familyIndex = 0;
     gfx.capabilities = QueueCapability::Graphics | QueueCapability::Compute | QueueCapability::Transfer;
     gfx.queueCount = 1;
     gfx.debugName = "Universal";
 
     // Family 1: Compute-only (async compute)
-    QueueFamilyInfo asyncCompute;
+    ArbiterQueueFamilyInfo asyncCompute;
     asyncCompute.familyIndex = 1;
     asyncCompute.capabilities = QueueCapability::Compute | QueueCapability::Transfer;
     asyncCompute.queueCount = 1;
@@ -105,12 +105,12 @@ TEST(QueueFamilyArbiter, PreferDedicatedTransfer) {
     config.preferDedicatedTransfer = true;
     arbiter.Init(config);
 
-    QueueFamilyInfo gfx;
+    ArbiterQueueFamilyInfo gfx;
     gfx.familyIndex = 0;
     gfx.capabilities = QueueCapability::Graphics | QueueCapability::Compute | QueueCapability::Transfer;
     gfx.queueCount = 1;
 
-    QueueFamilyInfo transfer;
+    ArbiterQueueFamilyInfo transfer;
     transfer.familyIndex = 2;
     transfer.capabilities = QueueCapability::Transfer;
     transfer.queueCount = 1;
@@ -139,7 +139,7 @@ TEST(QueueFamilyArbiter, LoadBalancing) {
     config.enableLoadBalancing = true;
     arbiter.Init(config);
 
-    QueueFamilyInfo family;
+    ArbiterQueueFamilyInfo family;
     family.familyIndex = 0;
     family.capabilities = QueueCapability::Graphics | QueueCapability::Compute | QueueCapability::Transfer;
     family.queueCount = 2;
@@ -167,12 +167,12 @@ TEST(QueueFamilyArbiter, GetAsyncComputeFamily) {
     QueueFamilyArbiter arbiter;
     arbiter.Init();
 
-    QueueFamilyInfo gfx;
+    ArbiterQueueFamilyInfo gfx;
     gfx.familyIndex = 0;
     gfx.capabilities = QueueCapability::Graphics | QueueCapability::Compute;
     gfx.queueCount = 1;
 
-    QueueFamilyInfo asyncComp;
+    ArbiterQueueFamilyInfo asyncComp;
     asyncComp.familyIndex = 1;
     asyncComp.capabilities = QueueCapability::Compute;
     asyncComp.queueCount = 1;
@@ -189,12 +189,12 @@ TEST(QueueFamilyArbiter, GetDedicatedTransferFamily) {
     QueueFamilyArbiter arbiter;
     arbiter.Init();
 
-    QueueFamilyInfo gfx;
+    ArbiterQueueFamilyInfo gfx;
     gfx.familyIndex = 0;
     gfx.capabilities = QueueCapability::Graphics | QueueCapability::Compute | QueueCapability::Transfer;
     gfx.queueCount = 1;
 
-    QueueFamilyInfo dma;
+    ArbiterQueueFamilyInfo dma;
     dma.familyIndex = 2;
     dma.capabilities = QueueCapability::Transfer;
     dma.queueCount = 1;
@@ -211,7 +211,7 @@ TEST(QueueFamilyArbiter, NoAsyncComputeReturnsNegative) {
     QueueFamilyArbiter arbiter;
     arbiter.Init();
 
-    QueueFamilyInfo gfx;
+    ArbiterQueueFamilyInfo gfx;
     gfx.familyIndex = 0;
     gfx.capabilities = QueueCapability::Graphics | QueueCapability::Compute;
     gfx.queueCount = 1;
@@ -228,7 +228,7 @@ TEST(QueueFamilyArbiter, GetFamiliesWithCapability) {
     QueueFamilyArbiter arbiter;
     arbiter.Init();
 
-    QueueFamilyInfo f0, f1, f2;
+    ArbiterQueueFamilyInfo f0, f1, f2;
     f0.familyIndex = 0; f0.capabilities = QueueCapability::Graphics | QueueCapability::Compute | QueueCapability::Transfer; f0.queueCount = 1;
     f1.familyIndex = 1; f1.capabilities = QueueCapability::Compute; f1.queueCount = 1;
     f2.familyIndex = 2; f2.capabilities = QueueCapability::Transfer; f2.queueCount = 1;
@@ -253,7 +253,7 @@ TEST(QueueFamilyArbiter, RecordSubmissionAndCompletion) {
     QueueFamilyArbiter arbiter;
     arbiter.Init();
 
-    QueueFamilyInfo family;
+    ArbiterQueueFamilyInfo family;
     family.familyIndex = 0;
     family.capabilities = QueueCapability::Graphics;
     family.queueCount = 1;
@@ -276,7 +276,7 @@ TEST(QueueFamilyArbiter, ResetLoads) {
     QueueFamilyArbiter arbiter;
     arbiter.Init();
 
-    QueueFamilyInfo family;
+    ArbiterQueueFamilyInfo family;
     family.familyIndex = 0;
     family.capabilities = QueueCapability::Graphics;
     family.queueCount = 1;
@@ -297,7 +297,7 @@ TEST(QueueFamilyArbiter, SetDedicated) {
     QueueFamilyArbiter arbiter;
     arbiter.Init();
 
-    QueueFamilyInfo family;
+    ArbiterQueueFamilyInfo family;
     family.familyIndex = 0;
     family.capabilities = QueueCapability::Graphics | QueueCapability::Compute;
     family.queueCount = 2;
@@ -325,7 +325,7 @@ TEST(QueueFamilyArbiter, StatsTracking) {
     QueueFamilyArbiter arbiter;
     arbiter.Init();
 
-    QueueFamilyInfo f0, f1;
+    ArbiterQueueFamilyInfo f0, f1;
     f0.familyIndex = 0; f0.capabilities = QueueCapability::Graphics | QueueCapability::Compute | QueueCapability::Transfer; f0.queueCount = 2;
     f1.familyIndex = 1; f1.capabilities = QueueCapability::Compute; f1.queueCount = 1;
 

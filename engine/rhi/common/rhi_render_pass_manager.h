@@ -28,7 +28,7 @@ enum class AttachmentStoreOp : u8 {
     DontCare,
 };
 
-struct PassAttachment {
+struct RPMPassAttachment {
     u64              textureHandle;
     u32              format;        // RHI format enum
     AttachmentLoadOp loadOp;
@@ -37,10 +37,10 @@ struct PassAttachment {
     std::string      debugName;
 };
 
-struct RenderPassDesc {
+struct RPMRenderPassDesc {
     std::string                  name;
-    std::vector<PassAttachment>  colorAttachments;
-    PassAttachment               depthAttachment;
+    std::vector<RPMPassAttachment>  colorAttachments;
+    RPMPassAttachment               depthAttachment;
     bool                         hasDepth = false;
     u32                          width;
     u32                          height;
@@ -58,9 +58,9 @@ struct SubpassDependency {
 };
 
 struct MergedRenderPass {
-    std::vector<RenderPassDesc>  subpasses;
+    std::vector<RPMRenderPassDesc>  subpasses;
     std::vector<SubpassDependency> dependencies;
-    std::vector<PassAttachment>  allAttachments;  // Deduplicated
+    std::vector<RPMPassAttachment>  allAttachments;  // Deduplicated
     u64                          hash;
     std::string                  debugName;
 };
@@ -94,7 +94,7 @@ public:
     void Shutdown();
 
     // Submit a sequence of render passes for analysis
-    void SubmitPassSequence(const std::vector<RenderPassDesc>& passes);
+    void SubmitPassSequence(const std::vector<RPMRenderPassDesc>& passes);
 
     // Get merge opportunities (advisory)
     std::vector<MergeOpportunity> AnalyzeMergeOpportunities() const;
@@ -106,10 +106,10 @@ public:
     const MergedRenderPass* GetMergedPass(u64 hash) const;
 
     // Check if two passes can be merged
-    bool CanMerge(const RenderPassDesc& a, const RenderPassDesc& b) const;
+    bool CanMerge(const RPMRenderPassDesc& a, const RPMRenderPassDesc& b) const;
 
     // Force-merge two passes (manual override)
-    MergedRenderPass MergePasses(const RenderPassDesc& a, const RenderPassDesc& b) const;
+    MergedRenderPass MergePasses(const RPMRenderPassDesc& a, const RPMRenderPassDesc& b) const;
 
     // Clear all submitted passes
     void Clear();
@@ -118,14 +118,14 @@ public:
 
 private:
     u64 HashPass(const MergedRenderPass& pass) const;
-    bool AttachmentsCompatible(const RenderPassDesc& a, const RenderPassDesc& b) const;
+    bool AttachmentsCompatible(const RPMRenderPassDesc& a, const RPMRenderPassDesc& b) const;
     SubpassDependency BuildDependency(u32 srcSubpass, u32 dstSubpass,
-                                       const RenderPassDesc& src, const RenderPassDesc& dst) const;
+                                       const RPMRenderPassDesc& src, const RPMRenderPassDesc& dst) const;
 
     IDevice* m_device = nullptr;
     RenderPassManagerConfig m_config;
 
-    std::vector<RenderPassDesc> m_submittedPasses;
+    std::vector<RPMRenderPassDesc> m_submittedPasses;
     std::vector<MergedRenderPass> m_mergedPasses;
     std::unordered_map<u64, MergedRenderPass> m_passCache;
 

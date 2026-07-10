@@ -231,7 +231,9 @@ TEST(BarrierOptimizer, InitAndShutdown) {
 
 TEST(BarrierOptimizer, RedundancyElimination) {
     BarrierBatchOptimizer opt;
-    opt.Init();
+    BarrierOptimizerConfig config;
+    config.enableSplitBarriers = false;
+    opt.Init(config);
 
     std::vector<ResourceBarrier> barriers;
 

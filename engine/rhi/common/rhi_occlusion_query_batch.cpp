@@ -48,7 +48,7 @@ u32 OcclusionQueryBatchManager::AllocateQuery(u32 objectId) {
     for (u32 i = 0; i < static_cast<u32>(m_slots.size()); ++i) {
         if (m_slots[i].state == QueryState::Free) {
             m_slots[i].objectId = objectId;
-            m_slots[i].state = QueryState::Free; // Will become Pending on MarkIssued
+            m_slots[i].state = QueryState::Pending; // Allocated, awaiting MarkIssued
             m_slots[i].samplesPassed = 0;
             m_slots[i].visible = m_config.conservativeDefault;
             m_objectToSlot[objectId] = i;

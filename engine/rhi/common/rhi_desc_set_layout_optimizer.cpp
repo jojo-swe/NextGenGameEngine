@@ -238,6 +238,7 @@ u64 DescriptorSetLayoutOptimizer::ComputeLayoutHash(const std::vector<Descriptor
         hashByte(static_cast<u8>(b.count >> 8));
         hashByte(static_cast<u8>(b.stageFlags));
         hashByte(static_cast<u8>(b.stageFlags >> 8));
+        hashByte(static_cast<u8>(b.frequency));
     }
 
     return hash;

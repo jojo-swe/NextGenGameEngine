@@ -246,9 +246,7 @@ TEST(SamplerDedupManager, PurgeUnreferenced) {
     mgr.Release(h1);
     mgr.Release(h3);
 
-    EXPECT_EQ(mgr.GetCount(), 3u); // Still tracked (refCount=0 not auto-deleted here because Release does auto-delete)
-
-    // Actually h1 and h3 were destroyed on Release since refCount hit 0
+    // h1 and h3 were destroyed on Release since refCount hit 0
     // So count should be 1
     EXPECT_EQ(mgr.GetCount(), 1u);
 

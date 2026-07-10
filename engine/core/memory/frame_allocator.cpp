@@ -29,7 +29,9 @@ void FrameAllocator::BeginFrame() {
 }
 
 void* FrameAllocator::Allocate(usize size, usize alignment) {
-    usize alignedOffset = AlignUp(m_offset, alignment);
+    uintptr_t base = reinterpret_cast<uintptr_t>(m_blocks[m_currentBlock]);
+    uintptr_t alignedPtr = AlignUp(base + m_offset, alignment);
+    usize alignedOffset = static_cast<usize>(alignedPtr - base);
 
     if (alignedOffset + size > m_blockSize) {
         // Out of memory — in production, could chain overflow blocks
@@ -37,7 +39,7 @@ void* FrameAllocator::Allocate(usize size, usize alignment) {
         return nullptr;
     }
 
-    void* ptr = m_blocks[m_currentBlock] + alignedOffset;
+    void* ptr = reinterpret_cast<void*>(alignedPtr);
     m_offset = alignedOffset + size;
     return ptr;
 }
