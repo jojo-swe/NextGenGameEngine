@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/core/types.h"
+#include "engine/rhi/common/rhi_types.h"
 #include <vector>
 #include <string>
 #include <unordered_map>
@@ -30,20 +31,6 @@ enum class DescBindingType : u8 {
     InputAttachment,
     AccelerationStructure,
 };
-
-enum class ShaderStage : u32 {
-    Vertex   = 0x01,
-    Fragment = 0x02,
-    Compute  = 0x04,
-    Geometry = 0x08,
-    TessCtrl = 0x10,
-    TessEval = 0x20,
-    All      = 0xFF,
-};
-
-inline ShaderStage operator|(ShaderStage a, ShaderStage b) {
-    return static_cast<ShaderStage>(static_cast<u32>(a) | static_cast<u32>(b));
-}
 
 struct LayoutBinding {
     u32             binding;

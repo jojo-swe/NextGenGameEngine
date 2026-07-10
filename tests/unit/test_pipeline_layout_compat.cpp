@@ -17,7 +17,7 @@ TEST(PipelineLayoutCompat, RegisterLayout) {
     checker.Init();
 
     std::vector<u64> sets = {0xABCD, 0x1234};
-    std::vector<PushConstantRange> pcs = {{0x1, 0, 64, "MVP"}};
+    std::vector<CompatPushConstantRange> pcs = {{0x1, 0, 64, "MVP"}};
 
     u32 id = checker.RegisterLayout(sets, pcs, "ForwardPass");
     EXPECT_NE(id, UINT32_MAX);
@@ -121,7 +121,7 @@ TEST(PipelineLayoutCompat, ValidatePushConstantExceedsLimit) {
     config.maxPushConstantSize = 128;
     checker.Init(config);
 
-    std::vector<PushConstantRange> pcs = {{0x1, 0, 256, "BigPush"}}; // 256 > 128
+    std::vector<CompatPushConstantRange> pcs = {{0x1, 0, 256, "BigPush"}}; // 256 > 128
     u32 id = checker.RegisterLayout({0x1}, pcs, "BigPushLayout");
 
     auto issues = checker.ValidateLayout(id);
@@ -139,7 +139,7 @@ TEST(PipelineLayoutCompat, ValidatePushConstantStageConflict) {
     checker.Init();
 
     // Two ranges overlapping in bytes AND sharing stage flags
-    std::vector<PushConstantRange> pcs = {
+    std::vector<CompatPushConstantRange> pcs = {
         {0x1, 0, 64, "RangeA"},   // Offset 0, size 64, vertex stage
         {0x1, 32, 64, "RangeB"},  // Offset 32, size 64, vertex stage (overlap at 32-64)
     };
@@ -160,7 +160,7 @@ TEST(PipelineLayoutCompat, ValidateNoOverlapDifferentStages) {
     checker.Init();
 
     // Overlapping ranges but different stage flags -> no conflict
-    std::vector<PushConstantRange> pcs = {
+    std::vector<CompatPushConstantRange> pcs = {
         {0x1, 0, 64, "Vertex"},    // Vertex stage
         {0x10, 0, 64, "Fragment"}, // Fragment stage (different flag)
     };
@@ -217,7 +217,7 @@ TEST(PipelineLayoutCompat, GetPushConstantSize) {
     PipelineLayoutCompatChecker checker;
     checker.Init();
 
-    std::vector<PushConstantRange> pcs = {
+    std::vector<CompatPushConstantRange> pcs = {
         {0x1, 0, 64, "MVP"},
         {0x10, 64, 32, "Material"},
     };
@@ -317,7 +317,7 @@ TEST(PipelineLayoutCompat, ValidateCleanLayout) {
     PipelineLayoutCompatChecker checker;
     checker.Init();
 
-    std::vector<PushConstantRange> pcs = {{0x1, 0, 64, "MVP"}};
+    std::vector<CompatPushConstantRange> pcs = {{0x1, 0, 64, "MVP"}};
     u32 id = checker.RegisterLayout({0xABCD, 0x1234}, pcs, "CleanLayout");
 
     auto issues = checker.ValidateLayout(id);
