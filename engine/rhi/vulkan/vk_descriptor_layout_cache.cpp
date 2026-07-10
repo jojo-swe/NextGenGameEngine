@@ -1,5 +1,6 @@
 #include "engine/rhi/vulkan/vk_descriptor_layout_cache.h"
 #include "engine/core/logging/log.h"
+#include <algorithm>
 
 namespace nge::rhi::vulkan {
 

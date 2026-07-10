@@ -1,5 +1,6 @@
 #include "engine/rhi/vulkan/vulkan_device.h"
 #include "engine/core/assert.h"
+#include <algorithm>
 
 // ─── Volk: Vulkan meta-loader (loads all function pointers) ──────────────
 // In production we use volk. For now, we dynamically load the Vulkan library.

@@ -1,5 +1,6 @@
 #include "engine/network/server/net_server.h"
 #include "engine/core/logging/log.h"
+#include <algorithm>
 
 namespace nge::network {
 

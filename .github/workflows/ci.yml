@@ -54,7 +54,7 @@ jobs:
           submodules: true
 
       - name: Install CMake and Ninja
-        uses: lukka/get-cmake@7074bcac35ab1b4c6c7cab79e3bd3828ac522000 # v4.3.4
+        uses: lukka/get-cmake@f5b8fbb4d77cec1acc5a5f9f0df4beffaf5d98d9 # v4.3.4
 
       # Versioned ports (e.g. fmt@10.2.0) are checked out from historical git
       # tree objects, which a depth-1 submodule clone does not contain.
@@ -86,7 +86,7 @@ jobs:
           submodules: true
 
       - name: Install CMake and Ninja
-        uses: lukka/get-cmake@7074bcac35ab1b4c6c7cab79e3bd3828ac522000 # v4.3.4
+        uses: lukka/get-cmake@f5b8fbb4d77cec1acc5a5f9f0df4beffaf5d98d9 # v4.3.4
 
       # Versioned ports (e.g. fmt@10.2.0) are checked out from historical git
       # tree objects, which a depth-1 submodule clone does not contain.
