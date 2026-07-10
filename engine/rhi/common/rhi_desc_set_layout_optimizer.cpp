@@ -28,20 +28,50 @@ void DescriptorSetLayoutOptimizer::DeclareBinding(u32 setIndex, u32 binding, Des
                                                      u32 count, u32 stageFlags,
                                                      UpdateFrequency frequency,
                                                      const std::string& name) {
+    std::fprintf(stderr, "[DBG] DeclareBinding: set=%u binding=%u name='%s'\n", setIndex, binding, name.c_str());
     std::lock_guard lock(m_mutex);
+    std::fprintf(stderr, "[DBG]  locked, sizeof(DescriptorBinding)=%zu\n", sizeof(DescriptorBinding));
 
     DescriptorBinding desc;
+    std::fprintf(stderr, "[DBG]  desc constructed\n");
     desc.binding = binding;
     desc.type = type;
     desc.count = count;
     desc.stageFlags = stageFlags;
     desc.frequency = frequency;
     desc.debugName = name;
+    std::fprintf(stderr, "[DBG]  desc filled, debugName='%s'\n", desc.debugName.c_str());
+
+    m_declaredBindings[setIndex];
+    std::fprintf(stderr, "[DBG]  operator[] done\n");
+
+    // Test 1: can we create a DescriptorBinding (also has std::string) here?
+    {
+        DescriptorBinding testBinding;
+        testBinding.debugName = "TestBinding";
+        std::fprintf(stderr, "[DBG]  test binding OK: '%s'\n", testBinding.debugName.c_str());
+    }
+
+    // Test 2: can we create a DescriptorSetLayout here?
+    {
+        DescriptorSetLayout testLayout;
+        testLayout.debugName = "TestAfterOp";
+        std::fprintf(stderr, "[DBG]  test layout after op[] OK: '%s'\n", testLayout.debugName.c_str());
+    }
 
     m_declaredBindings[setIndex].push_back(std::move(desc));
+    std::fprintf(stderr, "[DBG]  pushed, map size=%zu\n", m_declaredBindings.size());
+
+    // Test: can we create a DescriptorSetLayout here?
+    {
+        DescriptorSetLayout testLayout;
+        testLayout.debugName = "TestAfterPush";
+        std::fprintf(stderr, "[DBG]  test layout after push OK: '%s'\n", testLayout.debugName.c_str());
+    }
 }
 
 std::vector<DescriptorSetLayout> DescriptorSetLayoutOptimizer::BuildOptimizedLayouts() {
+    std::fprintf(stderr, "[DBG] sizeof(DescriptorSetLayoutOptimizer)=%zu\n", sizeof(DescriptorSetLayoutOptimizer));
     std::lock_guard lock(m_mutex);
     std::fprintf(stderr, "[DBG] BuildOptimizedLayouts: start, declared=%zu\n", m_declaredBindings.size());
 
