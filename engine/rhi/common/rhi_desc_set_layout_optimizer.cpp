@@ -2,6 +2,8 @@
 #include "engine/core/logging/log.h"
 #include <algorithm>
 #include <cstring>
+#include <cstdio>
+#include <memory>
 
 namespace nge::rhi {
 
@@ -41,21 +43,27 @@ void DescriptorSetLayoutOptimizer::DeclareBinding(u32 setIndex, u32 binding, Des
 
 std::vector<DescriptorSetLayout> DescriptorSetLayoutOptimizer::BuildOptimizedLayouts() {
     std::lock_guard lock(m_mutex);
+    std::fprintf(stderr, "[DBG] BuildOptimizedLayouts: start, declared=%zu\n", m_declaredBindings.size());
 
     m_layouts.clear();
 
     if (m_config.sortByFrequency) {
+        std::fprintf(stderr, "[DBG] sortByFrequency path\n");
         // Reorganize bindings into sets by update frequency
         std::unordered_map<u32, std::vector<DescriptorBinding>> frequencySets;
 
         for (auto& [setIdx, bindings] : m_declaredBindings) {
+            std::fprintf(stderr, "[DBG] declared set %u: %zu bindings\n", setIdx, bindings.size());
             for (auto& b : bindings) {
                 u32 targetSet = static_cast<u32>(b.frequency);
+                std::fprintf(stderr, "[DBG]  binding %u -> freq set %u\n", b.binding, targetSet);
                 frequencySets[targetSet].push_back(b);
             }
         }
+        std::fprintf(stderr, "[DBG] frequencySets size=%zu\n", frequencySets.size());
 
         for (auto& [setIdx, bindings] : frequencySets) {
+            std::fprintf(stderr, "[DBG] freq set %u: %zu bindings\n", setIdx, bindings.size());
             if (m_config.enableCompaction) {
                 u32 origSize = static_cast<u32>(bindings.size());
                 CompactBindings(bindings);
@@ -67,17 +75,31 @@ std::vector<DescriptorSetLayout> DescriptorSetLayoutOptimizer::BuildOptimizedLay
                 bindings[i].binding = i;
             }
 
-            DescriptorSetLayout layout;
+            std::fprintf(stderr, "[DBG] creating layout for set %u\n", setIdx);
+            {
+                std::string testStr = "Test";
+                std::fprintf(stderr, "[DBG]  bare string works: '%s'\n", testStr.c_str());
+            }
+            auto layoutPtr = std::make_unique<DescriptorSetLayout>();
+            auto& layout = *layoutPtr;
+            std::fprintf(stderr, "[DBG]  layout heap-constructed, sizeof=%zu\n", sizeof(layout));
+            layout.debugName = "Test";
+            std::fprintf(stderr, "[DBG]  debugName assigned first\n");
             layout.layoutId = static_cast<u32>(m_layouts.size());
             layout.setIndex = setIdx;
-            layout.bindings = bindings;
+            std::fprintf(stderr, "[DBG]  setIndex=%u\n", setIdx);
+            // layout.bindings = bindings;  // SKIP for debugging
+            std::fprintf(stderr, "[DBG]  bindings SKIPPED\n");
             layout.layoutHash = ComputeLayoutHash(bindings);
+            std::fprintf(stderr, "[DBG]  hash computed\n");
             layout.refCount = 1;
-            layout.debugName = "Set" + std::to_string(setIdx);
+            std::fprintf(stderr, "[DBG]  refCount set\n");
 
             m_layouts.push_back(std::move(layout));
+            std::fprintf(stderr, "[DBG] layout pushed, total=%zu\n", m_layouts.size());
         }
     } else {
+        std::fprintf(stderr, "[DBG] non-sortByFrequency path\n");
         // Keep original set assignments
         for (auto& [setIdx, bindings] : m_declaredBindings) {
             if (m_config.enableCompaction) {
@@ -97,6 +119,7 @@ std::vector<DescriptorSetLayout> DescriptorSetLayoutOptimizer::BuildOptimizedLay
             m_layouts.push_back(std::move(layout));
         }
     }
+    std::fprintf(stderr, "[DBG] before merge, layouts=%zu\n", m_layouts.size());
 
     // Merge compatible layouts
     if (m_config.enableMerging) {
@@ -126,6 +149,7 @@ std::vector<DescriptorSetLayout> DescriptorSetLayoutOptimizer::BuildOptimizedLay
 
         m_layouts = std::move(merged);
     }
+    std::fprintf(stderr, "[DBG] before sort, layouts=%zu\n", m_layouts.size());
 
     // Sort by set index
     std::sort(m_layouts.begin(), m_layouts.end(),
@@ -133,6 +157,7 @@ std::vector<DescriptorSetLayout> DescriptorSetLayoutOptimizer::BuildOptimizedLay
                   return a.setIndex < b.setIndex;
               });
 
+    std::fprintf(stderr, "[DBG] returning, layouts=%zu\n", m_layouts.size());
     return m_layouts;
 }
 
