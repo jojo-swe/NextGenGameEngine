@@ -1,0 +1,7 @@
+[18:22:04.840] [info] [rhi_pipeline_stats_aggregator.cpp:13] Pipeline stats aggregator initialized: maxPasses=128, history=120 frames, minMax=true, bottleneck=true
+[18:22:04.842] [info] [rhi_pipeline_stats_aggregator.cpp:13] Pipeline stats aggregator initialized: maxPasses=128, history=120 frames, minMax=true, bottleneck=true
+[18:22:04.842] [info] [rhi_pipeline_stats_aggregator.cpp:13] Pipeline stats aggregator initialized: maxPasses=128, history=120 frames, minMax=true, bottleneck=true
+[18:22:04.842] [info] [rhi_pipeline_stats_aggregator.cpp:13] Pipeline stats aggregator initialized: maxPasses=128, history=120 frames, minMax=true, bottleneck=true
+[18:22:04.842] [info] [rhi_pipeline_stats_aggregator.cpp:13] Pipeline stats aggregator initialized: maxPasses=128, history=120 frames, minMax=true, bottleneck=true
+[18:22:04.842] [info] [rhi_pipeline_stats_aggregator.cpp:13] Pipeline stats aggregator initialized: maxPasses=128, history=120 frames, minMax=true, bottleneck=true
+[18:22:04.842] [info] [rhi_pipeline_stats_aggregator.cpp:13] Pipeline stats aggregator initialized: maxPasses=64, history=128 frames, minMax=true, bottleneck=false

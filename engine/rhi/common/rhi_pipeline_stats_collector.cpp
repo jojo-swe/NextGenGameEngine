@@ -4,7 +4,7 @@
 
 namespace nge::rhi {
 
-bool PipelineStatsCollector::Init(const PipelineStatsConfig& config) {
+bool PipelineStatsCollector::Init(const CollectorStatsConfig& config) {
     m_config = config;
     m_nextQueryId = 0;
     m_queriesThisFrame = 0;
@@ -57,7 +57,7 @@ void PipelineStatsCollector::EndPass(u32 queryId) {
     // TODO: vkCmdEndQuery(cmdBuffer, queryPool, queryId);
 }
 
-void PipelineStatsCollector::SubmitResults(u32 queryId, const PipelineStatistics& stats) {
+void PipelineStatsCollector::SubmitResults(u32 queryId, const CollectorPipelineStatistics& stats) {
     std::lock_guard lock(m_mutex);
 
     auto it = m_activeQueries.find(queryId);

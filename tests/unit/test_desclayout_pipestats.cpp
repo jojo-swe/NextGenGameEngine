@@ -223,7 +223,7 @@ TEST(PipelineStatsCollector, BeginEndPassBasic) {
 
     collector.EndPass(qid);
 
-    PipelineStatistics stats{};
+    CollectorPipelineStatistics stats{};
     stats.vertexShaderInvocations = 50000;
     stats.fragmentShaderInvocations = 200000;
     stats.inputAssemblyPrimitives = 10000;
@@ -255,7 +255,7 @@ TEST(PipelineStatsCollector, MultiplePasses) {
     u32 q3 = collector.BeginPass("Lighting");
     collector.EndPass(q3);
 
-    PipelineStatistics s1{}, s2{}, s3{};
+    CollectorPipelineStatistics s1{}, s2{}, s3{};
     s1.fragmentShaderInvocations = 100000;
     s2.fragmentShaderInvocations = 300000; // Highest overdraw
     s3.fragmentShaderInvocations = 50000;
@@ -288,7 +288,7 @@ TEST(PipelineStatsCollector, AccumulatorReset) {
     u32 q = collector.BeginPass("Test");
     collector.EndPass(q);
 
-    PipelineStatistics s{};
+    CollectorPipelineStatistics s{};
     s.vertexShaderInvocations = 1000;
     collector.SubmitResults(q, s);
     collector.EndFrame(1920 * 1080);
@@ -308,7 +308,7 @@ TEST(PipelineStatsCollector, AccumulatorReset) {
 
 TEST(PipelineStatsCollector, MaxQueriesPerFrame) {
     PipelineStatsCollector collector;
-    PipelineStatsConfig config;
+    CollectorStatsConfig config;
     config.maxQueriesPerFrame = 2;
     collector.Init(config);
 
@@ -339,7 +339,7 @@ TEST(PipelineStatsCollector, OverdrawComputation) {
     u32 q = collector.BeginPass("OverdrawTest");
     collector.EndPass(q);
 
-    PipelineStatistics s{};
+    CollectorPipelineStatistics s{};
     s.fragmentShaderInvocations = 4147200; // 2x overdraw at 1080p
     collector.SubmitResults(q, s);
     collector.EndFrame(1920 * 1080); // 2073600 pixels
@@ -366,7 +366,7 @@ TEST(PipelineStatsCollector, ComputeShaderStats) {
     u32 q = collector.BeginPass("ComputePass");
     collector.EndPass(q);
 
-    PipelineStatistics s{};
+    CollectorPipelineStatistics s{};
     s.computeShaderInvocations = 1000000;
     collector.SubmitResults(q, s);
     collector.EndFrame(0);

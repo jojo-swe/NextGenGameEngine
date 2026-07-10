@@ -20,7 +20,7 @@ namespace nge::rhi {
 //   - Compute shader occupancy tracking
 //   - Per-pass cost attribution
 
-struct PipelineStatistics {
+struct CollectorPipelineStatistics {
     u64 inputAssemblyVertices;
     u64 inputAssemblyPrimitives;
     u64 vertexShaderInvocations;
@@ -38,14 +38,14 @@ struct PipelineStatistics {
 
 struct PassStatistics {
     std::string passName;
-    PipelineStatistics current;       // Current frame
-    PipelineStatistics accumulated;   // Running total
+    CollectorPipelineStatistics current;       // Current frame
+    CollectorPipelineStatistics accumulated;   // Running total
     u32 sampleCount;                  // Frames sampled
     f32 overdrawRatio;                // fragment invocations / pixels
     f32 geometryAmplification;        // output prims / input prims
 };
 
-struct PipelineStatsConfig {
+struct CollectorStatsConfig {
     u32  maxPasses = 64;
     u32  maxQueriesPerFrame = 128;
     u32  historyFrames = 60;          // Rolling average window
@@ -63,7 +63,7 @@ struct PipelineStatsCollectorStats {
 
 class PipelineStatsCollector {
 public:
-    bool Init(const PipelineStatsConfig& config = {});
+    bool Init(const CollectorStatsConfig& config = {});
     void Shutdown();
 
     // Begin/end statistics collection for a named pass
@@ -71,7 +71,7 @@ public:
     void EndPass(u32 queryId);
 
     // Submit readback results from GPU
-    void SubmitResults(u32 queryId, const PipelineStatistics& stats);
+    void SubmitResults(u32 queryId, const CollectorPipelineStatistics& stats);
 
     // End of frame: compute averages
     void EndFrame(u32 screenPixelCount);
@@ -89,12 +89,12 @@ public:
     PipelineStatsCollectorStats GetStats() const;
 
 private:
-    PipelineStatsConfig m_config;
+    CollectorStatsConfig m_config;
 
     struct ActiveQuery {
         std::string passName;
         bool hasResults;
-        PipelineStatistics results;
+        CollectorPipelineStatistics results;
     };
 
     std::unordered_map<u32, ActiveQuery> m_activeQueries;

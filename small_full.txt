@@ -1,0 +1,24 @@
+Note: Google Test filter = PipelineStatsAggregator.*
+[==========] Running 19 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 19 tests from PipelineStatsAggregator
+[ RUN      ] PipelineStatsAggregator.InitAndShutdown
+[18:22:31.630] [info] [rhi_pipeline_stats_aggregator.cpp:13] Pipeline stats aggregator initialized: maxPasses=128, history=120 frames, minMax=true, bottleneck=true
+[       OK ] PipelineStatsAggregator.InitAndShutdown (1 ms)
+[ RUN      ] PipelineStatsAggregator.RecordPass
+[18:22:31.631] [info] [rhi_pipeline_stats_aggregator.cpp:13] Pipeline stats aggregator initialized: maxPasses=128, history=120 frames, minMax=true, bottleneck=true
+[       OK ] PipelineStatsAggregator.RecordPass (0 ms)
+[ RUN      ] PipelineStatsAggregator.RecordMultiplePasses
+[18:22:31.632] [info] [rhi_pipeline_stats_aggregator.cpp:13] Pipeline stats aggregator initialized: maxPasses=128, history=120 frames, minMax=true, bottleneck=true
+[       OK ] PipelineStatsAggregator.RecordMultiplePasses (0 ms)
+[ RUN      ] PipelineStatsAggregator.GetLatestPassStats
+[18:22:31.632] [info] [rhi_pipeline_stats_aggregator.cpp:13] Pipeline stats aggregator initialized: maxPasses=128, history=120 frames, minMax=true, bottleneck=true
+[       OK ] PipelineStatsAggregator.GetLatestPassStats (0 ms)
+[ RUN      ] PipelineStatsAggregator.GetLatestPassStatsUnknown
+[18:22:31.632] [info] [rhi_pipeline_stats_aggregator.cpp:13] Pipeline stats aggregator initialized: maxPasses=128, history=120 frames, minMax=true, bottleneck=true
+[       OK ] PipelineStatsAggregator.GetLatestPassStatsUnknown (0 ms)
+[ RUN      ] PipelineStatsAggregator.GetPassStatsAveraged
+[18:22:31.632] [info] [rhi_pipeline_stats_aggregator.cpp:13] Pipeline stats aggregator initialized: maxPasses=128, history=120 frames, minMax=true, bottleneck=true
+[       OK ] PipelineStatsAggregator.GetPassStatsAveraged (0 ms)
+[ RUN      ] PipelineStatsAggregator.MinMaxTracking
+[18:22:31.632] [info] [rhi_pipeline_stats_aggregator.cpp:13] Pipeline stats aggregator initialized: maxPasses=64, history=128 frames, minMax=true, bottleneck=false
