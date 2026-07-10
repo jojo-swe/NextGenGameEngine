@@ -45,24 +45,32 @@ std::vector<DescriptorSetLayout> DescriptorSetLayoutOptimizer::BuildOptimizedLay
     std::lock_guard lock(m_mutex);
     std::fprintf(stderr, "[DBG] BuildOptimizedLayouts: start, declared=%zu\n", m_declaredBindings.size());
 
+    // EARLY TEST: create a DescriptorSetLayout before any other work
+    {
+        DescriptorSetLayout testLayout;
+        testLayout.debugName = "EarlyTest";
+        std::fprintf(stderr, "[DBG] early test layout OK: '%s'\n", testLayout.debugName.c_str());
+    }
+
     m_layouts.clear();
 
     if (m_config.sortByFrequency) {
         std::fprintf(stderr, "[DBG] sortByFrequency path\n");
         // Reorganize bindings into sets by update frequency
-        std::unordered_map<u32, std::vector<DescriptorBinding>> frequencySets;
+        // Use heap-allocated map to avoid stack corruption
+        auto frequencySets = std::make_unique<std::unordered_map<u32, std::vector<DescriptorBinding>>>();
 
         for (auto& [setIdx, bindings] : m_declaredBindings) {
             std::fprintf(stderr, "[DBG] declared set %u: %zu bindings\n", setIdx, bindings.size());
             for (auto& b : bindings) {
                 u32 targetSet = static_cast<u32>(b.frequency);
                 std::fprintf(stderr, "[DBG]  binding %u -> freq set %u\n", b.binding, targetSet);
-                frequencySets[targetSet].push_back(b);
+                (*frequencySets)[targetSet].push_back(b);
             }
         }
-        std::fprintf(stderr, "[DBG] frequencySets size=%zu\n", frequencySets.size());
+        std::fprintf(stderr, "[DBG] frequencySets size=%zu\n", frequencySets->size());
 
-        for (auto& [setIdx, bindings] : frequencySets) {
+        for (auto& [setIdx, bindings] : *frequencySets) {
             std::fprintf(stderr, "[DBG] freq set %u: %zu bindings\n", setIdx, bindings.size());
             if (m_config.enableCompaction) {
                 u32 origSize = static_cast<u32>(bindings.size());
@@ -76,13 +84,8 @@ std::vector<DescriptorSetLayout> DescriptorSetLayoutOptimizer::BuildOptimizedLay
             }
 
             std::fprintf(stderr, "[DBG] creating layout for set %u\n", setIdx);
-            {
-                std::string testStr = "Test";
-                std::fprintf(stderr, "[DBG]  bare string works: '%s'\n", testStr.c_str());
-            }
-            auto layoutPtr = std::make_unique<DescriptorSetLayout>();
-            auto& layout = *layoutPtr;
-            std::fprintf(stderr, "[DBG]  layout heap-constructed, sizeof=%zu\n", sizeof(layout));
+            DescriptorSetLayout layout;
+            std::fprintf(stderr, "[DBG]  layout constructed, sizeof=%zu\n", sizeof(layout));
             layout.debugName = "Test";
             std::fprintf(stderr, "[DBG]  debugName assigned first\n");
             layout.layoutId = static_cast<u32>(m_layouts.size());
