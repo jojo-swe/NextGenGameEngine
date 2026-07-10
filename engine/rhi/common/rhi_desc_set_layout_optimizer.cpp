@@ -28,7 +28,12 @@ void DescriptorSetLayoutOptimizer::DeclareBinding(u32 setIndex, u32 binding, Des
                                                      u32 count, u32 stageFlags,
                                                      UpdateFrequency frequency,
                                                      const std::string& name) {
-    std::fprintf(stderr, "[DBG] DeclareBinding: set=%u binding=%u name='%s'\n", setIndex, binding, name.c_str());
+    std::fprintf(stderr, "[DBG] ENGINE sizeof(vector<DescriptorBinding>)=%zu, sizeof(string)=%zu\n",
+        sizeof(std::vector<DescriptorBinding>), sizeof(std::string));
+    std::fprintf(stderr, "[DBG] ENGINE sizeof(DescriptorBinding)=%zu, sizeof(DescriptorSetLayout)=%zu\n",
+        sizeof(DescriptorBinding), sizeof(DescriptorSetLayout));
+    std::fprintf(stderr, "[DBG] ENGINE offsetof debugName=%td\n",
+        (char*)&((DescriptorSetLayout*)nullptr)->debugName - (char*)nullptr);
     std::lock_guard lock(m_mutex);
     std::fprintf(stderr, "[DBG]  locked, sizeof(DescriptorBinding)=%zu\n", sizeof(DescriptorBinding));
 

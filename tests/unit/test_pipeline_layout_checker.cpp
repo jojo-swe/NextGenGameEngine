@@ -6,7 +6,7 @@ using namespace nge;
 using namespace nge::rhi;
 
 static PipelineLayoutDesc MakeLayout(u64 id, const std::string& name,
-                                      std::vector<DescriptorSetLayout> sets = {},
+                                      std::vector<PipelineSetLayoutDesc> sets = {},
                                       std::vector<PushConstantRange> pc = {}) {
     PipelineLayoutDesc desc;
     desc.layoutId = id;
@@ -16,8 +16,8 @@ static PipelineLayoutDesc MakeLayout(u64 id, const std::string& name,
     return desc;
 }
 
-static DescriptorSetLayout MakeSet(u32 setIndex, std::vector<LayoutBinding> bindings) {
-    DescriptorSetLayout sl;
+static PipelineSetLayoutDesc MakeSet(u32 setIndex, std::vector<LayoutBinding> bindings) {
+    PipelineSetLayoutDesc sl;
     sl.setIndex = setIndex;
     sl.bindings = std::move(bindings);
     return sl;

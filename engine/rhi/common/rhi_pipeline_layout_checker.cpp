@@ -215,7 +215,7 @@ PipelineLayoutCheckerStats PipelineLayoutChecker::GetStats() const {
 }
 
 std::vector<LayoutIncompatibility> PipelineLayoutChecker::CheckSetCompat(
-    const DescriptorSetLayout& a, const DescriptorSetLayout& b) const {
+    const PipelineSetLayoutDesc& a, const PipelineSetLayoutDesc& b) const {
 
     std::vector<LayoutIncompatibility> issues;
     u32 setIdx = a.setIndex;
