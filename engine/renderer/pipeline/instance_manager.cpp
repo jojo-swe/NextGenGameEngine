@@ -12,34 +12,36 @@ bool InstanceManager::Init(rhi::IDevice* device, u32 maxInstances) {
 
     m_cpuBuffer.reserve(maxInstances);
 
-    // GPU structured buffer for current frame instances
-    {
-        rhi::BufferDesc desc;
-        desc.size = maxInstances * sizeof(GPUInstanceData);
-        desc.usage = rhi::BufferUsage::Storage | rhi::BufferUsage::TransferDst;
-        desc.memoryUsage = rhi::MemoryUsage::GPU_Only;
-        desc.debugName = "InstanceBuffer";
-        m_gpuBuffer = device->CreateBuffer(desc);
-    }
+    if (device) {
+        // GPU structured buffer for current frame instances
+        {
+            rhi::BufferDesc desc;
+            desc.size = maxInstances * sizeof(GPUInstanceData);
+            desc.usage = rhi::BufferUsage::Storage | rhi::BufferUsage::TransferDst;
+            desc.memoryUsage = rhi::MemoryUsage::GPU_Only;
+            desc.debugName = "InstanceBuffer";
+            m_gpuBuffer = device->CreateBuffer(desc);
+        }
 
-    // Previous frame buffer (for motion vectors)
-    {
-        rhi::BufferDesc desc;
-        desc.size = maxInstances * sizeof(GPUInstanceData);
-        desc.usage = rhi::BufferUsage::Storage | rhi::BufferUsage::TransferDst;
-        desc.memoryUsage = rhi::MemoryUsage::GPU_Only;
-        desc.debugName = "PrevInstanceBuffer";
-        m_prevGpuBuffer = device->CreateBuffer(desc);
-    }
+        // Previous frame buffer (for motion vectors)
+        {
+            rhi::BufferDesc desc;
+            desc.size = maxInstances * sizeof(GPUInstanceData);
+            desc.usage = rhi::BufferUsage::Storage | rhi::BufferUsage::TransferDst;
+            desc.memoryUsage = rhi::MemoryUsage::GPU_Only;
+            desc.debugName = "PrevInstanceBuffer";
+            m_prevGpuBuffer = device->CreateBuffer(desc);
+        }
 
-    // CPU-visible staging buffer
-    {
-        rhi::BufferDesc desc;
-        desc.size = maxInstances * sizeof(GPUInstanceData);
-        desc.usage = rhi::BufferUsage::TransferSrc;
-        desc.memoryUsage = rhi::MemoryUsage::CPU_To_GPU;
-        desc.debugName = "InstanceStaging";
-        m_stagingBuffer = device->CreateBuffer(desc);
+        // CPU-visible staging buffer
+        {
+            rhi::BufferDesc desc;
+            desc.size = maxInstances * sizeof(GPUInstanceData);
+            desc.usage = rhi::BufferUsage::TransferSrc;
+            desc.memoryUsage = rhi::MemoryUsage::CPU_To_GPU;
+            desc.debugName = "InstanceStaging";
+            m_stagingBuffer = device->CreateBuffer(desc);
+        }
     }
 
     NGE_LOG_INFO("Instance manager initialized: max {} instances ({} KB)",

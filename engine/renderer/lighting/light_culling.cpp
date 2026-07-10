@@ -11,54 +11,56 @@ bool LightCullingSystem::Init(rhi::IDevice* device, const ClusterGridConfig& con
 
     u32 totalClusters = GetTotalClusters();
 
-    // Light structured buffer
-    {
-        rhi::BufferDesc desc;
-        desc.size = MAX_LIGHTS * sizeof(GPULightData);
-        desc.usage = rhi::BufferUsage::Storage | rhi::BufferUsage::TransferDst;
-        desc.memoryUsage = rhi::MemoryUsage::GPU_Only;
-        desc.debugName = "LightBuffer";
-        m_lightBuffer = device->CreateBuffer(desc);
-    }
+    if (device) {
+        // Light structured buffer
+        {
+            rhi::BufferDesc desc;
+            desc.size = MAX_LIGHTS * sizeof(GPULightData);
+            desc.usage = rhi::BufferUsage::Storage | rhi::BufferUsage::TransferDst;
+            desc.memoryUsage = rhi::MemoryUsage::GPU_Only;
+            desc.debugName = "LightBuffer";
+            m_lightBuffer = device->CreateBuffer(desc);
+        }
 
-    // Cluster AABB buffer (built once or on resize)
-    {
-        rhi::BufferDesc desc;
-        desc.size = totalClusters * 32; // 2x float4 per cluster (min + max)
-        desc.usage = rhi::BufferUsage::Storage;
-        desc.memoryUsage = rhi::MemoryUsage::GPU_Only;
-        desc.debugName = "ClusterAABBs";
-        m_clusterBuffer = device->CreateBuffer(desc);
-    }
+        // Cluster AABB buffer (built once or on resize)
+        {
+            rhi::BufferDesc desc;
+            desc.size = totalClusters * 32; // 2x float4 per cluster (min + max)
+            desc.usage = rhi::BufferUsage::Storage;
+            desc.memoryUsage = rhi::MemoryUsage::GPU_Only;
+            desc.debugName = "ClusterAABBs";
+            m_clusterBuffer = device->CreateBuffer(desc);
+        }
 
-    // Light grid: per-cluster offset + count (2x u32 = 8 bytes per cluster)
-    {
-        rhi::BufferDesc desc;
-        desc.size = totalClusters * 8;
-        desc.usage = rhi::BufferUsage::Storage;
-        desc.memoryUsage = rhi::MemoryUsage::GPU_Only;
-        desc.debugName = "LightGrid";
-        m_lightGridBuffer = device->CreateBuffer(desc);
-    }
+        // Light grid: per-cluster offset + count (2x u32 = 8 bytes per cluster)
+        {
+            rhi::BufferDesc desc;
+            desc.size = totalClusters * 8;
+            desc.usage = rhi::BufferUsage::Storage;
+            desc.memoryUsage = rhi::MemoryUsage::GPU_Only;
+            desc.debugName = "LightGrid";
+            m_lightGridBuffer = device->CreateBuffer(desc);
+        }
 
-    // Light index list (worst case: every light in every cluster)
-    {
-        rhi::BufferDesc desc;
-        desc.size = totalClusters * config.maxLightsPerCluster * sizeof(u32);
-        desc.usage = rhi::BufferUsage::Storage;
-        desc.memoryUsage = rhi::MemoryUsage::GPU_Only;
-        desc.debugName = "LightIndexList";
-        m_lightIndexBuffer = device->CreateBuffer(desc);
-    }
+        // Light index list (worst case: every light in every cluster)
+        {
+            rhi::BufferDesc desc;
+            desc.size = totalClusters * config.maxLightsPerCluster * sizeof(u32);
+            desc.usage = rhi::BufferUsage::Storage;
+            desc.memoryUsage = rhi::MemoryUsage::GPU_Only;
+            desc.debugName = "LightIndexList";
+            m_lightIndexBuffer = device->CreateBuffer(desc);
+        }
 
-    // Staging buffer for light upload
-    {
-        rhi::BufferDesc desc;
-        desc.size = MAX_LIGHTS * sizeof(GPULightData);
-        desc.usage = rhi::BufferUsage::TransferSrc;
-        desc.memoryUsage = rhi::MemoryUsage::CPU_To_GPU;
-        desc.debugName = "LightStaging";
-        m_stagingBuffer = device->CreateBuffer(desc);
+        // Staging buffer for light upload
+        {
+            rhi::BufferDesc desc;
+            desc.size = MAX_LIGHTS * sizeof(GPULightData);
+            desc.usage = rhi::BufferUsage::TransferSrc;
+            desc.memoryUsage = rhi::MemoryUsage::CPU_To_GPU;
+            desc.debugName = "LightStaging";
+            m_stagingBuffer = device->CreateBuffer(desc);
+        }
     }
 
     m_lights.reserve(MAX_LIGHTS);

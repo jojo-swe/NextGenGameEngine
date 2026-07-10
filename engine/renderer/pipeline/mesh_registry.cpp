@@ -10,24 +10,27 @@ bool MeshRegistry::Init(rhi::IDevice* device, u32 maxMeshes) {
 
     // Global vertex buffer (256 MB default)
     m_vertexBufferCapacity = 256 * 1024 * 1024;
-    {
-        rhi::BufferDesc desc;
-        desc.size = m_vertexBufferCapacity;
-        desc.usage = rhi::BufferUsage::Vertex | rhi::BufferUsage::Storage | rhi::BufferUsage::TransferDst;
-        desc.memoryUsage = rhi::MemoryUsage::GPU_Only;
-        desc.debugName = "GlobalVertexBuffer";
-        m_globalVertexBuffer = device->CreateBuffer(desc);
-    }
-
     // Global index buffer (128 MB default)
     m_indexBufferCapacity = 128 * 1024 * 1024;
-    {
-        rhi::BufferDesc desc;
-        desc.size = m_indexBufferCapacity;
-        desc.usage = rhi::BufferUsage::Index | rhi::BufferUsage::Storage | rhi::BufferUsage::TransferDst;
-        desc.memoryUsage = rhi::MemoryUsage::GPU_Only;
-        desc.debugName = "GlobalIndexBuffer";
-        m_globalIndexBuffer = device->CreateBuffer(desc);
+
+    if (device) {
+        {
+            rhi::BufferDesc desc;
+            desc.size = m_vertexBufferCapacity;
+            desc.usage = rhi::BufferUsage::Vertex | rhi::BufferUsage::Storage | rhi::BufferUsage::TransferDst;
+            desc.memoryUsage = rhi::MemoryUsage::GPU_Only;
+            desc.debugName = "GlobalVertexBuffer";
+            m_globalVertexBuffer = device->CreateBuffer(desc);
+        }
+
+        {
+            rhi::BufferDesc desc;
+            desc.size = m_indexBufferCapacity;
+            desc.usage = rhi::BufferUsage::Index | rhi::BufferUsage::Storage | rhi::BufferUsage::TransferDst;
+            desc.memoryUsage = rhi::MemoryUsage::GPU_Only;
+            desc.debugName = "GlobalIndexBuffer";
+            m_globalIndexBuffer = device->CreateBuffer(desc);
+        }
     }
 
     m_vertexBufferOffset = 0;
@@ -130,11 +133,13 @@ void MeshRegistry::Unregister(MeshId id) {
 
     // Note: GPU memory from global buffer is NOT reclaimed (linear allocator).
     // For mesh hot-swap, use a more sophisticated allocator.
-    if (it->second.vertexBuffer.IsValid() && it->second.vertexBuffer != m_globalVertexBuffer) {
-        m_device->DestroyBuffer(it->second.vertexBuffer);
-    }
-    if (it->second.indexBuffer.IsValid() && it->second.indexBuffer != m_globalIndexBuffer) {
-        m_device->DestroyBuffer(it->second.indexBuffer);
+    if (m_device) {
+        if (it->second.vertexBuffer.IsValid() && it->second.vertexBuffer != m_globalVertexBuffer) {
+            m_device->DestroyBuffer(it->second.vertexBuffer);
+        }
+        if (it->second.indexBuffer.IsValid() && it->second.indexBuffer != m_globalIndexBuffer) {
+            m_device->DestroyBuffer(it->second.indexBuffer);
+        }
     }
 
     m_meshes.erase(it);
