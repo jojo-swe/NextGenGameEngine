@@ -23,11 +23,10 @@ struct Transform {
     // ─── Convenience setters ──────────────────────────────────────────
 
     void SetPosition(math::Vec3 pos) {
-        // Extract current rotation, combine with new translation
-        pga::Motor rot = pga::Motor::Rotation({0,0,1}, 0); // TODO: extract rotation from current motor
-        // For now, rebuild motor from scratch
+        // TODO(WP-2): extract the rotation from the current motor and
+        // recombine: Motor::Multiply(Translation(pos), rotorPart).
+        // For now this rebuilds the motor from scratch and DROPS rotation.
         localMotor = pga::Motor::Translation(pos);
-        // If we had rotation, we'd do: Motor::Multiply(Translation(pos), rotation)
         dirty = true;
     }
 

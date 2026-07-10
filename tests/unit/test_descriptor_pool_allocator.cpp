@@ -311,7 +311,7 @@ TEST(DescriptorPoolAllocator, ReuseAfterFree) {
     alloc.Init(config);
 
     u32 id0 = alloc.Allocate(SimpleReq());
-    u32 id1 = alloc.Allocate(SimpleReq());
+    [[maybe_unused]] u32 id1 = alloc.Allocate(SimpleReq());
     // Pool 0 is full
 
     alloc.Free(id0);

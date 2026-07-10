@@ -11,7 +11,7 @@
 
 namespace nge::assets {
 
-GLTFImportResult GLTFImporter::Import(const std::string& path, const GLTFImportOptions& options) {
+GLTFImportResult GLTFImporter::Import(const std::string& path, [[maybe_unused]] const GLTFImportOptions& options) {
     GLTFImportResult result;
 
     // Verify file exists

@@ -196,7 +196,7 @@ TEST(IndirectCount, DestroyReducesActive) {
     desc.debugName = "Test";
 
     u32 id0 = builder.CreateBuffer(desc);
-    u32 id1 = builder.CreateBuffer(desc);
+    [[maybe_unused]] u32 id1 = builder.CreateBuffer(desc);
 
     EXPECT_EQ(builder.GetStats().activeBuffers, 2u);
 

@@ -33,7 +33,7 @@ TEST(AsyncReadback, SubmitAndComplete) {
     req.frameIssued = 0;
     req.framesToWait = 2;
     req.debugName = "TestReadback";
-    req.callback = [&](const void* data, u64 size, bool success) {
+    req.callback = [&]([[maybe_unused]] const void* data, u64 size, [[maybe_unused]] bool success) {
         callbackFired = true;
         receivedSize = size;
     };

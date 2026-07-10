@@ -168,11 +168,11 @@ TEST(FrameGraphAliaser, ComplexGraphAliasing) {
     // Pass 2: Read lighting, write post-process temp
     // Pass 3: Read post-process, write final
 
-    u32 albedo   = aliaser.DeclareResource(ResourceType::RenderTarget, 8000, 0, 1, "Albedo");
-    u32 normal   = aliaser.DeclareResource(ResourceType::RenderTarget, 8000, 0, 1, "Normal");
-    u32 lighting = aliaser.DeclareResource(ResourceType::RenderTarget, 8000, 1, 2, "Lighting");
-    u32 postTemp = aliaser.DeclareResource(ResourceType::RenderTarget, 8000, 2, 3, "PostTemp");
-    u32 finalRT  = aliaser.DeclareResource(ResourceType::RenderTarget, 8000, 3, 3, "Final");
+    [[maybe_unused]] u32 albedo   = aliaser.DeclareResource(ResourceType::RenderTarget, 8000, 0, 1, "Albedo");
+    [[maybe_unused]] u32 normal   = aliaser.DeclareResource(ResourceType::RenderTarget, 8000, 0, 1, "Normal");
+    [[maybe_unused]] u32 lighting = aliaser.DeclareResource(ResourceType::RenderTarget, 8000, 1, 2, "Lighting");
+    [[maybe_unused]] u32 postTemp = aliaser.DeclareResource(ResourceType::RenderTarget, 8000, 2, 3, "PostTemp");
+    [[maybe_unused]] u32 finalRT  = aliaser.DeclareResource(ResourceType::RenderTarget, 8000, 3, 3, "Final");
 
     auto groups = aliaser.ComputeAliasing();
 
@@ -321,8 +321,8 @@ TEST(FrameGraphAliaser, MinResourceSizeFilter) {
     aliaser.Init(config);
 
     // Small resource below threshold
-    u32 a = aliaser.DeclareResource(ResourceType::RenderTarget, 100, 0, 1);
-    u32 b = aliaser.DeclareResource(ResourceType::RenderTarget, 100, 2, 3);
+    [[maybe_unused]] u32 a = aliaser.DeclareResource(ResourceType::RenderTarget, 100, 0, 1);
+    [[maybe_unused]] u32 b = aliaser.DeclareResource(ResourceType::RenderTarget, 100, 2, 3);
 
     auto groups = aliaser.ComputeAliasing();
 

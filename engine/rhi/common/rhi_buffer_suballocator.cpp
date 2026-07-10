@@ -100,7 +100,7 @@ SubAllocatorStats BufferSubAllocator::GetStats() const {
     for (const auto& heap : m_heaps) {
         u64 usedPlusFree = heap.allocated;
         for (const auto& b : heap.freeBlocks) usedPlusFree += b.size;
-        u64 tailFree = heap.capacity - usedPlusFree;
+        [[maybe_unused]] u64 tailFree = heap.capacity - usedPlusFree;
         // Tail free space is implicit — not tracked as a free block
     }
 

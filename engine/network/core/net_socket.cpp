@@ -20,6 +20,13 @@
 #define closesocket close
 #endif
 
+// Address-length type differs: int on Winsock, socklen_t on POSIX.
+#if defined(NGE_PLATFORM_WINDOWS)
+using AddrLen = int;
+#else
+using AddrLen = socklen_t;
+#endif
+
 namespace nge::network {
 
 bool UDPSocket::s_initialized = false;
@@ -75,7 +82,7 @@ bool UDPSocket::Open(u16 port) {
 
     // Get actual bound port
     sockaddr_in boundAddr{};
-    int addrLen = sizeof(boundAddr);
+    AddrLen addrLen = sizeof(boundAddr);
     getsockname(sock, reinterpret_cast<sockaddr*>(&boundAddr), &addrLen);
     m_port = ntohs(boundAddr.sin_port);
 
@@ -125,7 +132,7 @@ i32 UDPSocket::Receive(NetAddress& from, void* buffer, usize bufferSize) {
     if (m_socket == INVALID_SOCKET_VAL) return -1;
 
     sockaddr_in addr{};
-    int addrLen = sizeof(addr);
+    AddrLen addrLen = sizeof(addr);
 
     auto result = recvfrom(static_cast<SOCKET>(m_socket),
                             static_cast<char*>(buffer),

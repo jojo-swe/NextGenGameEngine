@@ -30,11 +30,11 @@ bool DescriptorSetAllocator::Init(IDevice* device, const DescriptorAllocatorConf
 
 void DescriptorSetAllocator::Shutdown() {
     for (auto& frame : m_transientFrames) {
-        for (auto& pool : frame.pools) {
+        for ([[maybe_unused]] auto& pool : frame.pools) {
             // TODO: vkDestroyDescriptorPool(device, pool.handle, nullptr);
         }
     }
-    for (auto& pool : m_persistentPools) {
+    for ([[maybe_unused]] auto& pool : m_persistentPools) {
         // TODO: vkDestroyDescriptorPool(device, pool.handle, nullptr);
     }
     m_transientFrames.clear();
@@ -46,7 +46,7 @@ void DescriptorSetAllocator::BeginFrame(u32 frameIndex) {
     m_currentFrame = frameIndex % m_config.framesInFlight;
 
     auto& frame = m_transientFrames[m_currentFrame];
-    for (auto& pool : frame.pools) {
+    for ([[maybe_unused]] auto& pool : frame.pools) {
         // TODO: vkResetDescriptorPool(device, pool.handle, 0);
         pool.allocatedSets = 0;
         pool.full = false;
@@ -91,7 +91,7 @@ u64 DescriptorSetAllocator::AllocatePersistent(u64 setLayoutHandle) {
     std::lock_guard lock(m_mutex);
 
     // Try existing pools
-    for (auto& pool : m_persistentPools) {
+    for ([[maybe_unused]] auto& pool : m_persistentPools) {
         if (!pool.full) {
             u64 set = AllocateFromPool(pool, setLayoutHandle);
             if (set != 0) {

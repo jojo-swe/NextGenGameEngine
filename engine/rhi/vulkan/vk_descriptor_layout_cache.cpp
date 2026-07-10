@@ -157,7 +157,7 @@ u64 DescriptorLayoutCache::HashLayout(const LayoutCreateInfo& info) const {
     return hash;
 }
 
-DescriptorSetLayoutHandle DescriptorLayoutCache::CreateLayout(const LayoutCreateInfo& info) {
+DescriptorSetLayoutHandle DescriptorLayoutCache::CreateLayout([[maybe_unused]] const LayoutCreateInfo& info) {
     // TODO: Create actual VkDescriptorSetLayout via vkCreateDescriptorSetLayout
     // VkDescriptorSetLayoutCreateInfo createInfo{};
     // createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -181,7 +181,7 @@ DescriptorSetLayoutHandle DescriptorLayoutCache::CreateLayout(const LayoutCreate
     return handle;
 }
 
-void DescriptorLayoutCache::DestroyLayout(DescriptorSetLayoutHandle handle) {
+void DescriptorLayoutCache::DestroyLayout([[maybe_unused]] DescriptorSetLayoutHandle handle) {
     // TODO: vkDestroyDescriptorSetLayout(device, (VkDescriptorSetLayout)handle, nullptr);
     NGE_LOG_DEBUG("Destroyed descriptor set layout: handle={}", handle);
 }

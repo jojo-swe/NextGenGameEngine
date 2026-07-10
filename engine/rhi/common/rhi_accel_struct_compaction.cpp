@@ -174,7 +174,7 @@ void AccelStructCompactionManager::Unregister(u64 accelId) {
     m_structures.erase(accelId);
 }
 
-std::vector<u64> AccelStructCompactionManager::ProcessFrame(u32 currentFrame) {
+std::vector<u64> AccelStructCompactionManager::ProcessFrame([[maybe_unused]] u32 currentFrame) {
     std::lock_guard lock(m_mutex);
 
     std::vector<u64> toCompact;

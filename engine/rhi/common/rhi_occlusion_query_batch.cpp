@@ -155,7 +155,7 @@ void OcclusionQueryBatchManager::FreeObjectQueries(u32 objectId) {
     m_objectToSlot.erase(it);
 }
 
-void OcclusionQueryBatchManager::ProcessFrame(u32 currentFrame) {
+void OcclusionQueryBatchManager::ProcessFrame([[maybe_unused]] u32 currentFrame) {
     std::lock_guard lock(m_mutex);
 
     // Reset per-frame counters

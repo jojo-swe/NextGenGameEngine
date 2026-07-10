@@ -112,8 +112,6 @@ void GPUTimerProfiler::EndTimer(rhi::ICommandList* cmd, u32 timerIndex) {
 }
 
 void GPUTimerProfiler::CollectResults() {
-    const auto& timestamps = m_queryHeap.GetTimestampResults();
-
     // Copy current nodes as results, filling in durations from query readback
     m_results = m_currentNodes;
 

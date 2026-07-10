@@ -50,9 +50,14 @@ bool Application::InitSubsystems() {
         return false;
     }
 
+#if defined(NGE_PLATFORM_WINDOWS)
+    void* instanceHandle = m_window->GetInstanceHandle(); // HINSTANCE
+#else
+    void* instanceHandle = nullptr; // No HINSTANCE equivalent on this platform
+#endif
     if (!m_device->Init(
             m_window->GetNativeHandle(),
-            m_window->GetInstanceHandle(),
+            instanceHandle,
             m_config.width, m_config.height))
     {
         NGE_LOG_ERROR("Failed to initialize RHI device");

@@ -145,7 +145,7 @@ TEST(SubresourceStateTracker, RedundantTransitionDetection) {
 
     // First transition: Undefined -> ShaderReadOnly already done at registration
     // Transition to same layout should be redundant
-    auto barrier = tracker.TransitionSubresource(1, 0, 0,
+    [[maybe_unused]] auto barrier = tracker.TransitionSubresource(1, 0, 0,
         ImageLayout::ShaderReadOnly, static_cast<u32>(AccessFlags::ShaderRead));
 
     // The state was already ShaderReadOnly with access None, but access mask differs

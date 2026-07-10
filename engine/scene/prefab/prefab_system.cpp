@@ -133,7 +133,7 @@ ecs::Entity PrefabManager::Instantiate(ecs::World& world, PrefabId id,
 
         // Compute transform (root gets params override, children use prefab-local)
         math::Vec3 pos = node.position;
-        math::Vec4 rot = node.rotation;
+        [[maybe_unused]] math::Vec4 rot = node.rotation; // TODO: apply once rotation composition exists
         math::Vec3 scl = node.scale;
 
         if (i == 0) {

@@ -132,8 +132,6 @@ std::vector<BarrierRequest> SubresourceStateTracker::TransitionWholeImage(u64 im
     auto imgIt = m_images.find(imageHandle);
     if (imgIt == m_images.end()) return barriers;
 
-    const auto& info = imgIt->second;
-
     for (auto& [key, state] : imgIt->second.subresources) {
         if (m_config.detectRedundantBarriers &&
             state.layout == newLayout && state.accessMask == newAccessMask) {

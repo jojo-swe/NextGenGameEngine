@@ -160,7 +160,7 @@ bool DescriptorSetLayoutOptimizer::AreCompatible(u32 layoutA, u32 layoutB) const
     return a->layoutHash == b->layoutHash;
 }
 
-void DescriptorSetLayoutOptimizer::RecordBind(u32 setIndex) {
+void DescriptorSetLayoutOptimizer::RecordBind([[maybe_unused]] u32 setIndex) {
     std::lock_guard lock(m_mutex);
     m_totalBinds++;
 }

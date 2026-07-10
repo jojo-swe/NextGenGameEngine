@@ -12,28 +12,7 @@ Motor Motor::Multiply(const Motor& a, const Motor& b) {
     // e31' = a.s*b.e31 + a.e31*b.s + a.e12*b.e23 - a.e23*b.e12
     // e12' = a.s*b.e12 + a.e12*b.s + a.e23*b.e31 - a.e31*b.e23
 
-    // SIMD implementation of rotor product
-    __m128 a1 = a.p1;
-    __m128 b1 = b.p1;
-
-    // s component broadcast
-    __m128 a_s = _mm_shuffle_ps(a1, a1, _MM_SHUFFLE(0, 0, 0, 0));
-    __m128 t1 = _mm_mul_ps(a_s, b1);
-
-    // e23 contribution
-    __m128 a_e23 = _mm_shuffle_ps(a1, a1, _MM_SHUFFLE(1, 1, 1, 1));
-    __m128 b_shuf1 = _mm_shuffle_ps(b1, b1, _MM_SHUFFLE(2, 3, 0, 1)); // (e23, s, e12, e31)
-    __m128 sign1 = _mm_set_ps(1, -1, 1, -1);
-    __m128 t2 = _mm_mul_ps(_mm_mul_ps(a_e23, b_shuf1), sign1);
-
-    // e31 contribution
-    __m128 a_e31 = _mm_shuffle_ps(a1, a1, _MM_SHUFFLE(2, 2, 2, 2));
-    __m128 b_shuf2 = _mm_shuffle_ps(b1, b1, _MM_SHUFFLE(1, 0, 3, 2)); // (e31, e12, s, e23) -> need proper shuffle
-    // Manually: for e31 row the product pattern is:
-    // s':   -a.e31*b.e31
-    // e23': -a.e31*b.e12 (wait, let me just do scalar for correctness, then optimize)
-
-    // For correctness first, scalar fallback for the full product:
+    // Scalar implementation (a future SIMD version must match these formulas):
     f32 rs   = a.s*b.s     - a.e23*b.e23   - a.e31*b.e31   - a.e12*b.e12;
     f32 re23 = a.s*b.e23   + a.e23*b.s     + a.e31*b.e12   - a.e12*b.e31;
     f32 re31 = a.s*b.e31   + a.e31*b.s     + a.e12*b.e23   - a.e23*b.e12;
@@ -187,7 +166,6 @@ Line Motor::Log() const {
     result.e12 = e12 * lineScale;
 
     if (rotNorm > math::EPSILON) {
-        f32 cosHalf = s;
         f32 dIdeal = idealScale * halfAngle;
 
         result.e01 = e01 * lineScale + e23 * dIdeal;
@@ -233,7 +211,6 @@ Motor Motor::Exp(Line l) {
     result.e0123 = dualScale * math::Sin(dirNorm);
 
     if (dirNorm > math::EPSILON) {
-        f32 sinA = math::Sin(dirNorm);
         result.e01 = l.e01 * sinA_over_norm + l.e23 * dualScale * cosA;
         result.e02 = l.e02 * sinA_over_norm + l.e31 * dualScale * cosA;
         result.e03 = l.e03 * sinA_over_norm + l.e12 * dualScale * cosA;
