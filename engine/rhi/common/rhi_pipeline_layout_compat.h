@@ -19,17 +19,17 @@ namespace nge::rhi {
 //   - Detect mismatched set layouts when binding across pipelines
 //   - Pre-validate pipeline layout before VkPipelineLayout creation
 
-struct PushConstantRange {
+struct CompatPushConstantRange {
     u32         stageFlags;
     u32         offset;
     u32         size;
     std::string debugName;
 };
 
-struct PipelineLayoutDesc {
+struct CompatPipelineLayoutDesc {
     u32                          layoutId;
     std::vector<u64>             setLayoutHashes;  // Hash per descriptor set
-    std::vector<PushConstantRange> pushConstantRanges;
+    std::vector<CompatPushConstantRange> pushConstantRanges;
     std::string                  debugName;
 };
 
@@ -74,7 +74,7 @@ public:
 
     // Register a pipeline layout
     u32 RegisterLayout(const std::vector<u64>& setLayoutHashes,
-                        const std::vector<PushConstantRange>& pushConstants,
+                        const std::vector<CompatPushConstantRange>& pushConstants,
                         const std::string& name = "");
 
     // Check if two layouts are compatible (all shared sets match)
@@ -90,7 +90,7 @@ public:
     std::vector<CompatIssue> FindIssues(u32 layoutA, u32 layoutB) const;
 
     // Get layout info
-    const PipelineLayoutDesc* GetLayout(u32 layoutId) const;
+    const CompatPipelineLayoutDesc* GetLayout(u32 layoutId) const;
 
     // Get total push constant size for a layout
     u32 GetPushConstantSize(u32 layoutId) const;
@@ -105,10 +105,10 @@ public:
     PipelineLayoutCompatStats GetStats() const;
 
 private:
-    bool CheckPushConstantOverlap(const PushConstantRange& a, const PushConstantRange& b) const;
+    bool CheckPushConstantOverlap(const CompatPushConstantRange& a, const CompatPushConstantRange& b) const;
 
     PipelineLayoutCompatConfig m_config;
-    std::unordered_map<u32, PipelineLayoutDesc> m_layouts;
+    std::unordered_map<u32, CompatPipelineLayoutDesc> m_layouts;
 
     u32 m_nextId = 0;
     mutable u32 m_totalValidations = 0;

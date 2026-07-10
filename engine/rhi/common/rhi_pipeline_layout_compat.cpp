@@ -23,7 +23,7 @@ void PipelineLayoutCompatChecker::Shutdown() {
 }
 
 u32 PipelineLayoutCompatChecker::RegisterLayout(const std::vector<u64>& setLayoutHashes,
-                                                   const std::vector<PushConstantRange>& pushConstants,
+                                                   const std::vector<CompatPushConstantRange>& pushConstants,
                                                    const std::string& name) {
     std::lock_guard lock(m_mutex);
 
@@ -34,7 +34,7 @@ u32 PipelineLayoutCompatChecker::RegisterLayout(const std::vector<u64>& setLayou
 
     u32 id = m_nextId++;
 
-    PipelineLayoutDesc desc;
+    CompatPipelineLayoutDesc desc;
     desc.layoutId = id;
     desc.setLayoutHashes = setLayoutHashes;
     desc.pushConstantRanges = pushConstants;
@@ -211,7 +211,7 @@ std::vector<CompatIssue> PipelineLayoutCompatChecker::FindIssues(u32 layoutA, u3
     return issues;
 }
 
-const PipelineLayoutDesc* PipelineLayoutCompatChecker::GetLayout(u32 layoutId) const {
+const CompatPipelineLayoutDesc* PipelineLayoutCompatChecker::GetLayout(u32 layoutId) const {
     std::lock_guard lock(m_mutex);
 
     auto it = m_layouts.find(layoutId);
@@ -268,8 +268,8 @@ PipelineLayoutCompatStats PipelineLayoutCompatChecker::GetStats() const {
     return stats;
 }
 
-bool PipelineLayoutCompatChecker::CheckPushConstantOverlap(const PushConstantRange& a,
-                                                              const PushConstantRange& b) const {
+bool PipelineLayoutCompatChecker::CheckPushConstantOverlap(const CompatPushConstantRange& a,
+                                                              const CompatPushConstantRange& b) const {
     u32 aEnd = a.offset + a.size;
     u32 bEnd = b.offset + b.size;
     return !(aEnd <= b.offset || bEnd <= a.offset);

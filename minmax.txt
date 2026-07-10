@@ -1,0 +1,6 @@
+Note: Google Test filter = PipelineStatsAggregator.MinMaxTracking
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from PipelineStatsAggregator
+[ RUN      ] PipelineStatsAggregator.MinMaxTracking
+[18:22:46.050] [info] [rhi_pipeline_stats_aggregator.cpp:13] Pipeline stats aggregator initialized: maxPasses=64, history=128 frames, minMax=true, bottleneck=false

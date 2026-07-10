@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/core/types.h"
+#include "engine/rhi/common/rhi_types.h"
 #include <vector>
 #include <string>
 #include <unordered_map>
@@ -31,20 +32,6 @@ enum class DescBindingType : u8 {
     AccelerationStructure,
 };
 
-enum class ShaderStage : u32 {
-    Vertex   = 0x01,
-    Fragment = 0x02,
-    Compute  = 0x04,
-    Geometry = 0x08,
-    TessCtrl = 0x10,
-    TessEval = 0x20,
-    All      = 0xFF,
-};
-
-inline ShaderStage operator|(ShaderStage a, ShaderStage b) {
-    return static_cast<ShaderStage>(static_cast<u32>(a) | static_cast<u32>(b));
-}
-
 struct LayoutBinding {
     u32             binding;
     DescBindingType type;
@@ -58,7 +45,7 @@ struct PushConstantRange {
     u32         size;
 };
 
-struct DescriptorSetLayout {
+struct PipelineSetLayoutDesc {
     u32                       setIndex;
     std::vector<LayoutBinding> bindings;
 };
@@ -66,7 +53,7 @@ struct DescriptorSetLayout {
 struct PipelineLayoutDesc {
     u64                             layoutId;
     std::string                     debugName;
-    std::vector<DescriptorSetLayout> setLayouts;  // Indexed by set number
+    std::vector<PipelineSetLayoutDesc> setLayouts;  // Indexed by set number
     std::vector<PushConstantRange>   pushConstants;
 };
 
@@ -131,8 +118,8 @@ public:
     PipelineLayoutCheckerStats GetStats() const;
 
 private:
-    std::vector<LayoutIncompatibility> CheckSetCompat(const DescriptorSetLayout& a,
-                                                        const DescriptorSetLayout& b) const;
+    std::vector<LayoutIncompatibility> CheckSetCompat(const PipelineSetLayoutDesc& a,
+                                                        const PipelineSetLayoutDesc& b) const;
 
     PipelineLayoutCheckerConfig m_config;
     std::unordered_map<u64, PipelineLayoutDesc> m_layouts;

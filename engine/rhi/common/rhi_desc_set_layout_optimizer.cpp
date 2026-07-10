@@ -1,7 +1,6 @@
 #include "engine/rhi/common/rhi_desc_set_layout_optimizer.h"
 #include "engine/core/logging/log.h"
 #include <algorithm>
-#include <cstring>
 
 namespace nge::rhi {
 

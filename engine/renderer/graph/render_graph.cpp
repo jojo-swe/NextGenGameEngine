@@ -204,12 +204,16 @@ void RenderGraph::TopologicalSort() {
 }
 
 void RenderGraph::CullUnused() {
-    // Mark passes as culled if they don't contribute to any output
-    // Start from passes that write to imported (external) resources and trace backwards
+    // Mark passes as culled if they don't contribute to any output.
+    // A pass is needed if:
+    //   1. It writes to an imported (external) resource, OR
+    //   2. Its output is read by another pass, OR
+    //   3. It reads from a needed pass (forward trace)
+    // Applied as a fixpoint until no more changes.
 
     std::unordered_set<u32> needed;
 
-    // All passes that write to imported resources are needed
+    // Rule 1: passes that write to imported resources
     for (u32 i = 0; i < static_cast<u32>(m_passes.size()); ++i) {
         for (const auto& write : m_passes[i].writes) {
             if (!m_resources[write.handle.index].transient) {
@@ -218,25 +222,54 @@ void RenderGraph::CullUnused() {
         }
     }
 
-    // Also keep the last pass (usually presents to screen)
-    if (!m_passes.empty()) {
-        needed.insert(static_cast<u32>(m_passes.size()) - 1);
+    // Rule 2: passes whose output is read by another pass
+    for (u32 b = 0; b < static_cast<u32>(m_passes.size()); ++b) {
+        for (const auto& read : m_passes[b].reads) {
+            for (u32 a = 0; a < static_cast<u32>(m_passes.size()); ++a) {
+                if (a == b) continue;
+                for (const auto& write : m_passes[a].writes) {
+                    if (write.handle == read.handle) {
+                        needed.insert(a);
+                    }
+                }
+            }
+        }
     }
 
-    // Trace backwards: if pass B is needed and reads from pass A's output, A is needed too
+    // Fixpoint: backward trace (needed pass reads from producer) + forward trace (needed pass output read by consumer)
     bool changed = true;
     while (changed) {
         changed = false;
-        for (u32 b : needed) {
-            for (const auto& read : m_passes[b].reads) {
-                for (u32 a = 0; a < static_cast<u32>(m_passes.size()); ++a) {
-                    if (needed.count(a)) continue;
-                    for (const auto& write : m_passes[a].writes) {
-                        if (write.handle == read.handle) {
-                            needed.insert(a);
-                            changed = true;
+        for (u32 b = 0; b < static_cast<u32>(m_passes.size()); ++b) {
+            if (needed.count(b)) {
+                // Backward: b is needed and reads from a → a is needed
+                for (const auto& read : m_passes[b].reads) {
+                    for (u32 a = 0; a < static_cast<u32>(m_passes.size()); ++a) {
+                        if (needed.count(a)) continue;
+                        for (const auto& write : m_passes[a].writes) {
+                            if (write.handle == read.handle) {
+                                needed.insert(a);
+                                changed = true;
+                            }
                         }
                     }
+                }
+            } else {
+                // Forward: b reads from a needed pass → b is needed
+                for (const auto& read : m_passes[b].reads) {
+                    bool found = false;
+                    for (u32 a : needed) {
+                        for (const auto& write : m_passes[a].writes) {
+                            if (write.handle == read.handle) {
+                                needed.insert(b);
+                                changed = true;
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (found) break;
+                    }
+                    if (found) break;
                 }
             }
         }
@@ -251,6 +284,8 @@ void RenderGraph::CullUnused() {
 }
 
 void RenderGraph::AllocateTransientResources() {
+    if (!m_device) return;
+
     for (auto& res : m_resources) {
         if (!res.transient || res.imported) continue;
         if (res.refCount == 0) continue; // Unused resource
@@ -482,13 +517,15 @@ void RenderGraph::InsertCrossQueueSync() {
 
 void RenderGraph::Reset() {
     // Free transient resources
-    for (auto& res : m_resources) {
-        if (!res.transient) continue;
-        if (res.type == RGResource::Type::Texture && res.physicalTexture.IsValid()) {
-            m_device->DestroyTexture(res.physicalTexture);
-        }
-        if (res.type == RGResource::Type::Buffer && res.physicalBuffer.IsValid()) {
-            m_device->DestroyBuffer(res.physicalBuffer);
+    if (m_device) {
+        for (auto& res : m_resources) {
+            if (!res.transient) continue;
+            if (res.type == RGResource::Type::Texture && res.physicalTexture.IsValid()) {
+                m_device->DestroyTexture(res.physicalTexture);
+            }
+            if (res.type == RGResource::Type::Buffer && res.physicalBuffer.IsValid()) {
+                m_device->DestroyBuffer(res.physicalBuffer);
+            }
         }
     }
 
