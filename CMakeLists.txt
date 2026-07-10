@@ -79,6 +79,9 @@ if(NGE_BUILD_SAMPLES)
     add_subdirectory(samples)
 endif()
 if(NGE_BUILD_TESTS)
+    # Must be called at the top level or ctest finds no tests in the
+    # build root ("No tests were found!!!"), silently skipping the suite.
+    enable_testing()
     add_subdirectory(tests)
 endif()
 # add_subdirectory(tools)
