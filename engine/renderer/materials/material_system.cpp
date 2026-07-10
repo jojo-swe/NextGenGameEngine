@@ -85,7 +85,7 @@ MaterialId MaterialManager::CreateMaterial(const std::string& name) {
     inst.dirty = true;
 
     // Initialize GPU data with defaults
-    std::memset(&inst.gpuData, 0, sizeof(GPUMaterialData));
+    inst.gpuData = {};
     inst.gpuData.baseColorFactor = {1, 1, 1, 1};
     inst.gpuData.metallicFactor = 0.0f;
     inst.gpuData.roughnessFactor = 1.0f;

@@ -244,8 +244,8 @@ void DebugTextRenderer::BuildVertices(u32 screenWidth, u32 screenHeight) {
         for (char c : entry.text) {
             if (charCount >= MAX_CHARS) break;
 
-            u32 charIdx = static_cast<u32>(c) - 32;
-            if (c < 32 || c > 127) charIdx = 0; // Replace unprintable with space
+            u32 uc = static_cast<unsigned char>(c);
+            u32 charIdx = (uc < 32 || uc > 127) ? 0 : uc - 32; // Unprintable -> space
 
             // UV coords in font atlas
             f32 uvX0 = static_cast<f32>((charIdx % CHARS_PER_ROW) * GLYPH_WIDTH) / static_cast<f32>(ATLAS_WIDTH);
