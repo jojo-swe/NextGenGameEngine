@@ -67,7 +67,7 @@ struct BodyDesc {
     f32        angularDamping = 0.05f;
     bool       isSensor = false;      // Trigger volume (no physical response)
     u64        userData = 0;          // Arbitrary user data (e.g., ECS entity id)
-    u16        collisionLayer = 0;
+    u16        collisionLayer = 1;   // Default to layer 0 (bit 0)
     u16        collisionMask = 0xFFFF;
 };
 

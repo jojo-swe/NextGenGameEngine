@@ -147,3 +147,72 @@ TEST_F(AnimationTest, SH9Basics) {
     EXPECT_NEAR(sh.c[2], 0.0f, 0.001f);       // Y_1^0 (z=0)
     EXPECT_NEAR(sh.c[3], 0.0f, 0.001f);       // Y_1^1 (x=0)
 }
+
+TEST_F(AnimationTest, CrossFade) {
+    // Create two clips
+    AnimationClip clipA, clipB;
+    clipA.name = "Idle";
+    clipA.duration = 2.0f;
+    clipA.ticksPerSecond = 1.0f;
+    clipA.looping = true;
+    BoneChannel chA;
+    chA.boneIndex = 0;
+    chA.keyframes.push_back({0.0f, pga::Motor::Identity()});
+    chA.keyframes.push_back({2.0f, pga::Motor::Translation(1, 0, 0)});
+    clipA.channels.push_back(chA);
+
+    clipB.name = "Walk";
+    clipB.duration = 1.0f;
+    clipB.ticksPerSecond = 1.0f;
+    clipB.looping = true;
+    BoneChannel chB;
+    chB.boneIndex = 0;
+    chB.keyframes.push_back({0.0f, pga::Motor::Identity()});
+    chB.keyframes.push_back({1.0f, pga::Motor::Translation(5, 0, 0)});
+    clipB.channels.push_back(chB);
+
+    u32 clipIdA = m_system.RegisterClip(clipA);
+    u32 clipIdB = m_system.RegisterClip(clipB);
+
+    auto* state = m_system.CreateState(m_skelId);
+    ASSERT_NE(state, nullptr);
+
+    // Play clip A
+    m_system.Play(*state, clipIdA);
+    EXPECT_EQ(state->activeNodes.size(), 1u);
+
+    // Start crossfade to clip B over 0.5 seconds
+    m_system.CrossFade(*state, clipIdA, clipIdB, 0.5f);
+
+    // Both clips should be active
+    EXPECT_EQ(state->activeNodes.size(), 2u);
+    EXPECT_TRUE(state->crossFade.active);
+
+    // Source should have weight 1, target weight 0
+    bool foundA = false, foundB = false;
+    for (const auto& node : state->activeNodes) {
+        if (node.clipIndex == clipIdA) { EXPECT_NEAR(node.weight, 1.0f, 0.001f); foundA = true; }
+        if (node.clipIndex == clipIdB) { EXPECT_NEAR(node.weight, 0.0f, 0.001f); foundB = true; }
+    }
+    EXPECT_TRUE(foundA);
+    EXPECT_TRUE(foundB);
+
+    // Advance halfway through fade (0.25s)
+    m_system.EvaluateState(*state, 0.25f);
+
+    // Weights should be ~0.5 each
+    for (const auto& node : state->activeNodes) {
+        if (node.clipIndex == clipIdA) EXPECT_NEAR(node.weight, 0.5f, 0.05f);
+        if (node.clipIndex == clipIdB) EXPECT_NEAR(node.weight, 0.5f, 0.05f);
+    }
+    EXPECT_TRUE(state->crossFade.active);
+
+    // Advance past fade completion (another 0.3s = 0.55s total, > 0.5s)
+    m_system.EvaluateState(*state, 0.3f);
+
+    // Fade should be complete: source removed, target at full weight
+    EXPECT_FALSE(state->crossFade.active);
+    EXPECT_EQ(state->activeNodes.size(), 1u);
+    EXPECT_EQ(state->activeNodes[0].clipIndex, clipIdB);
+    EXPECT_NEAR(state->activeNodes[0].weight, 1.0f, 0.001f);
+}

@@ -154,14 +154,6 @@ void PhysicsWorld::Step(f32 deltaTime) {
                 // Reset forces
                 body.pendingForce = {0, 0, 0};
                 body.pendingTorque = {0, 0, 0};
-
-                // Simple ground plane collision at y=0
-                if (body.position.y < 0) {
-                    body.position.y = 0;
-                    if (body.linearVelocity.y < 0) {
-                        body.linearVelocity.y = -body.linearVelocity.y * body.restitution;
-                    }
-                }
             }
         }
 
@@ -193,7 +185,7 @@ void PhysicsWorld::Step(f32 deltaTime) {
                         normal = delta * (1.0f / dist);
                         penetration = sumR - dist;
                     } else if (dist <= 0.0001f) {
-                        normal = {0, 1, 0};
+                        normal = {0, -1, 0}; // Push A up (away from B)
                         penetration = sumR;
                     } else continue;
                 } else if (a.shapeType == ShapeType::Sphere && b.shapeType == ShapeType::Box) {
@@ -206,7 +198,7 @@ void PhysicsWorld::Step(f32 deltaTime) {
                     math::Vec3 delta = a.position - closest;
                     f32 dist = delta.Length();
                     if (dist < a.radius && dist > 0.0001f) {
-                        normal = delta * (1.0f / dist);
+                        normal = delta * (-1.0f / dist); // From A(sphere) to B(box)
                         penetration = a.radius - dist;
                     } else if (dist <= 0.0001f) {
                         // Sphere center inside box — push out along smallest axis
@@ -215,13 +207,13 @@ void PhysicsWorld::Step(f32 deltaTime) {
                         f32 ay = std::abs(toCenter.y) / b.halfExtents.y;
                         f32 az = std::abs(toCenter.z) / b.halfExtents.z;
                         if (ax >= ay && ax >= az) {
-                            normal = {toCenter.x > 0 ? 1.0f : -1.0f, 0, 0};
+                            normal = {toCenter.x > 0 ? -1.0f : 1.0f, 0, 0};
                             penetration = b.halfExtents.x + a.radius - std::abs(toCenter.x);
                         } else if (ay >= az) {
-                            normal = {0, toCenter.y > 0 ? 1.0f : -1.0f, 0};
+                            normal = {0, toCenter.y > 0 ? -1.0f : 1.0f, 0};
                             penetration = b.halfExtents.y + a.radius - std::abs(toCenter.y);
                         } else {
-                            normal = {0, 0, toCenter.z > 0 ? 1.0f : -1.0f};
+                            normal = {0, 0, toCenter.z > 0 ? -1.0f : 1.0f};
                             penetration = b.halfExtents.z + a.radius - std::abs(toCenter.z);
                         }
                     } else continue;
@@ -232,13 +224,13 @@ void PhysicsWorld::Step(f32 deltaTime) {
                     f32 overlapZ = std::min(aabbA.max.z, aabbB.max.z) - std::max(aabbA.min.z, aabbB.min.z);
                     if (overlapX <= 0 || overlapY <= 0 || overlapZ <= 0) continue;
                     if (overlapX <= overlapY && overlapX <= overlapZ) {
-                        normal = a.position.x < b.position.x ? math::Vec3{-1, 0, 0} : math::Vec3{1, 0, 0};
+                        normal = a.position.x < b.position.x ? math::Vec3{1, 0, 0} : math::Vec3{-1, 0, 0};
                         penetration = overlapX;
                     } else if (overlapY <= overlapZ) {
-                        normal = a.position.y < b.position.y ? math::Vec3{0, -1, 0} : math::Vec3{0, 1, 0};
+                        normal = a.position.y < b.position.y ? math::Vec3{0, 1, 0} : math::Vec3{0, -1, 0};
                         penetration = overlapY;
                     } else {
-                        normal = a.position.z < b.position.z ? math::Vec3{0, 0, -1} : math::Vec3{0, 0, 1};
+                        normal = a.position.z < b.position.z ? math::Vec3{0, 0, 1} : math::Vec3{0, 0, -1};
                         penetration = overlapZ;
                     }
                 } else {
@@ -252,12 +244,12 @@ void PhysicsWorld::Step(f32 deltaTime) {
                     math::Vec3 delta = b.position - closest;
                     f32 dist = delta.Length();
                     if (dist < b.radius && dist > 0.0001f) {
-                        normal = delta * (-1.0f / dist); // normal points from b to a
+                        normal = delta * (1.0f / dist); // From A(box) to B(sphere)
                         penetration = b.radius - dist;
                     } else if (dist <= 0.0001f) {
                         math::Vec3 toCenter = b.position - a.position;
                         f32 ay = std::abs(toCenter.y) / a.halfExtents.y;
-                        normal = {0, toCenter.y > 0 ? -1.0f : 1.0f, 0};
+                        normal = {0, toCenter.y > 0 ? 1.0f : -1.0f, 0};
                         penetration = a.halfExtents.y + b.radius - std::abs(toCenter.y);
                         (void)ay;
                     } else continue;
@@ -311,6 +303,17 @@ void PhysicsWorld::Step(f32 deltaTime) {
                 }
             } // for j
         } // for i
+
+        // Ground plane collision at y=0 (after body-body to avoid interference)
+        for (auto& body : m_impl->bodies) {
+            if (!body.active || body.type == BodyType::Static) continue;
+            if (body.position.y < 0) {
+                body.position.y = 0;
+                if (body.linearVelocity.y < 0) {
+                    body.linearVelocity.y = -body.linearVelocity.y * body.restitution;
+                }
+            }
+        }
 
         m_impl->accumulator -= m_impl->fixedTimeStep;
         steps++;

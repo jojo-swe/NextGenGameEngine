@@ -86,6 +86,14 @@ struct BlendNode {
     BlendMode mode = BlendMode::Override;
 };
 
+struct CrossFadeState {
+    u32       fromClip = UINT32_MAX;
+    u32       toClip = UINT32_MAX;
+    f32       duration = 0;
+    f32       elapsed = 0;
+    bool      active = false;
+};
+
 // ─── Animation State ─────────────────────────────────────────────────────
 // Per-entity animation state.
 
@@ -93,6 +101,7 @@ struct AnimationState {
     u32                    skeletonIndex = UINT32_MAX;
     std::vector<BlendNode> activeNodes;  // Currently playing animations
     AnimationPose          currentPose;
+    CrossFadeState         crossFade;
     bool                   dirty = true;
 };
 

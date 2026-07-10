@@ -86,13 +86,26 @@ void AnimationSystem::Stop(AnimationState& state, u32 clipIndex) {
 }
 
 void AnimationSystem::CrossFade(AnimationState& state, u32 fromClip, u32 toClip, f32 fadeDuration) {
+    if (fadeDuration <= 0.0f || toClip == UINT32_MAX) return;
+
     // Start the target clip at weight 0, ramp up over fadeDuration
-    // The source clip will be ramped down simultaneously
-    // This is handled in Update by interpolating weights over time
     Play(state, toClip, 0.0f, 1.0f, BlendMode::Blend);
-    (void)fromClip;
-    (void)fadeDuration;
-    // TODO: Implement fade scheduling with timer
+
+    // Set up fade state
+    state.crossFade.fromClip = fromClip;
+    state.crossFade.toClip = toClip;
+    state.crossFade.duration = fadeDuration;
+    state.crossFade.elapsed = 0;
+    state.crossFade.active = true;
+
+    // Set source clip to Blend mode with full weight
+    for (auto& node : state.activeNodes) {
+        if (node.clipIndex == fromClip) {
+            node.weight = 1.0f;
+            node.mode = BlendMode::Blend;
+            break;
+        }
+    }
 }
 
 void AnimationSystem::Update(f32 deltaTime) {
@@ -107,6 +120,34 @@ void AnimationSystem::EvaluateState(AnimationState& state, f32 deltaTime) {
 
     const Skeleton& skeleton = m_skeletons[state.skeletonIndex];
     u32 boneCount = skeleton.GetBoneCount();
+
+    // Update crossfade weights
+    if (state.crossFade.active) {
+        state.crossFade.elapsed += deltaTime;
+        f32 t = state.crossFade.elapsed / state.crossFade.duration;
+
+        if (t >= 1.0f) {
+            // Fade complete: remove source clip, set target to full weight
+            Stop(state, state.crossFade.fromClip);
+            for (auto& node : state.activeNodes) {
+                if (node.clipIndex == state.crossFade.toClip) {
+                    node.weight = 1.0f;
+                    node.mode = BlendMode::Override;
+                    break;
+                }
+            }
+            state.crossFade.active = false;
+        } else {
+            // Interpolate weights: source goes 1→0, target goes 0→1
+            for (auto& node : state.activeNodes) {
+                if (node.clipIndex == state.crossFade.fromClip) {
+                    node.weight = 1.0f - t;
+                } else if (node.clipIndex == state.crossFade.toClip) {
+                    node.weight = t;
+                }
+            }
+        }
+    }
 
     // Start with bind pose
     AnimationPose resultPose;
