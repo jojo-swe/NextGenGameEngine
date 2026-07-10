@@ -15,9 +15,7 @@ bool MeshRegistry::Init(rhi::IDevice* device, u32 maxMeshes) {
 
     if (!device) {
         NGE_LOG_WARN("MeshRegistry::Init: null device — CPU-only mode, no GPU buffers created (tests only)");
-    }
-
-    if (device) {
+    } else {
         {
             rhi::BufferDesc desc;
             desc.size = m_vertexBufferCapacity;

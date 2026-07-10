@@ -14,9 +14,7 @@ bool InstanceManager::Init(rhi::IDevice* device, u32 maxInstances) {
 
     if (!device) {
         NGE_LOG_WARN("InstanceManager::Init: null device — CPU-only mode, no GPU buffers created (tests only)");
-    }
-
-    if (device) {
+    } else {
         // GPU structured buffer for current frame instances
         {
             rhi::BufferDesc desc;
