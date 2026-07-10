@@ -1,11 +1,25 @@
 #include <gtest/gtest.h>
 #include "engine/core/types.h"
 #include "engine/rhi/common/rhi_desc_set_layout_optimizer.h"
+#include <cstdio>
 
 using namespace nge;
 using namespace nge::rhi;
 
+// Verify ABI consistency
+static_assert(sizeof(DescriptorBinding) == 64, "DescriptorBinding size mismatch");
+static_assert(sizeof(DescriptorSetLayout) == 96, "DescriptorSetLayout size mismatch");
+static_assert(sizeof(DescriptorSetLayoutOptimizer) == 224, "DescriptorSetLayoutOptimizer size mismatch");
+
 TEST(DescSetLayoutOptimizer, InitAndShutdown) {
+    // Direct test: can we create a DescriptorSetLayout?
+    {
+        std::fprintf(stderr, "[TEST] Creating DescriptorSetLayout directly...\n");
+        DescriptorSetLayout layout;
+        layout.debugName = "DirectTest";
+        std::fprintf(stderr, "[TEST] OK: '%s'\n", layout.debugName.c_str());
+    }
+
     DescriptorSetLayoutOptimizer opt;
     EXPECT_TRUE(opt.Init());
     EXPECT_EQ(opt.GetLayoutCount(), 0u);
