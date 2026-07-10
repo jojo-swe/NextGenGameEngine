@@ -23,7 +23,8 @@ WP-0 (human only)
   └── WP-1 (CI green)
         ├── WP-2 (transform/PGA fixes)   ─┐
         ├── WP-3 (shader quarantine)      ├── may run in parallel
-        └── WP-5 (README honesty)        ─┘
+        ├── WP-5 (README honesty)         │
+        └── WP-6 (fix failing unit tests)─┘
               └── WP-4 (vertical slice: render a glTF mesh)
 ```
 
@@ -31,12 +32,33 @@ WP-0 (human only)
 
 | WP | Title | Status |
 |----|-------|--------|
-| WP-0 | Restore GitHub Actions runners (billing) | OPEN — human only |
-| WP-1 | Make CI green for the first time | OPEN |
+| WP-0 | Restore GitHub Actions runners (billing) | **STILL OPEN — human only, blocks everything.** Confirmed still broken on the run for `6b51f47` (all jobs die in ~3 s, `runner_id: 0`). |
+| WP-1 | Make CI green for the first time | PARTIAL — the `submodules: true` fix landed in `6b51f47`, but the acceptance criterion (four green jobs) is unverifiable until WP-0 is fixed. Also see the review notes on `6b51f47` below. |
 | WP-2 | Fix motor decomposition bug + harden PGA | OPEN |
 | WP-3 | Shader inventory honesty pass | OPEN |
 | WP-4 | Vertical slice: render one glTF mesh | BLOCKED (needs WP-1, WP-2) |
 | WP-5 | Subsystem freeze + honest README | OPEN |
+| WP-6 | Fix the 26 genuine unit-test failures | OPEN (see WP-6; suite list from real Windows run on 2026-07-10) |
+
+### Review notes on commit `6b51f47` (read if you are doing any WP)
+
+That commit mixed a correct CI fix with out-of-scope renderer edits, was pushed
+directly to `main`, and committed local test logs and a machine-specific build
+script. The logs/script have been removed and the process rules below are
+restated because they were each violated once already:
+
+- One WP = one branch = one PR. **Never push to `main`.**
+- Never touch files outside your WP's "Files you may touch" list.
+- Never commit build/test output or personal scripts (`.gitignore` now blocks
+  `test_output*.txt` and `build_temp.bat`).
+- If an acceptance criterion cannot be verified (e.g. CI never starts), STOP
+  and report the blocker. Do not merge on the assumption it would have passed.
+- Finish your commit message; a message ending mid-sentence fails review.
+
+One thing in `6b51f47` was **correct and is now official policy** (see Global
+Rules): renderer systems accept a null device as CPU-only test mode. That
+matched the existing convention used across the test suite; it has been kept
+and made explicit with warning logs.
 
 ---
 
@@ -71,6 +93,9 @@ WP-0 (human only)
 - There are ~375 `TODO|FIXME|not implemented|stub` markers in engine code.
 - Tests: `tests/CMakeLists.txt` globs `tests/**/*.cpp` into one `EngineTests`
   executable — a new test file is picked up automatically, no CMake edit needed.
+- The engine **builds and runs `EngineTests` on Windows** (verified by a local
+  run on 2026-07-10). That run showed **26 genuine test failures** — see WP-6
+  for the exact suite list. Everything else passed.
 - The long-term design document is `frolicking-tumbling-pond.md` (do not delete
   or rename it — CI's repo-sanity job checks it exists). Reality is at its
   Phase 2.2–2.3 (Vulkan backend bring-up), regardless of what else is scaffolded.
@@ -89,6 +114,13 @@ WP-0 (human only)
   ```bash
   grep -rE "TODO|FIXME|not implemented|stub" --include="*.cpp" --include="*.h" engine/ editor/ samples/ | wc -l
   ```
+- **Null-device contract (official):** renderer/RHI-adjacent systems with
+  `bool Init(rhi::IDevice* device, ...)` must tolerate `device == nullptr`:
+  skip all GPU resource creation/destruction, log one `NGE_LOG_WARN`, still
+  return `true`, and keep all CPU-side logic working. This exists so unit tests
+  can exercise CPU-side logic without a GPU (the test suite passes `nullptr`
+  widely). Production code paths must never rely on it. Do not "fix" tests by
+  weakening what a function does when a real device IS present.
 - **Conventions** (from CLAUDE.md): namespace `nge`; type aliases `nge::u32`,
   `nge::f32`, etc. from `engine/core/types.h`; PascalCase types, camelCase
   methods/variables; headers use `.h`; C++20, no extensions; match the comment
@@ -387,6 +419,43 @@ into the render core.
 no claims contradicting the ground-truth section of this file.
 
 **Forbidden:** touching anything except `README.md`.
+
+---
+
+## WP-6 — Fix the 26 genuine unit-test failures
+
+**Goal:** every test in `EngineTests` passes. These are real failures observed
+on a full Windows run (2026-07-10), after excluding the null-device crashes
+that the CPU-only contract already fixed.
+
+**The failing suites** (count = failing tests in that suite):
+
+| Suite | Failures | Notes |
+|-------|----------|-------|
+| `DescSetLayoutOptimizer` | 13 | biggest cluster — likely one shared root cause |
+| `FrameResourceTracker` | 5 | includes `ResetClearsAll` |
+| `OcclusionQueryBatch` | 2 | `PoolExhausted`, `FreeAndReallocate` |
+| `MeshLODSelector` | 2 | `SelectLODFarDistance`, `HysteresisDisabled` |
+| `QueueFamilyArbiter` | 1 | `RegisterFamilyAndQueue` |
+| `FrameAllocator` | 1 | |
+| `BufferSubAllocator` | 1 | |
+| `ECS` | 1 | `DestroyEntity`: `tests/core/test_ecs.cpp:25` asserts `world.IsAlive(e)` is `false` after destroy, actual `true` — this smells like a REAL engine bug in entity lifetime, not a bad test |
+
+**How to work it:** one suite per session/PR (exception: you may batch the
+four 1-failure suites into one PR). For each failure:
+1. Run the suite: `EngineTests --gtest_filter="<Suite>.*"`.
+2. Read the test AND the implementation; decide which one is wrong by working
+   out the intended contract from comments, names, and call sites. Say which
+   you chose and why in the PR description.
+3. Fix that side. A test may only be changed if its expectation is genuinely
+   wrong — quote the evidence in the PR.
+
+**Acceptance criteria:** the suite's filter run passes; the full `EngineTests`
+run has no NEW failures; TODO ratchet holds.
+
+**Forbidden:** deleting or disabling tests (`DISABLED_`, `GTEST_SKIP`);
+loosening assertions to make them pass; changing behavior of code paths that
+run with a real GPU device in order to satisfy a null-device test.
 
 ---
 

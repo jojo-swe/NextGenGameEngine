@@ -48,3 +48,8 @@ cooked/
 
 # Logs
 *.log
+
+# Local build/test scratch — never commit
+test_output*.txt
+build_temp.bat
+build_error*.log

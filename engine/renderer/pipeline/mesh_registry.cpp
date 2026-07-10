@@ -13,6 +13,10 @@ bool MeshRegistry::Init(rhi::IDevice* device, u32 maxMeshes) {
     // Global index buffer (128 MB default)
     m_indexBufferCapacity = 128 * 1024 * 1024;
 
+    if (!device) {
+        NGE_LOG_WARN("MeshRegistry::Init: null device — CPU-only mode, no GPU buffers created (tests only)");
+    }
+
     if (device) {
         {
             rhi::BufferDesc desc;
