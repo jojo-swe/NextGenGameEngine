@@ -1,7 +1,6 @@
 #include "engine/rhi/common/rhi_bindless_texture_manager.h"
 #include "engine/core/logging/log.h"
 #include <algorithm>
-#include <stack>
 
 namespace nge::rhi {
 
