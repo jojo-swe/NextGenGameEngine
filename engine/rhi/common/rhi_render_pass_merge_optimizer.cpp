@@ -20,7 +20,7 @@ void RenderPassMergeOptimizer::Shutdown() {
     m_passToGroup.clear();
 }
 
-bool RenderPassMergeOptimizer::AddPass(const RenderPassDesc& pass) {
+bool RenderPassMergeOptimizer::AddPass(const MergeRenderPassDesc& pass) {
     std::lock_guard lock(m_mutex);
 
     if (m_passes.size() >= m_config.maxPasses) {
@@ -165,7 +165,7 @@ u32 RenderPassMergeOptimizer::GetGroupForPass(u32 passId) const {
     return it->second;
 }
 
-const RenderPassDesc* RenderPassMergeOptimizer::GetPass(u32 passId) const {
+const MergeRenderPassDesc* RenderPassMergeOptimizer::GetPass(u32 passId) const {
     std::lock_guard lock(m_mutex);
 
     auto it = m_passes.find(passId);
@@ -222,7 +222,7 @@ RenderPassMergeStats RenderPassMergeOptimizer::GetStats() const {
     return stats;
 }
 
-bool RenderPassMergeOptimizer::CanMerge(const RenderPassDesc& a, const RenderPassDesc& b) const {
+bool RenderPassMergeOptimizer::CanMerge(const MergeRenderPassDesc& a, const MergeRenderPassDesc& b) const {
     // Resolution must match
     if (m_config.requireSameResolution && (a.width != b.width || a.height != b.height)) {
         return false;
