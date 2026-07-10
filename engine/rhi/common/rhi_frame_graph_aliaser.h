@@ -19,7 +19,7 @@ namespace nge::rhi {
 //   - Reduce peak memory by 40-60% for complex render graphs
 //   - Integrate with transient attachment allocator for actual allocation
 
-enum class ResourceType : u8 {
+enum class AliasResourceType : u8 {
     RenderTarget,
     DepthStencil,
     StorageImage,
@@ -29,7 +29,7 @@ enum class ResourceType : u8 {
 
 struct FrameGraphResource {
     u32          resourceId;
-    ResourceType type;
+    AliasResourceType type;
     u64          sizeBytes;        // For buffers: byte count. For images: w*h*bpp
     u32          width;
     u32          height;
@@ -73,11 +73,11 @@ public:
     void Shutdown();
 
     // Declare a transient resource with its pass lifetime
-    u32 DeclareResource(ResourceType type, u64 sizeBytes, u32 firstPass, u32 lastPass,
+    u32 DeclareResource(AliasResourceType type, u64 sizeBytes, u32 firstPass, u32 lastPass,
                          const std::string& name = "");
 
     // Declare with full image info
-    u32 DeclareImageResource(ResourceType type, u32 width, u32 height, u32 format,
+    u32 DeclareImageResource(AliasResourceType type, u32 width, u32 height, u32 format,
                               u32 sampleCount, u32 firstPass, u32 lastPass,
                               const std::string& name = "");
 

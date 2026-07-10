@@ -20,7 +20,7 @@ namespace nge::rhi {
 //   - CI regression testing for memory budgets
 //   - Debug resource lifetime issues
 
-enum class ResourceType : u8 {
+enum class FrameResourceType : u8 {
     Buffer,
     Image,
     ImageView,
@@ -36,9 +36,9 @@ enum class ResourceType : u8 {
     ShaderModule,
 };
 
-struct TrackedResource {
+struct FrameTrackedResource {
     u64          handle;
-    ResourceType type;
+    FrameResourceType type;
     u64          sizeBytes;
     u32          frameCreated;
     u32          frameLastUsed;
@@ -82,7 +82,7 @@ public:
     void Shutdown();
 
     // Track resource creation
-    void OnResourceCreated(u64 handle, ResourceType type, u64 sizeBytes,
+    void OnResourceCreated(u64 handle, FrameResourceType type, u64 sizeBytes,
                             const std::string& debugName = "",
                             bool isTransient = false);
 
@@ -96,16 +96,16 @@ public:
     void EndFrame(u32 frameIndex);
 
     // Get all potential leaks (created > N frames ago, never destroyed)
-    std::vector<TrackedResource> GetPotentialLeaks(u32 currentFrame, u32 minAge = 300) const;
+    std::vector<FrameTrackedResource> GetPotentialLeaks(u32 currentFrame, u32 minAge = 300) const;
 
     // Get stale resources (not used for N frames)
-    std::vector<TrackedResource> GetStaleResources(u32 currentFrame) const;
+    std::vector<FrameTrackedResource> GetStaleResources(u32 currentFrame) const;
 
     // Get resource by handle
-    const TrackedResource* GetResource(u64 handle) const;
+    const FrameTrackedResource* GetResource(u64 handle) const;
 
     // Get count by type
-    u32 GetCountByType(ResourceType type) const;
+    u32 GetCountByType(FrameResourceType type) const;
 
     // Get frame snapshots (rolling history)
     const std::vector<FrameResourceSnapshot>& GetHistory() const { return m_history; }
@@ -117,7 +117,7 @@ public:
 
 private:
     FrameResourceTrackerConfig m_config;
-    std::unordered_map<u64, TrackedResource> m_resources;
+    std::unordered_map<u64, FrameTrackedResource> m_resources;
     std::vector<FrameResourceSnapshot> m_history;
 
     u32 m_allocsThisFrame = 0;

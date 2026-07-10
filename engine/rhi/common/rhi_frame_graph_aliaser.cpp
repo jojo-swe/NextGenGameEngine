@@ -21,7 +21,7 @@ void FrameGraphResourceAliaser::Shutdown() {
     m_aliasGroups.clear();
 }
 
-u32 FrameGraphResourceAliaser::DeclareResource(ResourceType type, u64 sizeBytes,
+u32 FrameGraphResourceAliaser::DeclareResource(AliasResourceType type, u64 sizeBytes,
                                                   u32 firstPass, u32 lastPass,
                                                   const std::string& name) {
     std::lock_guard lock(m_mutex);
@@ -50,7 +50,7 @@ u32 FrameGraphResourceAliaser::DeclareResource(ResourceType type, u64 sizeBytes,
     return id;
 }
 
-u32 FrameGraphResourceAliaser::DeclareImageResource(ResourceType type, u32 width, u32 height,
+u32 FrameGraphResourceAliaser::DeclareImageResource(AliasResourceType type, u32 width, u32 height,
                                                        u32 format, u32 sampleCount,
                                                        u32 firstPass, u32 lastPass,
                                                        const std::string& name) {

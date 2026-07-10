@@ -18,8 +18,8 @@ TEST(FrameResourceTracker, TrackCreateAndDestroy) {
     FrameResourceTracker tracker;
     tracker.Init();
 
-    tracker.OnResourceCreated(1, ResourceType::Buffer, 1024, "TestBuffer");
-    tracker.OnResourceCreated(2, ResourceType::Image, 4096, "TestImage");
+    tracker.OnResourceCreated(1, FrameResourceType::Buffer, 1024, "TestBuffer");
+    tracker.OnResourceCreated(2, FrameResourceType::Image, 4096, "TestImage");
 
     auto stats = tracker.GetStats();
     EXPECT_EQ(stats.currentResourceCount, 2u);
@@ -38,9 +38,9 @@ TEST(FrameResourceTracker, PeakTracking) {
     FrameResourceTracker tracker;
     tracker.Init();
 
-    tracker.OnResourceCreated(1, ResourceType::Buffer, 2048, "A");
-    tracker.OnResourceCreated(2, ResourceType::Buffer, 2048, "B");
-    tracker.OnResourceCreated(3, ResourceType::Buffer, 2048, "C");
+    tracker.OnResourceCreated(1, FrameResourceType::Buffer, 2048, "A");
+    tracker.OnResourceCreated(2, FrameResourceType::Buffer, 2048, "B");
+    tracker.OnResourceCreated(3, FrameResourceType::Buffer, 2048, "C");
 
     // Peak: 3 resources, 6144 bytes
     tracker.OnResourceDestroyed(2);
@@ -58,12 +58,12 @@ TEST(FrameResourceTracker, GetResourceByHandle) {
     FrameResourceTracker tracker;
     tracker.Init();
 
-    tracker.OnResourceCreated(42, ResourceType::Pipeline, 0, "MyPipeline");
+    tracker.OnResourceCreated(42, FrameResourceType::Pipeline, 0, "MyPipeline");
 
     const auto* res = tracker.GetResource(42);
     EXPECT_NE(res, nullptr);
     EXPECT_EQ(res->handle, 42u);
-    EXPECT_EQ(res->type, ResourceType::Pipeline);
+    EXPECT_EQ(res->type, FrameResourceType::Pipeline);
     EXPECT_EQ(res->debugName, "MyPipeline");
 
     EXPECT_EQ(tracker.GetResource(999), nullptr);
@@ -75,15 +75,15 @@ TEST(FrameResourceTracker, CountByType) {
     FrameResourceTracker tracker;
     tracker.Init();
 
-    tracker.OnResourceCreated(1, ResourceType::Buffer, 100, "Buf1");
-    tracker.OnResourceCreated(2, ResourceType::Buffer, 200, "Buf2");
-    tracker.OnResourceCreated(3, ResourceType::Image, 400, "Img1");
-    tracker.OnResourceCreated(4, ResourceType::Sampler, 0, "Samp1");
+    tracker.OnResourceCreated(1, FrameResourceType::Buffer, 100, "Buf1");
+    tracker.OnResourceCreated(2, FrameResourceType::Buffer, 200, "Buf2");
+    tracker.OnResourceCreated(3, FrameResourceType::Image, 400, "Img1");
+    tracker.OnResourceCreated(4, FrameResourceType::Sampler, 0, "Samp1");
 
-    EXPECT_EQ(tracker.GetCountByType(ResourceType::Buffer), 2u);
-    EXPECT_EQ(tracker.GetCountByType(ResourceType::Image), 1u);
-    EXPECT_EQ(tracker.GetCountByType(ResourceType::Sampler), 1u);
-    EXPECT_EQ(tracker.GetCountByType(ResourceType::Pipeline), 0u);
+    EXPECT_EQ(tracker.GetCountByType(FrameResourceType::Buffer), 2u);
+    EXPECT_EQ(tracker.GetCountByType(FrameResourceType::Image), 1u);
+    EXPECT_EQ(tracker.GetCountByType(FrameResourceType::Sampler), 1u);
+    EXPECT_EQ(tracker.GetCountByType(FrameResourceType::Pipeline), 0u);
 
     tracker.Shutdown();
 }
@@ -92,7 +92,7 @@ TEST(FrameResourceTracker, EndFrameRecordsSnapshot) {
     FrameResourceTracker tracker;
     tracker.Init();
 
-    tracker.OnResourceCreated(1, ResourceType::Buffer, 512, "Buf");
+    tracker.OnResourceCreated(1, FrameResourceType::Buffer, 512, "Buf");
     tracker.EndFrame(0);
 
     auto& history = tracker.GetHistory();
@@ -116,7 +116,7 @@ TEST(FrameResourceTracker, PotentialLeakDetection) {
     FrameResourceTracker tracker;
     tracker.Init();
 
-    tracker.OnResourceCreated(1, ResourceType::Buffer, 256, "LeakyBuffer");
+    tracker.OnResourceCreated(1, FrameResourceType::Buffer, 256, "LeakyBuffer");
     tracker.EndFrame(0);
 
     // Not a leak at frame 10 (too young)
@@ -135,7 +135,7 @@ TEST(FrameResourceTracker, TransientResourcesExcludedFromLeaks) {
     FrameResourceTracker tracker;
     tracker.Init();
 
-    tracker.OnResourceCreated(1, ResourceType::Image, 1024, "TransientRT", true);
+    tracker.OnResourceCreated(1, FrameResourceType::Image, 1024, "TransientRT", true);
     tracker.EndFrame(0);
 
     auto leaks = tracker.GetPotentialLeaks(1000, 300);
@@ -150,7 +150,7 @@ TEST(FrameResourceTracker, StaleResourceDetection) {
     config.staleResourceFrames = 10;
     tracker.Init(config);
 
-    tracker.OnResourceCreated(1, ResourceType::Buffer, 256, "StaleBuffer");
+    tracker.OnResourceCreated(1, FrameResourceType::Buffer, 256, "StaleBuffer");
     tracker.OnResourceUsed(1);
     tracker.EndFrame(0);
 
@@ -177,7 +177,7 @@ TEST(FrameResourceTracker, ResetClearsAll) {
     FrameResourceTracker tracker;
     tracker.Init();
 
-    tracker.OnResourceCreated(1, ResourceType::Buffer, 1024, "Buf");
+    tracker.OnResourceCreated(1, FrameResourceType::Buffer, 1024, "Buf");
     tracker.EndFrame(0);
 
     EXPECT_EQ(tracker.GetStats().currentResourceCount, 1u);
@@ -198,7 +198,7 @@ TEST(FrameResourceTracker, DisabledModeSkipsTracking) {
     config.enabled = false;
     tracker.Init(config);
 
-    tracker.OnResourceCreated(1, ResourceType::Buffer, 1024, "Ignored");
+    tracker.OnResourceCreated(1, FrameResourceType::Buffer, 1024, "Ignored");
 
     auto stats = tracker.GetStats();
     EXPECT_EQ(stats.currentResourceCount, 0u);
@@ -212,10 +212,10 @@ TEST(FrameResourceTracker, MaxTrackedLimit) {
     config.maxTrackedResources = 3;
     tracker.Init(config);
 
-    tracker.OnResourceCreated(1, ResourceType::Buffer, 100, "A");
-    tracker.OnResourceCreated(2, ResourceType::Buffer, 100, "B");
-    tracker.OnResourceCreated(3, ResourceType::Buffer, 100, "C");
-    tracker.OnResourceCreated(4, ResourceType::Buffer, 100, "D"); // Exceeds limit
+    tracker.OnResourceCreated(1, FrameResourceType::Buffer, 100, "A");
+    tracker.OnResourceCreated(2, FrameResourceType::Buffer, 100, "B");
+    tracker.OnResourceCreated(3, FrameResourceType::Buffer, 100, "C");
+    tracker.OnResourceCreated(4, FrameResourceType::Buffer, 100, "D"); // Exceeds limit
 
     EXPECT_EQ(tracker.GetStats().currentResourceCount, 3u);
 

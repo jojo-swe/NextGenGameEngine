@@ -18,13 +18,13 @@ TEST(FrameGraphAliaser, DeclareResource) {
     FrameGraphResourceAliaser aliaser;
     aliaser.Init();
 
-    u32 id = aliaser.DeclareResource(ResourceType::RenderTarget, 1024 * 1024 * 4, 0, 3, "GBufferAlbedo");
+    u32 id = aliaser.DeclareResource(AliasResourceType::RenderTarget, 1024 * 1024 * 4, 0, 3, "GBufferAlbedo");
     EXPECT_EQ(id, 0u);
     EXPECT_EQ(aliaser.GetResourceCount(), 1u);
 
     const auto* res = aliaser.GetResource(id);
     EXPECT_NE(res, nullptr);
-    EXPECT_EQ(res->type, ResourceType::RenderTarget);
+    EXPECT_EQ(res->type, AliasResourceType::RenderTarget);
     EXPECT_EQ(res->sizeBytes, 1024u * 1024 * 4);
     EXPECT_EQ(res->firstPassIndex, 0u);
     EXPECT_EQ(res->lastPassIndex, 3u);
@@ -37,7 +37,7 @@ TEST(FrameGraphAliaser, DeclareImageResource) {
     FrameGraphResourceAliaser aliaser;
     aliaser.Init();
 
-    u32 id = aliaser.DeclareImageResource(ResourceType::RenderTarget, 1920, 1080, 44, 1, 0, 2, "HDRColor");
+    u32 id = aliaser.DeclareImageResource(AliasResourceType::RenderTarget, 1920, 1080, 44, 1, 0, 2, "HDRColor");
     EXPECT_EQ(id, 0u);
 
     const auto* res = aliaser.GetResource(id);
@@ -54,9 +54,9 @@ TEST(FrameGraphAliaser, OverlappingLifetimes) {
     FrameGraphResourceAliaser aliaser;
     aliaser.Init();
 
-    u32 a = aliaser.DeclareResource(ResourceType::RenderTarget, 1000, 0, 3);
-    u32 b = aliaser.DeclareResource(ResourceType::RenderTarget, 1000, 2, 5);
-    u32 c = aliaser.DeclareResource(ResourceType::RenderTarget, 1000, 4, 6);
+    u32 a = aliaser.DeclareResource(AliasResourceType::RenderTarget, 1000, 0, 3);
+    u32 b = aliaser.DeclareResource(AliasResourceType::RenderTarget, 1000, 2, 5);
+    u32 c = aliaser.DeclareResource(AliasResourceType::RenderTarget, 1000, 4, 6);
 
     EXPECT_TRUE(aliaser.Overlaps(a, b));   // [0,3] overlaps [2,5]
     EXPECT_FALSE(aliaser.Overlaps(a, c));  // [0,3] does NOT overlap [4,6]
@@ -73,8 +73,8 @@ TEST(FrameGraphAliaser, NonOverlappingCanAlias) {
     aliaser.Init(config);
 
     // A: passes 0-2, B: passes 3-5 (no overlap -> can alias)
-    u32 a = aliaser.DeclareResource(ResourceType::RenderTarget, 4096, 0, 2, "TempA");
-    u32 b = aliaser.DeclareResource(ResourceType::RenderTarget, 4096, 3, 5, "TempB");
+    u32 a = aliaser.DeclareResource(AliasResourceType::RenderTarget, 4096, 0, 2, "TempA");
+    u32 b = aliaser.DeclareResource(AliasResourceType::RenderTarget, 4096, 3, 5, "TempB");
 
     auto groups = aliaser.ComputeAliasing();
 
@@ -92,8 +92,8 @@ TEST(FrameGraphAliaser, OverlappingCannotAlias) {
     aliaser.Init(config);
 
     // A: passes 0-3, B: passes 2-5 (overlap -> cannot alias)
-    u32 a = aliaser.DeclareResource(ResourceType::RenderTarget, 4096, 0, 3);
-    u32 b = aliaser.DeclareResource(ResourceType::RenderTarget, 4096, 2, 5);
+    u32 a = aliaser.DeclareResource(AliasResourceType::RenderTarget, 4096, 0, 3);
+    u32 b = aliaser.DeclareResource(AliasResourceType::RenderTarget, 4096, 2, 5);
 
     auto groups = aliaser.ComputeAliasing();
 
@@ -109,8 +109,8 @@ TEST(FrameGraphAliaser, AliasingDisabled) {
     config.enableAliasing = false;
     aliaser.Init(config);
 
-    aliaser.DeclareResource(ResourceType::RenderTarget, 4096, 0, 2);
-    aliaser.DeclareResource(ResourceType::RenderTarget, 4096, 3, 5);
+    aliaser.DeclareResource(AliasResourceType::RenderTarget, 4096, 0, 2);
+    aliaser.DeclareResource(AliasResourceType::RenderTarget, 4096, 3, 5);
 
     auto groups = aliaser.ComputeAliasing();
 
@@ -128,8 +128,8 @@ TEST(FrameGraphAliaser, RequireSameTypeBlocks) {
     aliaser.Init(config);
 
     // Non-overlapping but different types
-    u32 a = aliaser.DeclareResource(ResourceType::RenderTarget, 4096, 0, 2);
-    u32 b = aliaser.DeclareResource(ResourceType::StorageBuffer, 4096, 3, 5);
+    u32 a = aliaser.DeclareResource(AliasResourceType::RenderTarget, 4096, 0, 2);
+    u32 b = aliaser.DeclareResource(AliasResourceType::StorageBuffer, 4096, 3, 5);
 
     auto groups = aliaser.ComputeAliasing();
 
@@ -144,9 +144,9 @@ TEST(FrameGraphAliaser, PhysicalSizeIsMaxOfGroup) {
     aliaser.Init();
 
     // Non-overlapping resources of different sizes
-    aliaser.DeclareResource(ResourceType::RenderTarget, 1000, 0, 1);
-    aliaser.DeclareResource(ResourceType::RenderTarget, 5000, 2, 3);
-    aliaser.DeclareResource(ResourceType::RenderTarget, 3000, 4, 5);
+    aliaser.DeclareResource(AliasResourceType::RenderTarget, 1000, 0, 1);
+    aliaser.DeclareResource(AliasResourceType::RenderTarget, 5000, 2, 3);
+    aliaser.DeclareResource(AliasResourceType::RenderTarget, 3000, 4, 5);
 
     auto groups = aliaser.ComputeAliasing();
 
@@ -168,11 +168,11 @@ TEST(FrameGraphAliaser, ComplexGraphAliasing) {
     // Pass 2: Read lighting, write post-process temp
     // Pass 3: Read post-process, write final
 
-    u32 albedo   = aliaser.DeclareResource(ResourceType::RenderTarget, 8000, 0, 1, "Albedo");
-    u32 normal   = aliaser.DeclareResource(ResourceType::RenderTarget, 8000, 0, 1, "Normal");
-    u32 lighting = aliaser.DeclareResource(ResourceType::RenderTarget, 8000, 1, 2, "Lighting");
-    u32 postTemp = aliaser.DeclareResource(ResourceType::RenderTarget, 8000, 2, 3, "PostTemp");
-    u32 finalRT  = aliaser.DeclareResource(ResourceType::RenderTarget, 8000, 3, 3, "Final");
+    u32 albedo   = aliaser.DeclareResource(AliasResourceType::RenderTarget, 8000, 0, 1, "Albedo");
+    u32 normal   = aliaser.DeclareResource(AliasResourceType::RenderTarget, 8000, 0, 1, "Normal");
+    u32 lighting = aliaser.DeclareResource(AliasResourceType::RenderTarget, 8000, 1, 2, "Lighting");
+    u32 postTemp = aliaser.DeclareResource(AliasResourceType::RenderTarget, 8000, 2, 3, "PostTemp");
+    u32 finalRT  = aliaser.DeclareResource(AliasResourceType::RenderTarget, 8000, 3, 3, "Final");
 
     auto groups = aliaser.ComputeAliasing();
 
@@ -200,9 +200,9 @@ TEST(FrameGraphAliaser, MemorySavingsStats) {
     aliaser.Init();
 
     // 3 non-overlapping resources of 10000 bytes each
-    aliaser.DeclareResource(ResourceType::RenderTarget, 10000, 0, 1);
-    aliaser.DeclareResource(ResourceType::RenderTarget, 10000, 2, 3);
-    aliaser.DeclareResource(ResourceType::RenderTarget, 10000, 4, 5);
+    aliaser.DeclareResource(AliasResourceType::RenderTarget, 10000, 0, 1);
+    aliaser.DeclareResource(AliasResourceType::RenderTarget, 10000, 2, 3);
+    aliaser.DeclareResource(AliasResourceType::RenderTarget, 10000, 4, 5);
 
     aliaser.ComputeAliasing();
 
@@ -220,9 +220,9 @@ TEST(FrameGraphAliaser, MaxOverlapStat) {
     aliaser.Init();
 
     // All 3 alive at pass 1
-    aliaser.DeclareResource(ResourceType::RenderTarget, 1000, 0, 2);
-    aliaser.DeclareResource(ResourceType::RenderTarget, 1000, 1, 3);
-    aliaser.DeclareResource(ResourceType::RenderTarget, 1000, 0, 1);
+    aliaser.DeclareResource(AliasResourceType::RenderTarget, 1000, 0, 2);
+    aliaser.DeclareResource(AliasResourceType::RenderTarget, 1000, 1, 3);
+    aliaser.DeclareResource(AliasResourceType::RenderTarget, 1000, 0, 1);
 
     aliaser.ComputeAliasing();
 
@@ -238,10 +238,10 @@ TEST(FrameGraphAliaser, MaxResourcesLimit) {
     config.maxResources = 3;
     aliaser.Init(config);
 
-    EXPECT_NE(aliaser.DeclareResource(ResourceType::RenderTarget, 100, 0, 1), UINT32_MAX);
-    EXPECT_NE(aliaser.DeclareResource(ResourceType::RenderTarget, 100, 0, 1), UINT32_MAX);
-    EXPECT_NE(aliaser.DeclareResource(ResourceType::RenderTarget, 100, 0, 1), UINT32_MAX);
-    EXPECT_EQ(aliaser.DeclareResource(ResourceType::RenderTarget, 100, 0, 1), UINT32_MAX);
+    EXPECT_NE(aliaser.DeclareResource(AliasResourceType::RenderTarget, 100, 0, 1), UINT32_MAX);
+    EXPECT_NE(aliaser.DeclareResource(AliasResourceType::RenderTarget, 100, 0, 1), UINT32_MAX);
+    EXPECT_NE(aliaser.DeclareResource(AliasResourceType::RenderTarget, 100, 0, 1), UINT32_MAX);
+    EXPECT_EQ(aliaser.DeclareResource(AliasResourceType::RenderTarget, 100, 0, 1), UINT32_MAX);
 
     aliaser.Shutdown();
 }
@@ -250,8 +250,8 @@ TEST(FrameGraphAliaser, ClearResetsResources) {
     FrameGraphResourceAliaser aliaser;
     aliaser.Init();
 
-    aliaser.DeclareResource(ResourceType::RenderTarget, 1000, 0, 1);
-    aliaser.DeclareResource(ResourceType::RenderTarget, 1000, 2, 3);
+    aliaser.DeclareResource(AliasResourceType::RenderTarget, 1000, 0, 1);
+    aliaser.DeclareResource(AliasResourceType::RenderTarget, 1000, 2, 3);
 
     aliaser.Clear();
 
@@ -274,7 +274,7 @@ TEST(FrameGraphAliaser, GetAliasGroupBeforeCompute) {
     FrameGraphResourceAliaser aliaser;
     aliaser.Init();
 
-    aliaser.DeclareResource(ResourceType::RenderTarget, 1000, 0, 1);
+    aliaser.DeclareResource(AliasResourceType::RenderTarget, 1000, 0, 1);
 
     // Before ComputeAliasing, group should be UINT32_MAX
     EXPECT_EQ(aliaser.GetAliasGroup(0), UINT32_MAX);
@@ -286,7 +286,7 @@ TEST(FrameGraphAliaser, SingleResourceOneGroup) {
     FrameGraphResourceAliaser aliaser;
     aliaser.Init();
 
-    u32 id = aliaser.DeclareResource(ResourceType::RenderTarget, 4096, 0, 5);
+    u32 id = aliaser.DeclareResource(AliasResourceType::RenderTarget, 4096, 0, 5);
 
     auto groups = aliaser.ComputeAliasing();
     EXPECT_EQ(groups.size(), 1u);
@@ -303,9 +303,9 @@ TEST(FrameGraphAliaser, AreCompatibleQuery) {
     config.requireSameType = true;
     aliaser.Init(config);
 
-    u32 a = aliaser.DeclareResource(ResourceType::RenderTarget, 1000, 0, 1);
-    u32 b = aliaser.DeclareResource(ResourceType::RenderTarget, 1000, 2, 3);
-    u32 c = aliaser.DeclareResource(ResourceType::StorageBuffer, 1000, 4, 5);
+    u32 a = aliaser.DeclareResource(AliasResourceType::RenderTarget, 1000, 0, 1);
+    u32 b = aliaser.DeclareResource(AliasResourceType::RenderTarget, 1000, 2, 3);
+    u32 c = aliaser.DeclareResource(AliasResourceType::StorageBuffer, 1000, 4, 5);
 
     EXPECT_TRUE(aliaser.AreCompatible(a, b));  // Same type
     EXPECT_FALSE(aliaser.AreCompatible(a, c)); // Different type
@@ -321,8 +321,8 @@ TEST(FrameGraphAliaser, MinResourceSizeFilter) {
     aliaser.Init(config);
 
     // Small resource below threshold
-    u32 a = aliaser.DeclareResource(ResourceType::RenderTarget, 100, 0, 1);
-    u32 b = aliaser.DeclareResource(ResourceType::RenderTarget, 100, 2, 3);
+    u32 a = aliaser.DeclareResource(AliasResourceType::RenderTarget, 100, 0, 1);
+    u32 b = aliaser.DeclareResource(AliasResourceType::RenderTarget, 100, 2, 3);
 
     auto groups = aliaser.ComputeAliasing();
 

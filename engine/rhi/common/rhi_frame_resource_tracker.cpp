@@ -30,7 +30,7 @@ void FrameResourceTracker::Shutdown() {
     m_history.clear();
 }
 
-void FrameResourceTracker::OnResourceCreated(u64 handle, ResourceType type, u64 sizeBytes,
+void FrameResourceTracker::OnResourceCreated(u64 handle, FrameResourceType type, u64 sizeBytes,
                                                const std::string& debugName, bool isTransient) {
     if (!m_config.enabled) return;
 
@@ -41,7 +41,7 @@ void FrameResourceTracker::OnResourceCreated(u64 handle, ResourceType type, u64 
         return;
     }
 
-    TrackedResource res;
+    FrameTrackedResource res;
     res.handle = handle;
     res.type = type;
     res.sizeBytes = sizeBytes;
@@ -138,9 +138,9 @@ void FrameResourceTracker::EndFrame(u32 frameIndex) {
     m_bytesFreedThisFrame = 0;
 }
 
-std::vector<TrackedResource> FrameResourceTracker::GetPotentialLeaks(u32 currentFrame, u32 minAge) const {
+std::vector<FrameTrackedResource> FrameResourceTracker::GetPotentialLeaks(u32 currentFrame, u32 minAge) const {
     std::lock_guard lock(m_mutex);
-    std::vector<TrackedResource> leaks;
+    std::vector<FrameTrackedResource> leaks;
 
     for (const auto& [handle, res] : m_resources) {
         if (res.isTransient) continue; // Transients are managed differently
@@ -153,9 +153,9 @@ std::vector<TrackedResource> FrameResourceTracker::GetPotentialLeaks(u32 current
     return leaks;
 }
 
-std::vector<TrackedResource> FrameResourceTracker::GetStaleResources(u32 currentFrame) const {
+std::vector<FrameTrackedResource> FrameResourceTracker::GetStaleResources(u32 currentFrame) const {
     std::lock_guard lock(m_mutex);
-    std::vector<TrackedResource> stale;
+    std::vector<FrameTrackedResource> stale;
 
     for (const auto& [handle, res] : m_resources) {
         if (res.isTransient) continue;
@@ -168,14 +168,14 @@ std::vector<TrackedResource> FrameResourceTracker::GetStaleResources(u32 current
     return stale;
 }
 
-const TrackedResource* FrameResourceTracker::GetResource(u64 handle) const {
+const FrameTrackedResource* FrameResourceTracker::GetResource(u64 handle) const {
     std::lock_guard lock(m_mutex);
     auto it = m_resources.find(handle);
     if (it != m_resources.end()) return &it->second;
     return nullptr;
 }
 
-u32 FrameResourceTracker::GetCountByType(ResourceType type) const {
+u32 FrameResourceTracker::GetCountByType(FrameResourceType type) const {
     std::lock_guard lock(m_mutex);
     u32 count = 0;
     for (const auto& [handle, res] : m_resources) {
