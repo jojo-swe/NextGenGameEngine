@@ -11,14 +11,14 @@
     "rendering": {
       "description": "Rendering stack dependencies (Vulkan path, mesh processing, tooling support)",
       "dependencies": [
-        { "name": "volk", "version>=": "1.3.270" },
-        { "name": "vulkan-memory-allocator", "version>=": "3.0.1" },
+        { "name": "volk" },
+        { "name": "vulkan-memory-allocator" },
         { "name": "glm", "version>=": "0.9.9.8" },
-        { "name": "meshoptimizer", "version>=": "0.20" },
-        { "name": "imgui", "version>=": "1.90.1", "features": ["docking-experimental", "vulkan-binding", "win32-binding"] },
-        { "name": "stb", "version>=": "2023.12.15" },
-        { "name": "cgltf", "version>=": "1.13" },
-        { "name": "tracy", "version>=": "0.10" }
+        { "name": "meshoptimizer" },
+        { "name": "imgui", "features": ["docking-experimental", "vulkan-binding", "win32-binding"] },
+        { "name": "stb" },
+        { "name": "cgltf" },
+        { "name": "tracy" }
       ]
     },
     "gameplay": {
@@ -31,5 +31,8 @@
       ]
     }
   },
-  "builtin-baseline": "e238b4b4a4239829e1fde2c7db2ab668b65ae1dd"
+  "builtin-baseline": "e238b4b4a4239829e1fde2c7db2ab668b65ae1dd",
+  "overrides": [
+    { "name": "glm", "version": "1.0.3" }
+  ]
 }

@@ -212,7 +212,14 @@ public:
     u32 GetFrameIndex() const override { return m_frameIndex; }
 
     // ─── Internal Vulkan accessors (used by VulkanCommandList) ────────
+    VkInstance GetVkInstance() const { return m_instance; }
+    VkPhysicalDevice GetVkPhysicalDevice() const { return m_physicalDevice; }
     VkDevice GetVkDevice() const { return m_device; }
+    VkQueue GetGraphicsQueue() const { return m_graphicsQueue; }
+    u32 GetGraphicsQueueFamily() const { return m_graphicsQueueFamily; }
+    u32 GetSwapchainImageCount() const { return static_cast<u32>(m_swapchainImages.size()); }
+    VkFormat GetVkSwapchainFormat() const { return m_swapchainFormat; }
+    VkCommandBuffer GetCurrentCommandBuffer() const;
     const VulkanBuffer& GetBuffer(BufferHandle h) const { return m_buffers[h.index]; }
     const VulkanTexture& GetTexture(TextureHandle h) const { return m_textures[h.index]; }
     const VulkanPipeline& GetPipeline(PipelineHandle h) const { return m_pipelines[h.index]; }

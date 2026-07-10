@@ -7,6 +7,7 @@
 #include "engine/scene/camera/camera.h"
 #include "engine/core/math/pga.h"
 #include <memory>
+#include <functional>
 
 namespace nge::renderer {
 
@@ -82,6 +83,12 @@ public:
 
     // GPU profiler access
     rhi::GPUProfiler& GetProfiler() { return m_profiler; }
+
+    // Set a callback that's called after all passes, before Present transition
+    // Used by editor for ImGui overlay rendering
+    void SetPostRenderCallback(std::function<void(rhi::ICommandList*)> callback) {
+        m_postRenderCallback = std::move(callback);
+    }
 
 private:
     // ─── Pipeline passes ──────────────────────────────────────────────
@@ -166,15 +173,20 @@ private:
 
     rhi::BufferHandle m_demoVertexBuffer;
     rhi::BufferHandle m_demoIndexBuffer;
+    rhi::BufferHandle m_demoInstanceBuffer;
     rhi::ShaderHandle m_demoVertexShader;
     rhi::ShaderHandle m_demoFragmentShader;
     u32 m_demoIndexCount = 0;
+    u32 m_demoInstanceCount = 0;
     bool m_depthBufferInitialized = false;
 
     // ─── Render graph ────────────────────────────────────────────────
     std::unique_ptr<RenderGraph> m_renderGraph;
     rhi::GPUProfiler m_profiler;
     bool m_useRenderGraph = true;
+
+    // ─── Post-render callback (for ImGui overlay) ────────────────────
+    std::function<void(rhi::ICommandList*)> m_postRenderCallback;
 };
 
 } // namespace nge::renderer

@@ -14,9 +14,7 @@ target_include_directories(NextGenEditor
 
 target_link_libraries(NextGenEditor PRIVATE NextGenEngine)
 
-# ImGui dependency (when available via vcpkg)
-# find_package(imgui CONFIG)
-# if(imgui_FOUND)
-#     target_link_libraries(NextGenEditor PRIVATE imgui::imgui)
-#     target_compile_definitions(NextGenEditor PRIVATE NGE_HAS_IMGUI=1)
-# endif()
+find_package(imgui CONFIG REQUIRED)
+find_package(Vulkan REQUIRED)
+target_link_libraries(NextGenEditor PRIVATE imgui::imgui Vulkan::Vulkan)
+target_compile_definitions(NextGenEditor PRIVATE NGE_HAS_IMGUI=1)

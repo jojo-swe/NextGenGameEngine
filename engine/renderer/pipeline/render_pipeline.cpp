@@ -4,6 +4,7 @@
 #include "engine/core/assert.h"
 
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <filesystem>
 #include <vector>
@@ -14,7 +15,13 @@ namespace {
 
 struct DemoVertex {
     nge::math::Vec3 position;
+    nge::math::Vec3 normal;
     nge::math::Vec3 color;
+};
+
+struct DemoInstanceData {
+    nge::math::Vec4 offsetScale;  // xyz = offset, w = scale
+    nge::math::Vec4 colorTint;    // rgb = tint, a = unused
 };
 
 struct DemoPushConstants {
@@ -106,10 +113,12 @@ void RenderPipeline::Shutdown() {
     if (m_renderGraph) { m_renderGraph->Reset(); m_renderGraph.reset(); }
     ResetHandle(m_demoVertexBuffer, [this](rhi::BufferHandle handle) { m_device->DestroyBuffer(handle); });
     ResetHandle(m_demoIndexBuffer, [this](rhi::BufferHandle handle) { m_device->DestroyBuffer(handle); });
+    ResetHandle(m_demoInstanceBuffer, [this](rhi::BufferHandle handle) { m_device->DestroyBuffer(handle); });
     ResetHandle(m_visBufferPipeline, [this](rhi::PipelineHandle handle) { m_device->DestroyPipeline(handle); });
     ResetHandle(m_demoVertexShader, [this](rhi::ShaderHandle handle) { m_device->DestroyShader(handle); });
     ResetHandle(m_demoFragmentShader, [this](rhi::ShaderHandle handle) { m_device->DestroyShader(handle); });
     m_demoIndexCount = 0;
+    m_demoInstanceCount = 0;
     DestroyRenderTargets();
     m_device = nullptr;
 }
@@ -171,6 +180,11 @@ void RenderPipeline::RenderFrame(const FrameRenderData& frameData) {
             PassPostProcess(cmd, frameData);
             PassComposite(cmd);
             break;
+    }
+
+    // Post-render callback (e.g. ImGui overlay)
+    if (m_postRenderCallback) {
+        m_postRenderCallback(cmd);
     }
 
     // Transition swapchain image for presentation
@@ -302,6 +316,11 @@ void RenderPipeline::RenderFrameGraph(const FrameRenderData& frameData) {
     cmd->Begin();
     m_renderGraph->Execute(cmd);
 
+    // Post-render callback (e.g. ImGui overlay)
+    if (m_postRenderCallback) {
+        m_postRenderCallback(cmd);
+    }
+
     // Present barrier
     TextureHandle swapchain = m_device->GetSwapchainTexture();
     cmd->TextureBarrier(swapchain, ResourceState::RenderTarget, ResourceState::Present);
@@ -343,10 +362,13 @@ void RenderPipeline::PassVisibilityBuffer(rhi::ICommandList* cmd, const FrameRen
         pushConstants.deltaTime = data.deltaTime;
 
         cmd->BindGraphicsPipeline(m_visBufferPipeline);
-        cmd->BindVertexBuffer(m_demoVertexBuffer);
+        cmd->BindVertexBuffer(m_demoVertexBuffer, 0);
+        if (m_demoInstanceBuffer.IsValid()) {
+            cmd->BindVertexBuffer(m_demoInstanceBuffer, 1);
+        }
         cmd->BindIndexBuffer(m_demoIndexBuffer, rhi::IndexType::UInt16);
         cmd->SetPushConstants(&pushConstants, static_cast<u32>(sizeof(pushConstants)));
-        cmd->DrawIndexed(m_demoIndexCount);
+        cmd->DrawIndexed(m_demoIndexCount, m_demoInstanceCount);
     }
 
     cmd->EndRendering();
@@ -523,18 +545,43 @@ void RenderPipeline::CreatePipelines() {
     rhi::GraphicsPipelineDesc pipelineDesc{};
     pipelineDesc.vertexShader = m_demoVertexShader;
     pipelineDesc.fragmentShader = m_demoFragmentShader;
-    pipelineDesc.vertexBindingCount = 1;
+    pipelineDesc.vertexBindingCount = 2;
+    // Binding 0: per-vertex data (position, normal, color)
     pipelineDesc.vertexBindings[0].binding = 0;
     pipelineDesc.vertexBindings[0].stride = sizeof(DemoVertex);
-    pipelineDesc.vertexAttributeCount = 2;
+    pipelineDesc.vertexBindings[0].perInstance = false;
+    // Binding 1: per-instance data (offset+scale, color tint)
+    pipelineDesc.vertexBindings[1].binding = 1;
+    pipelineDesc.vertexBindings[1].stride = sizeof(DemoInstanceData);
+    pipelineDesc.vertexBindings[1].perInstance = true;
+
+    pipelineDesc.vertexAttributeCount = 5;
+    // location 0: position (float3)
     pipelineDesc.vertexAttributes[0].location = 0;
     pipelineDesc.vertexAttributes[0].binding = 0;
     pipelineDesc.vertexAttributes[0].format = rhi::Format::RGB32_FLOAT;
     pipelineDesc.vertexAttributes[0].offset = 0;
+    // location 1: normal (float3)
     pipelineDesc.vertexAttributes[1].location = 1;
     pipelineDesc.vertexAttributes[1].binding = 0;
     pipelineDesc.vertexAttributes[1].format = rhi::Format::RGB32_FLOAT;
-    pipelineDesc.vertexAttributes[1].offset = static_cast<u32>(offsetof(DemoVertex, color));
+    pipelineDesc.vertexAttributes[1].offset = static_cast<u32>(offsetof(DemoVertex, normal));
+    // location 2: color (float3)
+    pipelineDesc.vertexAttributes[2].location = 2;
+    pipelineDesc.vertexAttributes[2].binding = 0;
+    pipelineDesc.vertexAttributes[2].format = rhi::Format::RGB32_FLOAT;
+    pipelineDesc.vertexAttributes[2].offset = static_cast<u32>(offsetof(DemoVertex, color));
+    // location 3: instance offset+scale (float4)
+    pipelineDesc.vertexAttributes[3].location = 3;
+    pipelineDesc.vertexAttributes[3].binding = 1;
+    pipelineDesc.vertexAttributes[3].format = rhi::Format::RGBA32_FLOAT;
+    pipelineDesc.vertexAttributes[3].offset = 0;
+    // location 4: instance color tint (float4)
+    pipelineDesc.vertexAttributes[4].location = 4;
+    pipelineDesc.vertexAttributes[4].binding = 1;
+    pipelineDesc.vertexAttributes[4].format = rhi::Format::RGBA32_FLOAT;
+    pipelineDesc.vertexAttributes[4].offset = static_cast<u32>(offsetof(DemoInstanceData, colorTint));
+
     pipelineDesc.renderTargetCount = 1;
     pipelineDesc.renderTargets[0].format = m_device->GetSwapchainFormat();
     pipelineDesc.hasDepthStencil = true;
@@ -542,43 +589,68 @@ void RenderPipeline::CreatePipelines() {
     pipelineDesc.depthStencil.depthTest = true;
     pipelineDesc.depthStencil.depthWrite = true;
     pipelineDesc.depthStencil.depthCompare = rhi::CompareOp::Greater;
-    pipelineDesc.cullMode = rhi::CullMode::None;
+    pipelineDesc.cullMode = rhi::CullMode::Back;
     pipelineDesc.frontFace = rhi::FrontFace::CounterClockwise;
-    pipelineDesc.debugName = "RenderPipelineDemo";
+    pipelineDesc.debugName = "RenderPipelineInstancedCubes";
     m_visBufferPipeline = m_device->CreateGraphicsPipeline(pipelineDesc);
 
-    const std::array<DemoVertex, 8> vertices{{
-        {{-1.0f, 0.0f, -1.0f}, {1.0f, 0.2f, 0.2f}},
-        {{ 1.0f, 0.0f, -1.0f}, {0.2f, 1.0f, 0.2f}},
-        {{ 1.0f, 2.0f, -1.0f}, {0.2f, 0.2f, 1.0f}},
-        {{-1.0f, 2.0f, -1.0f}, {1.0f, 1.0f, 0.2f}},
-        {{-1.0f, 0.0f,  1.0f}, {1.0f, 0.2f, 1.0f}},
-        {{ 1.0f, 0.0f,  1.0f}, {0.2f, 1.0f, 1.0f}},
-        {{ 1.0f, 2.0f,  1.0f}, {1.0f, 1.0f, 1.0f}},
-        {{-1.0f, 2.0f,  1.0f}, {0.2f, 0.2f, 0.2f}},
+    // ─── Cube geometry: 24 vertices (4 per face) with normals ─────────
+    // Face order: -Z (front), +Z (back), -X (left), +X (right), -Y (bottom), +Y (top)
+    const std::array<DemoVertex, 24> vertices{{
+        // Front face (-Z), normal (0,0,-1)
+        {{-1.0f, 0.0f, -1.0f}, {0, 0, -1}, {1.0f, 0.2f, 0.2f}},
+        {{ 1.0f, 0.0f, -1.0f}, {0, 0, -1}, {1.0f, 0.2f, 0.2f}},
+        {{ 1.0f, 2.0f, -1.0f}, {0, 0, -1}, {1.0f, 0.2f, 0.2f}},
+        {{-1.0f, 2.0f, -1.0f}, {0, 0, -1}, {1.0f, 0.2f, 0.2f}},
+        // Back face (+Z), normal (0,0,1)
+        {{ 1.0f, 0.0f,  1.0f}, {0, 0, 1}, {0.2f, 1.0f, 0.2f}},
+        {{-1.0f, 0.0f,  1.0f}, {0, 0, 1}, {0.2f, 1.0f, 0.2f}},
+        {{-1.0f, 2.0f,  1.0f}, {0, 0, 1}, {0.2f, 1.0f, 0.2f}},
+        {{ 1.0f, 2.0f,  1.0f}, {0, 0, 1}, {0.2f, 1.0f, 0.2f}},
+        // Left face (-X), normal (-1,0,0)
+        {{-1.0f, 0.0f,  1.0f}, {-1, 0, 0}, {0.2f, 0.2f, 1.0f}},
+        {{-1.0f, 0.0f, -1.0f}, {-1, 0, 0}, {0.2f, 0.2f, 1.0f}},
+        {{-1.0f, 2.0f, -1.0f}, {-1, 0, 0}, {0.2f, 0.2f, 1.0f}},
+        {{-1.0f, 2.0f,  1.0f}, {-1, 0, 0}, {0.2f, 0.2f, 1.0f}},
+        // Right face (+X), normal (1,0,0)
+        {{ 1.0f, 0.0f, -1.0f}, {1, 0, 0}, {1.0f, 1.0f, 0.2f}},
+        {{ 1.0f, 0.0f,  1.0f}, {1, 0, 0}, {1.0f, 1.0f, 0.2f}},
+        {{ 1.0f, 2.0f,  1.0f}, {1, 0, 0}, {1.0f, 1.0f, 0.2f}},
+        {{ 1.0f, 2.0f, -1.0f}, {1, 0, 0}, {1.0f, 1.0f, 0.2f}},
+        // Bottom face (-Y), normal (0,-1,0)
+        {{-1.0f, 0.0f,  1.0f}, {0, -1, 0}, {0.5f, 0.5f, 0.5f}},
+        {{ 1.0f, 0.0f,  1.0f}, {0, -1, 0}, {0.5f, 0.5f, 0.5f}},
+        {{ 1.0f, 0.0f, -1.0f}, {0, -1, 0}, {0.5f, 0.5f, 0.5f}},
+        {{-1.0f, 0.0f, -1.0f}, {0, -1, 0}, {0.5f, 0.5f, 0.5f}},
+        // Top face (+Y), normal (0,1,0)
+        {{-1.0f, 2.0f, -1.0f}, {0, 1, 0}, {0.8f, 0.8f, 0.8f}},
+        {{ 1.0f, 2.0f, -1.0f}, {0, 1, 0}, {0.8f, 0.8f, 0.8f}},
+        {{ 1.0f, 2.0f,  1.0f}, {0, 1, 0}, {0.8f, 0.8f, 0.8f}},
+        {{-1.0f, 2.0f,  1.0f}, {0, 1, 0}, {0.8f, 0.8f, 0.8f}},
     }};
 
+    // 36 indices (6 faces × 2 triangles × 3 vertices)
     const std::array<u16, 36> indices{{
-        0, 1, 2, 0, 2, 3,
-        4, 6, 5, 4, 7, 6,
-        4, 5, 1, 4, 1, 0,
-        3, 2, 6, 3, 6, 7,
-        1, 5, 6, 1, 6, 2,
-        4, 0, 3, 4, 3, 7,
+        0, 1, 2, 0, 2, 3,       // front
+        4, 5, 6, 4, 6, 7,       // back
+        8, 9, 10, 8, 10, 11,    // left
+        12, 13, 14, 12, 14, 15, // right
+        16, 17, 18, 16, 18, 19, // bottom
+        20, 21, 22, 20, 22, 23, // top
     }};
 
     rhi::BufferDesc vertexBufferDesc{};
     vertexBufferDesc.size = sizeof(vertices);
     vertexBufferDesc.usage = rhi::BufferUsage::Vertex;
     vertexBufferDesc.memoryUsage = rhi::MemoryUsage::CPU_To_GPU;
-    vertexBufferDesc.debugName = "RenderPipelineDemoVertices";
+    vertexBufferDesc.debugName = "DemoVertices";
     m_demoVertexBuffer = m_device->CreateBuffer(vertexBufferDesc);
 
     rhi::BufferDesc indexBufferDesc{};
     indexBufferDesc.size = sizeof(indices);
     indexBufferDesc.usage = rhi::BufferUsage::Index;
     indexBufferDesc.memoryUsage = rhi::MemoryUsage::CPU_To_GPU;
-    indexBufferDesc.debugName = "RenderPipelineDemoIndices";
+    indexBufferDesc.debugName = "DemoIndices";
     m_demoIndexBuffer = m_device->CreateBuffer(indexBufferDesc);
 
     if (m_demoVertexBuffer.IsValid() && m_demoIndexBuffer.IsValid()) {
@@ -587,7 +659,45 @@ void RenderPipeline::CreatePipelines() {
         m_demoIndexCount = static_cast<u32>(indices.size());
     }
 
-    NGE_LOG_INFO("Render pipelines created");
+    // ─── Instance data: 5×5 grid of cubes with varying heights ────────
+    constexpr u32 gridSize = 5;
+    constexpr f32 spacing = 4.0f;
+    std::vector<DemoInstanceData> instances;
+    instances.reserve(gridSize * gridSize);
+
+    for (u32 z = 0; z < gridSize; ++z) {
+        for (u32 x = 0; x < gridSize; ++x) {
+            DemoInstanceData inst{};
+            f32 fx = static_cast<f32>(x) - (gridSize - 1) * 0.5f;
+            f32 fz = static_cast<f32>(z) - (gridSize - 1) * 0.5f;
+            inst.offsetScale = {fx * spacing, 0.0f, fz * spacing, 1.0f};
+
+            // Color tint based on grid position (HSV-like)
+            f32 hue = static_cast<f32>(x + z) / static_cast<f32>(gridSize * 2 - 2);
+            inst.colorTint = {
+                0.5f + 0.5f * std::sin(hue * 6.28f),
+                0.5f + 0.5f * std::sin(hue * 6.28f + 2.09f),
+                0.5f + 0.5f * std::sin(hue * 6.28f + 4.19f),
+                1.0f
+            };
+            instances.push_back(inst);
+        }
+    }
+
+    rhi::BufferDesc instanceBufferDesc{};
+    instanceBufferDesc.size = instances.size() * sizeof(DemoInstanceData);
+    instanceBufferDesc.usage = rhi::BufferUsage::Vertex;
+    instanceBufferDesc.memoryUsage = rhi::MemoryUsage::CPU_To_GPU;
+    instanceBufferDesc.debugName = "DemoInstances";
+    m_demoInstanceBuffer = m_device->CreateBuffer(instanceBufferDesc);
+
+    if (m_demoInstanceBuffer.IsValid()) {
+        m_device->UpdateBuffer(m_demoInstanceBuffer, instances.data(),
+                               instances.size() * sizeof(DemoInstanceData));
+        m_demoInstanceCount = static_cast<u32>(instances.size());
+    }
+
+    NGE_LOG_INFO("Render pipelines created: {} instances", m_demoInstanceCount);
 }
 
 } // namespace nge::renderer

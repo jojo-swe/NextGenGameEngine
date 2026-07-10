@@ -86,10 +86,13 @@ bool Application::InitSubsystems() {
 void Application::ShutdownSubsystems() {
     NGE_LOG_INFO("Shutting down subsystems...");
 
+    if (m_device) {
+        m_device->WaitIdle();
+    }
+
     m_renderPipeline.Shutdown();
 
     if (m_device) {
-        m_device->WaitIdle();
         m_device->Shutdown();
     }
 

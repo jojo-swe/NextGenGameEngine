@@ -1,13 +1,31 @@
 #include "editor/editor_app.h"
 #include "engine/core/logging/log.h"
 #include "engine/core/platform/input.h"
+#include "engine/core/platform/window.h"
+#include "engine/rhi/common/rhi_device.h"
 
-// ImGui integration — when available via vcpkg:
-// #include <imgui.h>
-// #include <imgui_impl_vulkan.h>
-// #include <imgui_impl_win32.h>
+#ifdef NGE_HAS_IMGUI
+#include <imgui.h>
+#include <imgui_impl_vulkan.h>
+#include <imgui_impl_win32.h>
+
+#include <vulkan/vulkan.h>
+
+#include "engine/rhi/vulkan/vulkan_device.h"
+
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+#endif
 
 namespace nge::editor {
+
+#ifdef NGE_HAS_IMGUI
+static VkDescriptorPool g_imguiDescriptorPool = VK_NULL_HANDLE;
+
+static void CheckVkResult(VkResult err) {
+    if (err == VK_SUCCESS) return;
+    NGE_LOG_ERROR("[ImGui Vulkan] VkResult = {}", static_cast<int>(err));
+}
+#endif
 
 EditorApp::EditorApp(const EditorConfig& config)
     : Application({
@@ -24,7 +42,6 @@ void EditorApp::OnInit() {
 
     InitImGui();
 
-    // Set up default menu structure
     m_menus.push_back({"File", {
         {"New Scene",  [this]() { NGE_LOG_INFO("New Scene"); }},
         {"Open Scene", [this]() { NGE_LOG_INFO("Open Scene"); }},
@@ -56,14 +73,12 @@ void EditorApp::OnInit() {
 void EditorApp::OnUpdate(f32 deltaTime) {
     HandleShortcuts();
 
-    // Update all panels
     for (auto& panel : m_panels) {
         if (panel->IsVisible()) {
             panel->OnUpdate(deltaTime);
         }
     }
 
-    // ImGui rendering
     BeginImGuiFrame();
     DrawDockSpace();
     DrawMenuBar();
@@ -78,6 +93,9 @@ void EditorApp::OnUpdate(f32 deltaTime) {
 }
 
 void EditorApp::OnShutdown() {
+    if (m_device) {
+        m_device->WaitIdle();
+    }
     ShutdownImGui();
     m_panels.clear();
     NGE_LOG_INFO("Editor shut down");
@@ -112,7 +130,7 @@ void EditorApp::PushUndoAction(const std::string& description,
         m_undoStack.erase(m_undoStack.begin());
     }
     m_undoStack.push_back({description, std::move(undo), std::move(redo)});
-    m_redoStack.clear(); // New action invalidates redo history
+    m_redoStack.clear();
 }
 
 void EditorApp::Undo() {
@@ -142,67 +160,154 @@ void EditorApp::ClearSelection() {
 }
 
 void EditorApp::InitImGui() {
-    // TODO: Initialize ImGui with Vulkan backend when imgui is available via vcpkg
-    // ImGui::CreateContext();
-    // ImGuiIO& io = ImGui::GetIO();
-    // io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-    // ImGui_ImplWin32_Init(m_window->GetNativeHandle());
-    // ImGui_ImplVulkan_Init(...);
+#ifdef NGE_HAS_IMGUI
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.IniFilename = m_editorConfig.layoutFile.c_str();
+
+    ImGui::StyleColorsDark();
+
+    auto* vkDevice = dynamic_cast<nge::rhi::vulkan::VulkanDevice*>(m_device.get());
+    if (!vkDevice) {
+        NGE_LOG_ERROR("Editor requires Vulkan backend for ImGui");
+        return;
+    }
+
+    VkDescriptorPoolSize poolSizes[] = {
+        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1},
+    };
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    poolInfo.maxSets = 1;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = poolSizes;
+    vkCreateDescriptorPool(vkDevice->GetVkDevice(), &poolInfo, nullptr, &g_imguiDescriptorPool);
+
+    ImGui_ImplWin32_Init(m_window->GetNativeHandle());
+
+    ImGui_ImplVulkan_InitInfo initInfo{};
+    initInfo.ApiVersion = VK_API_VERSION_1_3;
+    initInfo.Instance = vkDevice->GetVkInstance();
+    initInfo.PhysicalDevice = vkDevice->GetVkPhysicalDevice();
+    initInfo.Device = vkDevice->GetVkDevice();
+    initInfo.QueueFamily = vkDevice->GetGraphicsQueueFamily();
+    initInfo.Queue = vkDevice->GetGraphicsQueue();
+    initInfo.DescriptorPool = g_imguiDescriptorPool;
+    initInfo.MinImageCount = 2;
+    initInfo.ImageCount = vkDevice->GetSwapchainImageCount();
+    initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+    initInfo.UseDynamicRendering = true;
+    initInfo.CheckVkResultFn = CheckVkResult;
+
+    // Configure dynamic rendering with swapchain format
+    initInfo.PipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
+    initInfo.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
+    VkFormat colorFormat = vkDevice->GetVkSwapchainFormat();
+    initInfo.PipelineRenderingCreateInfo.pColorAttachmentFormats = &colorFormat;
+
+    if (!ImGui_ImplVulkan_Init(&initInfo)) {
+        NGE_LOG_ERROR("Failed to initialize ImGui Vulkan backend");
+        return;
+    }
+
+    ImGui_ImplVulkan_CreateFontsTexture();
+
+    m_renderPipeline.SetPostRenderCallback([this](nge::rhi::ICommandList* /*cmd*/) {
+        if (!m_imguiInitialized) return;
+        auto* vkDev = dynamic_cast<nge::rhi::vulkan::VulkanDevice*>(m_device.get());
+        if (!vkDev) return;
+        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vkDev->GetCurrentCommandBuffer());
+    });
+
     m_imguiInitialized = true;
-    NGE_LOG_INFO("ImGui initialized (stub)");
+    NGE_LOG_INFO("ImGui initialized (Vulkan + Win32 backend)");
+#else
+    m_imguiInitialized = true;
+    NGE_LOG_INFO("ImGui initialized (stub - no NGE_HAS_IMGUI)");
+#endif
 }
 
 void EditorApp::ShutdownImGui() {
     if (!m_imguiInitialized) return;
-    // ImGui_ImplVulkan_Shutdown();
-    // ImGui_ImplWin32_Shutdown();
-    // ImGui::DestroyContext();
+
+#ifdef NGE_HAS_IMGUI
+    if (m_device) m_device->WaitIdle();
+
+    ImGui_ImplVulkan_Shutdown();
+    ImGui_ImplWin32_Shutdown();
+    ImGui::DestroyContext();
+
+    auto* vkDevice = dynamic_cast<nge::rhi::vulkan::VulkanDevice*>(m_device.get());
+    if (vkDevice && g_imguiDescriptorPool != VK_NULL_HANDLE) {
+        vkDestroyDescriptorPool(vkDevice->GetVkDevice(), g_imguiDescriptorPool, nullptr);
+        g_imguiDescriptorPool = VK_NULL_HANDLE;
+    }
+#endif
+
     m_imguiInitialized = false;
 }
 
 void EditorApp::BeginImGuiFrame() {
-    // ImGui_ImplVulkan_NewFrame();
-    // ImGui_ImplWin32_NewFrame();
-    // ImGui::NewFrame();
+#ifdef NGE_HAS_IMGUI
+    if (!m_imguiInitialized) return;
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
+#endif
 }
 
 void EditorApp::EndImGuiFrame() {
-    // ImGui::Render();
-    // ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), ...);
-    // ImGui::UpdatePlatformWindows();
-    // ImGui::RenderPlatformWindowsDefault();
+#ifdef NGE_HAS_IMGUI
+    if (!m_imguiInitialized) return;
+    ImGui::Render();
+#endif
 }
 
 void EditorApp::DrawMenuBar() {
-    // if (ImGui::BeginMainMenuBar()) {
-    //     for (const auto& menu : m_menus) {
-    //         if (ImGui::BeginMenu(menu.name.c_str())) {
-    //             for (const auto& item : menu.items) {
-    //                 if (ImGui::MenuItem(item.name.c_str())) {
-    //                     item.callback();
-    //                 }
-    //             }
-    //             ImGui::EndMenu();
-    //         }
-    //     }
-    //     ImGui::EndMainMenuBar();
-    // }
+#ifdef NGE_HAS_IMGUI
+    if (ImGui::BeginMainMenuBar()) {
+        for (const auto& menu : m_menus) {
+            if (ImGui::BeginMenu(menu.name.c_str())) {
+                for (const auto& item : menu.items) {
+                    if (ImGui::MenuItem(item.name.c_str())) {
+                        item.callback();
+                    }
+                }
+                ImGui::EndMenu();
+            }
+        }
+        ImGui::EndMainMenuBar();
+    }
+#endif
 }
 
 void EditorApp::DrawDockSpace() {
-    // ImGuiViewport* viewport = ImGui::GetMainViewport();
-    // ImGui::SetNextWindowPos(viewport->WorkPos);
-    // ImGui::SetNextWindowSize(viewport->WorkSize);
-    // ImGui::SetNextWindowViewport(viewport->ID);
-    // ImGuiWindowFlags flags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar |
-    //     ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-    //     ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus |
-    //     ImGuiWindowFlags_MenuBar;
-    // ImGui::Begin("DockSpace", nullptr, flags);
-    // ImGuiID dockSpaceId = ImGui::GetID("MainDockSpace");
-    // ImGui::DockSpace(dockSpaceId, ImVec2(0, 0), ImGuiDockNodeFlags_None);
-    // ImGui::End();
+#ifdef NGE_HAS_IMGUI
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->WorkPos);
+    ImGui::SetNextWindowSize(viewport->WorkSize);
+    ImGui::SetNextWindowViewport(viewport->ID);
+
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar |
+        ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus |
+        ImGuiWindowFlags_MenuBar;
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+    ImGui::Begin("DockSpace", nullptr, flags);
+    ImGui::PopStyleVar(3);
+
+    ImGuiID dockSpaceId = ImGui::GetID("MainDockSpace");
+    ImGui::DockSpace(dockSpaceId, ImVec2(0, 0), ImGuiDockNodeFlags_None);
+    ImGui::End();
+#endif
 }
 
 void EditorApp::HandleShortcuts() {

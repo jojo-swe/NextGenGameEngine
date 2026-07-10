@@ -2,12 +2,13 @@
 #include "engine/core/logging/log.h"
 #include "engine/core/platform/input.h"
 
+#ifdef NGE_HAS_IMGUI
+#include <imgui.h>
+#endif
+
 namespace nge::editor {
 
-// ─── Viewport Panel ──────────────────────────────────────────────────────
-
 void ViewportPanel::OnUpdate(f32 /*deltaTime*/) {
-    // Handle gizmo mode switching via keyboard
     using Key = platform::Key;
     if (m_focused) {
         if (platform::Input::IsKeyPressed(Key::W)) m_gizmoMode = GizmoMode::Translate;
@@ -17,118 +18,99 @@ void ViewportPanel::OnUpdate(f32 /*deltaTime*/) {
 }
 
 void ViewportPanel::OnDraw() {
-    // ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-    // if (ImGui::Begin("Viewport", &m_visible)) {
-    //     m_hovered = ImGui::IsWindowHovered();
-    //     m_focused = ImGui::IsWindowFocused();
-    //
-    //     auto size = ImGui::GetContentRegionAvail();
-    //     m_viewportWidth = size.x;
-    //     m_viewportHeight = size.y;
-    //
-    //     // Render scene texture into viewport
-    //     // ImGui::Image(sceneTextureId, size);
-    //
-    //     // Draw gizmo overlay for selected entity
-    //     // if (m_app && m_app->GetSelectedEntity().IsValid()) {
-    //     //     ImGuizmo::SetDrawlist();
-    //     //     ImGuizmo::SetRect(pos.x, pos.y, size.x, size.y);
-    //     //     // Draw translate/rotate/scale gizmo
-    //     // }
-    // }
-    // ImGui::End();
-    // ImGui::PopStyleVar();
-}
+#ifdef NGE_HAS_IMGUI
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+    if (ImGui::Begin("Viewport", &m_visible)) {
+        m_hovered = ImGui::IsWindowHovered();
+        m_focused = ImGui::IsWindowFocused();
 
-// ─── Hierarchy Panel ─────────────────────────────────────────────────────
+        auto size = ImGui::GetContentRegionAvail();
+        m_viewportWidth = size.x;
+        m_viewportHeight = size.y;
+
+        ImGui::TextDisabled("Scene render target (not yet wired)");
+    }
+    ImGui::End();
+    ImGui::PopStyleVar();
+#endif
+}
 
 void HierarchyPanel::OnUpdate(f32 /*deltaTime*/) {}
 
 void HierarchyPanel::OnDraw() {
-    // if (ImGui::Begin("Hierarchy", &m_visible)) {
-    //     // Search bar
-    //     ImGui::InputTextWithHint("##search", "Search...", &m_searchFilter);
-    //     ImGui::Separator();
-    //
-    //     // Iterate root entities and draw tree
-    //     // for (auto entity : m_app->GetWorld().GetRootEntities()) {
-    //     //     DrawEntityNode(entity);
-    //     // }
-    //
-    //     // Right-click context menu
-    //     if (ImGui::BeginPopupContextWindow()) {
-    //         if (ImGui::MenuItem("Create Empty Entity")) { /* ... */ }
-    //         if (ImGui::MenuItem("Create Cube")) { /* ... */ }
-    //         if (ImGui::MenuItem("Create Light")) { /* ... */ }
-    //         if (ImGui::MenuItem("Create Camera")) { /* ... */ }
-    //         ImGui::EndPopup();
-    //     }
-    // }
-    // ImGui::End();
+#ifdef NGE_HAS_IMGUI
+    if (ImGui::Begin("Hierarchy", &m_visible)) {
+        char searchBuf[256] = {};
+        ImGui::InputTextWithHint("##search", "Search...", searchBuf, sizeof(searchBuf));
+        ImGui::Separator();
+
+        if (ImGui::BeginPopupContextWindow()) {
+            if (ImGui::MenuItem("Create Empty Entity")) { NGE_LOG_INFO("Create Empty Entity"); }
+            if (ImGui::MenuItem("Create Cube")) { NGE_LOG_INFO("Create Cube"); }
+            if (ImGui::MenuItem("Create Light")) { NGE_LOG_INFO("Create Light"); }
+            if (ImGui::MenuItem("Create Camera")) { NGE_LOG_INFO("Create Camera"); }
+            ImGui::EndPopup();
+        }
+
+        if (m_app) {
+            auto* world = m_app->GetWorld();
+            (void)world;
+            // TODO: iterate root entities when ECS query API is available
+        }
+    }
+    ImGui::End();
+#endif
 }
 
 void HierarchyPanel::DrawEntityNode(ecs::Entity /*entity*/) {
-    // ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-    // if (m_app->GetSelectedEntity() == entity) flags |= ImGuiTreeNodeFlags_Selected;
-    // if (/* no children */) flags |= ImGuiTreeNodeFlags_Leaf;
-    //
-    // bool opened = ImGui::TreeNodeEx((void*)(u64)entity.id, flags, "%s", entityName);
-    // if (ImGui::IsItemClicked()) m_app->Select(entity);
-    //
-    // // Drag-drop for reparenting
-    // if (ImGui::BeginDragDropSource()) { /* ... */ ImGui::EndDragDropSource(); }
-    // if (ImGui::BeginDragDropTarget()) { /* ... */ ImGui::EndDragDropTarget(); }
-    //
-    // if (opened) {
-    //     // Recurse children
-    //     ImGui::TreePop();
-    // }
+#ifdef NGE_HAS_IMGUI
+    // TODO: implement when entity name system is available
+#endif
 }
-
-// ─── Inspector Panel ─────────────────────────────────────────────────────
 
 void InspectorPanel::OnUpdate(f32 /*deltaTime*/) {}
 
 void InspectorPanel::OnDraw() {
-    // if (ImGui::Begin("Inspector", &m_visible)) {
-    //     if (m_app && m_app->GetSelectedEntity().IsValid()) {
-    //         // Draw component editors based on what the entity has
-    //         DrawTransformComponent();
-    //         DrawCameraComponent();
-    //         DrawMaterialComponent();
-    //         DrawLightComponent();
-    //         DrawPhysicsComponent();
-    //
-    //         // Add component button
-    //         ImGui::Separator();
-    //         if (ImGui::Button("Add Component")) {
-    //             ImGui::OpenPopup("AddComponent");
-    //         }
-    //         if (ImGui::BeginPopup("AddComponent")) {
-    //             if (ImGui::MenuItem("Camera")) { /* ... */ }
-    //             if (ImGui::MenuItem("Light")) { /* ... */ }
-    //             if (ImGui::MenuItem("Mesh Renderer")) { /* ... */ }
-    //             if (ImGui::MenuItem("Rigid Body")) { /* ... */ }
-    //             if (ImGui::MenuItem("Collider")) { /* ... */ }
-    //             ImGui::EndPopup();
-    //         }
-    //     } else {
-    //         // ImGui::TextDisabled("No entity selected");
-    //     }
-    // }
-    // ImGui::End();
+#ifdef NGE_HAS_IMGUI
+    if (ImGui::Begin("Inspector", &m_visible)) {
+        if (m_app && m_app->GetSelectedEntity().IsValid()) {
+            DrawTransformComponent();
+            DrawCameraComponent();
+            DrawMaterialComponent();
+            DrawLightComponent();
+            DrawPhysicsComponent();
+
+            ImGui::Separator();
+            if (ImGui::Button("Add Component")) {
+                ImGui::OpenPopup("AddComponent");
+            }
+            if (ImGui::BeginPopup("AddComponent")) {
+                if (ImGui::MenuItem("Camera")) {}
+                if (ImGui::MenuItem("Light")) {}
+                if (ImGui::MenuItem("Mesh Renderer")) {}
+                if (ImGui::MenuItem("Rigid Body")) {}
+                if (ImGui::MenuItem("Collider")) {}
+                ImGui::EndPopup();
+            }
+        } else {
+            ImGui::TextDisabled("No entity selected");
+        }
+    }
+    ImGui::End();
+#endif
 }
 
 void InspectorPanel::DrawTransformComponent() {
-    // if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
-    //     auto* transform = m_app->GetWorld().GetComponent<scene::Transform>(entity);
-    //     if (transform) {
-    //         // Position, rotation (Euler), scale editors
-    //         // ImGui::DragFloat3("Position", &pos.x, 0.1f);
-    //         // ImGui::DragFloat3("Rotation", &euler.x, 1.0f);
-    //         // ImGui::DragFloat3("Scale", &scale.x, 0.01f);
-    //     }
-    // }
+#ifdef NGE_HAS_IMGUI
+    if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
+        float pos[3] = {0, 0, 0};
+        float rot[3] = {0, 0, 0};
+        float scale[3] = {1, 1, 1};
+        ImGui::DragFloat3("Position", pos, 0.1f);
+        ImGui::DragFloat3("Rotation", rot, 1.0f);
+        ImGui::DragFloat3("Scale", scale, 0.01f);
+    }
+#endif
 }
 
 void InspectorPanel::DrawCameraComponent() {}
@@ -136,32 +118,46 @@ void InspectorPanel::DrawMaterialComponent() {}
 void InspectorPanel::DrawLightComponent() {}
 void InspectorPanel::DrawPhysicsComponent() {}
 
-// ─── Console Panel ───────────────────────────────────────────────────────
-
 void ConsolePanel::OnUpdate(f32 /*deltaTime*/) {}
 
 void ConsolePanel::OnDraw() {
-    // if (ImGui::Begin("Console", &m_visible)) {
-    //     // Toolbar: filter buttons, clear, auto-scroll toggle
-    //     // if (ImGui::Button("Clear")) Clear();
-    //     // ImGui::SameLine();
-    //     // ImGui::Checkbox("Auto-scroll", &m_autoScroll);
-    //     // ImGui::SameLine();
-    //     // ImGui::Checkbox("Info", &m_showInfo); ...
-    //
-    //     // Log entries
-    //     // ImGui::BeginChild("ScrollRegion");
-    //     // for (const auto& entry : m_logs) {
-    //     //     if (!PassesFilter(entry)) continue;
-    //     //     ImVec4 color = GetColorForLevel(entry.level);
-    //     //     ImGui::PushStyleColor(ImGuiCol_Text, color);
-    //     //     ImGui::TextUnformatted(entry.message.c_str());
-    //     //     ImGui::PopStyleColor();
-    //     // }
-    //     // if (m_autoScroll) ImGui::SetScrollHereY(1.0f);
-    //     // ImGui::EndChild();
-    // }
-    // ImGui::End();
+#ifdef NGE_HAS_IMGUI
+    if (ImGui::Begin("Console", &m_visible)) {
+        if (ImGui::Button("Clear")) Clear();
+        ImGui::SameLine();
+        ImGui::Checkbox("Auto-scroll", &m_autoScroll);
+        ImGui::SameLine();
+        ImGui::Checkbox("Info", &m_showInfo);
+        ImGui::SameLine();
+        ImGui::Checkbox("Warn", &m_showWarn);
+        ImGui::SameLine();
+        ImGui::Checkbox("Error", &m_showError);
+        ImGui::SameLine();
+        ImGui::Checkbox("Debug", &m_showDebug);
+
+        ImGui::Separator();
+        ImGui::BeginChild("ScrollRegion");
+        for (const auto& entry : m_logs) {
+            bool show = (entry.level == 0 && m_showInfo) ||
+                        (entry.level == 1 && m_showWarn) ||
+                        (entry.level == 2 && m_showError) ||
+                        (entry.level == 3 && m_showDebug);
+            if (!show) continue;
+
+            ImVec4 color = ImVec4(1, 1, 1, 1);
+            if (entry.level == 1) color = ImVec4(1, 1, 0, 1);
+            else if (entry.level == 2) color = ImVec4(1, 0.3f, 0.3f, 1);
+            else if (entry.level == 3) color = ImVec4(0.5f, 0.5f, 0.5f, 1);
+
+            ImGui::PushStyleColor(ImGuiCol_Text, color);
+            ImGui::TextUnformatted(entry.message.c_str());
+            ImGui::PopStyleColor();
+        }
+        if (m_autoScroll && !m_logs.empty()) ImGui::SetScrollHereY(1.0f);
+        ImGui::EndChild();
+    }
+    ImGui::End();
+#endif
 }
 
 void ConsolePanel::AddLog(const std::string& msg, u8 level) {
@@ -175,29 +171,24 @@ void ConsolePanel::Clear() {
     m_logs.clear();
 }
 
-// ─── Asset Browser Panel ─────────────────────────────────────────────────
-
 void AssetBrowserPanel::OnUpdate(f32 /*deltaTime*/) {}
 
 void AssetBrowserPanel::OnDraw() {
-    // if (ImGui::Begin("Assets", &m_visible)) {
-    //     // Breadcrumb path bar
-    //     // Directory tree (left) + file grid (right)
-    //     // Thumbnail previews for textures/meshes
-    //     // Drag-drop to scene or inspector
-    //     // Right-click: import, create, rename, delete
-    // }
-    // ImGui::End();
+#ifdef NGE_HAS_IMGUI
+    if (ImGui::Begin("Assets", &m_visible)) {
+        ImGui::Text("Root: %s", m_rootPath.c_str());
+        ImGui::Separator();
+        // TODO: directory browsing with std::filesystem
+    }
+    ImGui::End();
+#endif
 }
-
-// ─── Profiler Panel ──────────────────────────────────────────────────────
 
 void ProfilerPanel::OnUpdate(f32 deltaTime) {
     f32 frameMs = deltaTime * 1000.0f;
     m_frameTimesMs[m_frameIndex % FRAME_HISTORY] = frameMs;
     m_frameIndex++;
 
-    // Compute stats
     f32 sum = 0, maxVal = 0;
     u32 count = math::Min(m_frameIndex, FRAME_HISTORY);
     for (u32 i = 0; i < count; ++i) {
@@ -209,23 +200,19 @@ void ProfilerPanel::OnUpdate(f32 deltaTime) {
 }
 
 void ProfilerPanel::OnDraw() {
-    // if (ImGui::Begin("Profiler", &m_visible)) {
-    //     ImGui::Text("FPS: %.1f", 1000.0f / m_avgFrameTime);
-    //     ImGui::Text("Frame: %.2f ms (avg), %.2f ms (max)", m_avgFrameTime, m_maxFrameTime);
-    //     ImGui::Separator();
-    //
-    //     // Frame time graph
-    //     ImGui::PlotLines("Frame Time (ms)", m_frameTimesMs, FRAME_HISTORY,
-    //                      m_frameIndex % FRAME_HISTORY, nullptr, 0, 33.3f, ImVec2(0, 80));
-    //
-    //     // Memory stats
-    //     // ImGui::Text("RAM: %.1f MB", memUsage / (1024.0f * 1024.0f));
-    //     // ImGui::Text("VRAM: %.1f MB", vramUsage / (1024.0f * 1024.0f));
-    //
-    //     // GPU timing breakdown
-    //     // Draw bars for each render pass timing
-    // }
-    // ImGui::End();
+#ifdef NGE_HAS_IMGUI
+    if (ImGui::Begin("Profiler", &m_visible)) {
+        if (m_avgFrameTime > 0) {
+            ImGui::Text("FPS: %.1f", 1000.0f / m_avgFrameTime);
+        }
+        ImGui::Text("Frame: %.2f ms (avg), %.2f ms (max)", m_avgFrameTime, m_maxFrameTime);
+        ImGui::Separator();
+
+        ImGui::PlotLines("Frame Time (ms)", m_frameTimesMs, FRAME_HISTORY,
+                         m_frameIndex % FRAME_HISTORY, nullptr, 0, 33.3f, ImVec2(0, 80));
+    }
+    ImGui::End();
+#endif
 }
 
 } // namespace nge::editor

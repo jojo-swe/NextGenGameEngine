@@ -1278,6 +1278,10 @@ ICommandList* VulkanDevice::GetCommandList(QueueType /*queue*/) {
     return &m_commandList;
 }
 
+VkCommandBuffer VulkanDevice::GetCurrentCommandBuffer() const {
+    return m_frames[m_frameIndex].commandBuffer;
+}
+
 void VulkanDevice::SubmitCommandList(ICommandList* /*cmdList*/, QueueType /*queue*/) {
     auto& frame = m_frames[m_frameIndex];
     VkSemaphore renderFinished = m_swapchainRenderFinishedSemaphores[m_currentImageIndex];
