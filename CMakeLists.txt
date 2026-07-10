@@ -10,6 +10,7 @@ project(NextGenGameEngine
 option(NGE_ENABLE_VULKAN "Enable Vulkan integration" ON)
 option(NGE_BUILD_SAMPLES "Build sample applications" ON)
 option(NGE_BUILD_TESTS "Build unit/integration tests" ON)
+option(NGE_BUILD_EDITOR "Build the ImGui editor (requires Vulkan SDK and the 'rendering' vcpkg feature)" ON)
 
 # ─── C++ Standard ───────────────────────────────────────────────────────────
 set(CMAKE_CXX_STANDARD 20)
@@ -81,4 +82,8 @@ if(NGE_BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 # add_subdirectory(tools)
-add_subdirectory(editor)
+# The editor hard-requires imgui + the Vulkan SDK, so it can only build when
+# Vulkan integration is enabled.
+if(NGE_BUILD_EDITOR AND NGE_ENABLE_VULKAN)
+    add_subdirectory(editor)
+endif()
