@@ -7,6 +7,13 @@ on:
     branches: [main, master]
   workflow_dispatch:
 
+# A new push supersedes any in-flight run for the same ref — without this,
+# hung runs (e.g. a blocking test before ctest timeouts existed) burn runner
+# time until GitHub's 6-hour cap.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   repo-sanity:
     name: Repo Sanity Checks
