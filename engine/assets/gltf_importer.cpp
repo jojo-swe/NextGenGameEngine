@@ -5,9 +5,14 @@
 #include <algorithm>
 #include <filesystem>
 
-// Note: In production, this would use cgltf for parsing.
-// For now, we implement the importer interface with stub parsing
-// that can be connected to cgltf when the dependency is available.
+#ifdef NGE_HAS_CGLTF
+#include <cgltf.h>
+#endif
+
+#ifdef NGE_HAS_STB
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+#endif
 
 namespace nge::assets {
 
@@ -26,25 +31,40 @@ GLTFImportResult GLTFImporter::Import(const std::string& path, const GLTFImportO
 
     NGE_LOG_INFO("Importing glTF{}: '{}'", isBinary ? " (binary)" : "", path);
 
-    // TODO: Parse with cgltf
-    // cgltf_options cgltfOptions = {};
-    // cgltf_data* data = nullptr;
-    // cgltf_result res = cgltf_parse_file(&cgltfOptions, path.c_str(), &data);
-    // if (res != cgltf_result_success) { ... }
-    // cgltf_load_buffers(&cgltfOptions, data, path.c_str());
-
-    // For now, create a stub result to validate the pipeline
-    // Real implementation would call Parse* methods with cgltf data
-
     std::string basePath = std::filesystem::path(path).parent_path().string();
 
-    // ParseMeshes(data, result, options);
-    // ParseMaterials(data, result);
-    // ParseTextures(data, result, basePath);
-    // ParseNodes(data, result);
-    // if (options.importAnimations) ParseAnimations(data, result);
+#ifdef NGE_HAS_CGLTF
+    cgltf_options cgltfOptions = {};
+    cgltf_data* data = nullptr;
+    cgltf_result res = cgltf_parse_file(&cgltfOptions, path.c_str(), &data);
+    if (res != cgltf_result_success) {
+        result.error = "cgltf_parse_file failed with code " + std::to_string(res);
+        NGE_LOG_ERROR("glTF parse failed: {}", result.error);
+        return result;
+    }
+
+    res = cgltf_load_buffers(&cgltfOptions, data, path.c_str());
+    if (res != cgltf_result_success) {
+        result.error = "cgltf_load_buffers failed with code " + std::to_string(res);
+        NGE_LOG_ERROR("glTF buffer load failed: {}", result.error);
+        cgltf_free(data);
+        return result;
+    }
+
+    ParseMeshes(data, result, options);
+    ParseMaterials(data, result);
+    ParseTextures(data, result, basePath);
+    ParseNodes(data, result);
+    if (options.importAnimations) ParseAnimations(data, result);
+
+    cgltf_free(data);
 
     result.success = true;
+#else
+    result.error = "Engine built without cgltf support (NGE_HAS_CGLTF not defined)";
+    NGE_LOG_ERROR("{}", result.error);
+#endif
+
     NGE_LOG_INFO("glTF imported: {} meshes, {} materials, {} textures, {} nodes, {} animations",
                  result.meshes.size(), result.materials.size(), result.textures.size(),
                  result.nodes.size(), result.animations.size());
@@ -190,26 +210,425 @@ ecs::Entity GLTFImporter::ImportToWorld(const std::string& path, ecs::World& wor
     return root;
 }
 
-void GLTFImporter::ParseMeshes(const void* /*gltfData*/, GLTFImportResult& /*result*/,
-                                 const GLTFImportOptions& /*options*/) {
-    // TODO: Iterate cgltf_data->meshes, extract vertex attributes and indices
+void GLTFImporter::ParseMeshes(const void* gltfData, GLTFImportResult& result,
+                                 const GLTFImportOptions& options) {
+#ifdef NGE_HAS_CGLTF
+    const cgltf_data* data = static_cast<const cgltf_data*>(gltfData);
+
+    for (cgltf_size mi = 0; mi < data->meshes_count; ++mi) {
+        const cgltf_mesh& mesh = data->meshes[mi];
+        GLTFMeshData meshData;
+        meshData.name = mesh.name ? mesh.name : ("mesh_" + std::to_string(mi));
+
+        for (cgltf_size pi = 0; pi < mesh.primitives_count; ++pi) {
+            const cgltf_primitive& prim = mesh.primitives[pi];
+            u32 primIndexOffset = static_cast<u32>(meshData.indices.size());
+            u32 primVertexOffset = static_cast<u32>(meshData.positions.size());
+
+            // Extract indices
+            if (prim.indices) {
+                const cgltf_accessor* accessor = prim.indices;
+                cgltf_size indexCount = accessor->count;
+                meshData.indices.reserve(meshData.indices.size() + indexCount);
+
+                const cgltf_buffer_view* bv = accessor->buffer_view;
+                const u8* bufferData = static_cast<const u8*>(bv->buffer->data) + bv->offset + accessor->offset;
+
+                for (cgltf_size i = 0; i < indexCount; ++i) {
+                    u32 idx = 0;
+                    switch (accessor->component_type) {
+                        case cgltf_component_type_r_8u:    idx = static_cast<const u8*>(static_cast<const void*>(bufferData))[i]; break;
+                        case cgltf_component_type_r_16u:   idx = static_cast<const u16*>(static_cast<const void*>(bufferData))[i]; break;
+                        case cgltf_component_type_r_32u:   idx = static_cast<const u32*>(static_cast<const void*>(bufferData))[i]; break;
+                        default: break;
+                    }
+                    meshData.indices.push_back(primVertexOffset + idx);
+                }
+            } else if (prim.attributes_count > 0) {
+                // Non-indexed: generate sequential indices
+                cgltf_size vertCount = prim.attributes[0].data->count;
+                for (cgltf_size i = 0; i < vertCount; ++i) {
+                    meshData.indices.push_back(primVertexOffset + static_cast<u32>(i));
+                }
+            }
+
+            // Extract vertex attributes
+            cgltf_size vertCount = 0;
+            for (cgltf_size ai = 0; ai < prim.attributes_count; ++ai) {
+                const cgltf_attribute& attr = prim.attributes[ai];
+                const cgltf_accessor* accessor = attr.data;
+                vertCount = accessor->count;
+
+                const cgltf_buffer_view* bv = accessor->buffer_view;
+                const u8* basePtr = static_cast<const u8*>(bv->buffer->data) + bv->offset + accessor->offset;
+                cgltf_size stride = accessor->stride;
+
+                switch (attr.type) {
+                    case cgltf_attribute_type_position: {
+                        meshData.positions.resize(primVertexOffset + vertCount);
+                        for (cgltf_size i = 0; i < vertCount; ++i) {
+                            const f32* p = reinterpret_cast<const f32*>(basePtr + i * stride);
+                            meshData.positions[primVertexOffset + i] = {p[0], p[1], p[2]};
+                        }
+                        break;
+                    }
+                    case cgltf_attribute_type_normal: {
+                        meshData.normals.resize(primVertexOffset + vertCount);
+                        for (cgltf_size i = 0; i < vertCount; ++i) {
+                            const f32* n = reinterpret_cast<const f32*>(basePtr + i * stride);
+                            meshData.normals[primVertexOffset + i] = {n[0], n[1], n[2]};
+                        }
+                        break;
+                    }
+                    case cgltf_attribute_type_tangent: {
+                        meshData.tangents.resize(primVertexOffset + vertCount);
+                        for (cgltf_size i = 0; i < vertCount; ++i) {
+                            const f32* t = reinterpret_cast<const f32*>(basePtr + i * stride);
+                            meshData.tangents[primVertexOffset + i] = {t[0], t[1], t[2], t[3]};
+                        }
+                        break;
+                    }
+                    case cgltf_attribute_type_texcoord: {
+                        if (attr.index == 0) {
+                            meshData.texcoords0.resize(primVertexOffset + vertCount);
+                            for (cgltf_size i = 0; i < vertCount; ++i) {
+                                const f32* uv = reinterpret_cast<const f32*>(basePtr + i * stride);
+                                meshData.texcoords0[primVertexOffset + i] = {uv[0], uv[1]};
+                            }
+                        } else if (attr.index == 1) {
+                            meshData.texcoords1.resize(primVertexOffset + vertCount);
+                            for (cgltf_size i = 0; i < vertCount; ++i) {
+                                const f32* uv = reinterpret_cast<const f32*>(basePtr + i * stride);
+                                meshData.texcoords1[primVertexOffset + i] = {uv[0], uv[1]};
+                            }
+                        }
+                        break;
+                    }
+                    case cgltf_attribute_type_color: {
+                        meshData.colors.resize(primVertexOffset + vertCount);
+                        for (cgltf_size i = 0; i < vertCount; ++i) {
+                            const f32* c = reinterpret_cast<const f32*>(basePtr + i * stride);
+                            cgltf_size comps = cgltf_num_components(accessor->type);
+                            meshData.colors[primVertexOffset + i] = {
+                                c[0], comps > 1 ? c[1] : 1.0f,
+                                comps > 2 ? c[2] : 1.0f, comps > 3 ? c[3] : 1.0f
+                            };
+                        }
+                        break;
+                    }
+                    case cgltf_attribute_type_joints: {
+                        meshData.joints.resize(primVertexOffset + vertCount);
+                        for (cgltf_size i = 0; i < vertCount; ++i) {
+                            const f32* j = reinterpret_cast<const f32*>(basePtr + i * stride);
+                            meshData.joints[primVertexOffset + i] = {j[0], j[1], j[2], j[3]};
+                        }
+                        break;
+                    }
+                    case cgltf_attribute_type_weights: {
+                        meshData.weights.resize(primVertexOffset + vertCount);
+                        for (cgltf_size i = 0; i < vertCount; ++i) {
+                            const f32* w = reinterpret_cast<const f32*>(basePtr + i * stride);
+                            meshData.weights[primVertexOffset + i] = {w[0], w[1], w[2], w[3]};
+                        }
+                        break;
+                    }
+                    default: break;
+                }
+            }
+
+            // Ensure positions exist (required)
+            if (meshData.positions.size() < primVertexOffset + vertCount) {
+                meshData.positions.resize(primVertexOffset + vertCount, {0, 0, 0});
+            }
+            // Fill missing normals with defaults
+            if (meshData.normals.size() < primVertexOffset + vertCount) {
+                meshData.normals.resize(primVertexOffset + vertCount, {0, 1, 0});
+            }
+            // Fill missing texcoords with defaults
+            if (meshData.texcoords0.size() < primVertexOffset + vertCount) {
+                meshData.texcoords0.resize(primVertexOffset + vertCount, {0, 0});
+            }
+
+            // Record primitive
+            GLTFMeshData::Primitive primData;
+            primData.indexOffset = primIndexOffset;
+            primData.indexCount = static_cast<u32>(meshData.indices.size() - primIndexOffset);
+            primData.materialIndex = prim.material ? static_cast<u32>(prim.material - data->materials) : 0;
+            meshData.primitives.push_back(primData);
+        }
+
+        // Compute tangents if missing and requested
+        if (options.generateTangents && meshData.tangents.empty() &&
+            !meshData.positions.empty() && !meshData.normals.empty() && !meshData.texcoords0.empty()) {
+            ComputeTangents(meshData);
+        }
+
+        ComputeBounds(meshData);
+        result.meshes.push_back(std::move(meshData));
+    }
+#else
+    (void)gltfData; (void)result; (void)options;
+#endif
 }
 
-void GLTFImporter::ParseMaterials(const void* /*gltfData*/, GLTFImportResult& /*result*/) {
-    // TODO: Iterate cgltf_data->materials, extract PBR metallic-roughness params
+void GLTFImporter::ParseMaterials(const void* gltfData, GLTFImportResult& result) {
+#ifdef NGE_HAS_CGLTF
+    const cgltf_data* data = static_cast<const cgltf_data*>(gltfData);
+
+    for (cgltf_size mi = 0; mi < data->materials_count; ++mi) {
+        const cgltf_material& mat = data->materials[mi];
+        GLTFMaterialData matData;
+        matData.name = mat.name ? mat.name : ("material_" + std::to_string(mi));
+
+        if (mat.has_pbr_metallic_roughness) {
+            const auto& pbr = mat.pbr_metallic_roughness;
+            matData.baseColorFactor = {
+                pbr.base_color_factor[0], pbr.base_color_factor[1],
+                pbr.base_color_factor[2], pbr.base_color_factor[3]
+            };
+            matData.metallicFactor = pbr.metallic_factor;
+            matData.roughnessFactor = pbr.roughness_factor;
+
+            if (pbr.base_color_texture.texture) {
+                matData.albedoTexture = static_cast<i32>(
+                    pbr.base_color_texture.texture - data->textures);
+            }
+            if (pbr.metallic_roughness_texture.texture) {
+                matData.metallicRoughnessTexture = static_cast<i32>(
+                    pbr.metallic_roughness_texture.texture - data->textures);
+            }
+        }
+
+        if (mat.normal_texture.texture) {
+            matData.normalTexture = static_cast<i32>(
+                mat.normal_texture.texture - data->textures);
+        }
+        if (mat.emissive_texture.texture) {
+            matData.emissiveTexture = static_cast<i32>(
+                mat.emissive_texture.texture - data->textures);
+        }
+        if (mat.occlusion_texture.texture) {
+            matData.occlusionTexture = static_cast<i32>(
+                mat.occlusion_texture.texture - data->textures);
+        }
+
+        matData.emissiveFactor = {
+            mat.emissive_factor[0], mat.emissive_factor[1], mat.emissive_factor[2]
+        };
+        matData.emissiveStrength = (mat.emissive_factor[0] > 0 || mat.emissive_factor[1] > 0 || mat.emissive_factor[2] > 0) ? 1.0f : 0.0f;
+
+        matData.doubleSided = (mat.double_sided != 0);
+        matData.alphaCutoff = mat.alpha_cutoff;
+
+        if (mat.alpha_mode == cgltf_alpha_mode_blend) {
+            matData.alphaBlend = true;
+        } else if (mat.alpha_mode == cgltf_alpha_mode_mask) {
+            matData.alphaTest = true;
+        }
+
+        result.materials.push_back(matData);
+    }
+#else
+    (void)gltfData; (void)result;
+#endif
 }
 
-void GLTFImporter::ParseTextures(const void* /*gltfData*/, GLTFImportResult& /*result*/,
-                                   const std::string& /*basePath*/) {
-    // TODO: Iterate cgltf_data->images, load and decode via stb_image
+void GLTFImporter::ParseTextures(const void* gltfData, GLTFImportResult& result,
+                                   const std::string& basePath) {
+#ifdef NGE_HAS_CGLTF
+    const cgltf_data* data = static_cast<const cgltf_data*>(gltfData);
+
+    for (cgltf_size ti = 0; ti < data->textures_count; ++ti) {
+        const cgltf_texture& tex = data->textures[ti];
+        GLTFTextureData texData;
+
+        if (tex.image) {
+            const cgltf_image& img = *tex.image;
+            texData.name = img.name ? img.name : ("texture_" + std::to_string(ti));
+
+            if (img.uri) {
+                texData.uri = img.uri;
+            }
+
+#ifdef NGE_HAS_STB
+            // Load image from file or embedded data
+            int width = 0, height = 0, channels = 0;
+            stbi_uc* pixels = nullptr;
+
+            if (img.buffer_view && img.buffer_view->buffer && img.buffer_view->buffer->data) {
+                // Embedded image via buffer view
+                const auto* bv = img.buffer_view;
+                const stbi_uc* embeddedData = static_cast<const stbi_uc*>(bv->buffer->data) + bv->offset;
+                pixels = stbi_load_from_memory(embeddedData, static_cast<int>(bv->size),
+                    &width, &height, &channels, 4);
+            } else if (img.uri) {
+                // External file
+                std::string fullPath = basePath + "/" + img.uri;
+                pixels = stbi_load(fullPath.c_str(), &width, &height, &channels, 4);
+            }
+
+            if (pixels) {
+                texData.width = static_cast<u32>(width);
+                texData.height = static_cast<u32>(height);
+                texData.channels = 4;
+                texData.pixels.resize(static_cast<usize>(width) * height * 4);
+                std::memcpy(texData.pixels.data(), pixels, texData.pixels.size());
+                stbi_image_free(pixels);
+            } else {
+                NGE_LOG_WARN("Failed to load texture '{}'", texData.name);
+            }
+#endif
+        }
+
+        result.textures.push_back(std::move(texData));
+    }
+#else
+    (void)gltfData; (void)result; (void)basePath;
+#endif
 }
 
-void GLTFImporter::ParseNodes(const void* /*gltfData*/, GLTFImportResult& /*result*/) {
-    // TODO: Iterate cgltf_data->nodes, build hierarchy
+void GLTFImporter::ParseNodes(const void* gltfData, GLTFImportResult& result) {
+#ifdef NGE_HAS_CGLTF
+    const cgltf_data* data = static_cast<const cgltf_data*>(gltfData);
+
+    // Build node list
+    for (cgltf_size ni = 0; ni < data->nodes_count; ++ni) {
+        const cgltf_node& node = data->nodes[ni];
+        GLTFNodeData nodeData;
+        nodeData.name = node.name ? node.name : ("node_" + std::to_string(ni));
+
+        // Determine parent index
+        if (node.parent) {
+            nodeData.parentIndex = static_cast<i32>(node.parent - data->nodes);
+        }
+
+        // Extract transform (TRS or matrix)
+        if (node.has_translation) {
+            nodeData.translation = {node.translation[0], node.translation[1], node.translation[2]};
+        }
+        if (node.has_rotation) {
+            nodeData.rotation = {node.rotation[0], node.rotation[1], node.rotation[2], node.rotation[3]};
+        }
+        if (node.has_scale) {
+            nodeData.scale = {node.scale[0], node.scale[1], node.scale[2]};
+        }
+        if (node.has_matrix) {
+            // Decompose matrix to TRS (simplified: extract translation)
+            nodeData.translation = {node.matrix[12], node.matrix[13], node.matrix[14]};
+            // TODO: Full matrix decomposition if needed
+        }
+
+        // Mesh/camera/light indices
+        if (node.mesh) {
+            nodeData.meshIndex = static_cast<i32>(node.mesh - data->meshes);
+        }
+        if (node.camera) {
+            nodeData.cameraIndex = static_cast<i32>(node.camera - data->cameras);
+        }
+        if (node.light) {
+            nodeData.lightIndex = static_cast<i32>(node.light - data->lights);
+        }
+
+        // Children
+        for (cgltf_size ci = 0; ci < node.children_count; ++ci) {
+            nodeData.children.push_back(static_cast<u32>(node.children[ci] - data->nodes));
+        }
+
+        result.nodes.push_back(nodeData);
+    }
+
+    // Determine root nodes from the default scene
+    if (data->scene && data->scene->nodes_count > 0) {
+        for (cgltf_size ri = 0; ri < data->scene->nodes_count; ++ri) {
+            result.rootNodes.push_back(static_cast<u32>(data->scene->nodes[ri] - data->nodes));
+        }
+    } else if (data->scenes_count > 0 && data->scenes[0].nodes_count > 0) {
+        for (cgltf_size ri = 0; ri < data->scenes[0].nodes_count; ++ri) {
+            result.rootNodes.push_back(static_cast<u32>(data->scenes[0].nodes[ri] - data->nodes));
+        }
+    } else if (data->nodes_count > 0) {
+        // No scene — all nodes without parents are roots
+        for (cgltf_size ni = 0; ni < data->nodes_count; ++ni) {
+            if (!data->nodes[ni].parent) {
+                result.rootNodes.push_back(static_cast<u32>(ni));
+            }
+        }
+    }
+#else
+    (void)gltfData; (void)result;
+#endif
 }
 
-void GLTFImporter::ParseAnimations(const void* /*gltfData*/, GLTFImportResult& /*result*/) {
-    // TODO: Iterate cgltf_data->animations, extract channels and keyframes
+void GLTFImporter::ParseAnimations(const void* gltfData, GLTFImportResult& result) {
+#ifdef NGE_HAS_CGLTF
+    const cgltf_data* data = static_cast<const cgltf_data*>(gltfData);
+
+    for (cgltf_size ai = 0; ai < data->animations_count; ++ai) {
+        const cgltf_animation& anim = data->animations[ai];
+        GLTFAnimationData animData;
+        animData.name = anim.name ? anim.name : ("anim_" + std::to_string(ai));
+
+        for (cgltf_size ci = 0; ci < anim.channels_count; ++ci) {
+            const cgltf_animation_channel& ch = anim.channels[ci];
+            GLTFAnimationChannel channel;
+            channel.nodeIndex = ch.target_node ? static_cast<u32>(ch.target_node - data->nodes) : 0;
+
+            switch (ch.target_path) {
+                case cgltf_animation_path_type_translation: channel.path = GLTFAnimationChannel::Path::Translation; break;
+                case cgltf_animation_path_type_rotation:    channel.path = GLTFAnimationChannel::Path::Rotation; break;
+                case cgltf_animation_path_type_scale:       channel.path = GLTFAnimationChannel::Path::Scale; break;
+                case cgltf_animation_path_type_weights:     channel.path = GLTFAnimationChannel::Path::Weights; break;
+                default: continue;
+            }
+
+            switch (ch.sampler->interpolation) {
+                case cgltf_interpolation_type_linear:       channel.interpolation = GLTFAnimationChannel::Interpolation::Linear; break;
+                case cgltf_interpolation_type_step:         channel.interpolation = GLTFAnimationChannel::Interpolation::Step; break;
+                case cgltf_interpolation_type_cubic_spline: channel.interpolation = GLTFAnimationChannel::Interpolation::CubicSpline; break;
+                default: channel.interpolation = GLTFAnimationChannel::Interpolation::Linear; break;
+            }
+
+            // Extract keyframe timestamps from the input accessor
+            const cgltf_accessor* inputAcc = ch.sampler->input;
+            if (inputAcc && inputAcc->buffer_view && inputAcc->buffer_view->buffer) {
+                const auto* bv = inputAcc->buffer_view;
+                const u8* basePtr = static_cast<const u8*>(bv->buffer->data) + bv->offset + inputAcc->offset;
+                cgltf_size stride = inputAcc->stride;
+                channel.timestamps.resize(inputAcc->count);
+                for (cgltf_size i = 0; i < inputAcc->count; ++i) {
+                    channel.timestamps[i] = *reinterpret_cast<const f32*>(basePtr + i * stride);
+                }
+            }
+
+            // Extract keyframe values from the output accessor
+            const cgltf_accessor* outputAcc = ch.sampler->output;
+            if (outputAcc && outputAcc->buffer_view && outputAcc->buffer_view->buffer) {
+                const auto* bv = outputAcc->buffer_view;
+                const u8* basePtr = static_cast<const u8*>(bv->buffer->data) + bv->offset + outputAcc->offset;
+                cgltf_size stride = outputAcc->stride;
+                cgltf_size comps = cgltf_num_components(outputAcc->type);
+                channel.values.resize(outputAcc->count * comps);
+                for (cgltf_size i = 0; i < outputAcc->count; ++i) {
+                    const f32* v = reinterpret_cast<const f32*>(basePtr + i * stride);
+                    for (cgltf_size c = 0; c < comps; ++c) {
+                        channel.values[i * comps + c] = v[c];
+                    }
+                }
+            }
+
+            // Track animation duration
+            if (!channel.timestamps.empty()) {
+                animData.duration = std::max(animData.duration, channel.timestamps.back());
+            }
+
+            animData.channels.push_back(std::move(channel));
+        }
+
+        result.animations.push_back(std::move(animData));
+    }
+#else
+    (void)gltfData; (void)result;
+#endif
 }
 
 void GLTFImporter::ComputeTangents(GLTFMeshData& mesh) {
