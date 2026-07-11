@@ -1,5 +1,7 @@
 #include "engine/assets/gltf_importer.h"
 #include "engine/core/logging/log.h"
+#include "engine/scene/transform/transform.h"
+#include "engine/scene/mesh_renderer.h"
 #include <cstring>
 #include <cmath>
 #include <algorithm>
@@ -15,7 +17,84 @@
 
 namespace nge::assets {
 
-GLTFImportResult GLTFImporter::Import(const std::string& path, [[maybe_unused]] const GLTFImportOptions& options) {
+namespace {
+
+// Upload data to a GPU-only buffer via a staging buffer and command list.
+void UploadBufferViaStaging(rhi::IDevice* device, rhi::BufferHandle gpuBuffer,
+                             const void* data, usize size) {
+    // Create staging buffer (CPU-visible)
+    rhi::BufferDesc stagingDesc;
+    stagingDesc.size = size;
+    stagingDesc.usage = rhi::BufferUsage::TransferSrc;
+    stagingDesc.memoryUsage = rhi::MemoryUsage::CPU_To_GPU;
+    stagingDesc.debugName = "staging_upload";
+    auto staging = device->CreateBuffer(stagingDesc);
+    if (!staging.IsValid()) {
+        NGE_LOG_ERROR("Failed to create staging buffer for GPU upload");
+        return;
+    }
+
+    // Map, copy, unmap
+    void* mapped = device->MapBuffer(staging);
+    if (mapped) {
+        std::memcpy(mapped, data, size);
+        device->UnmapBuffer(staging);
+    }
+
+    // Record copy command and submit immediately
+    auto* cmd = device->GetCommandList();
+    cmd->Begin();
+    cmd->BufferBarrier(staging, rhi::ResourceState::Undefined, rhi::ResourceState::TransferSrc);
+    cmd->BufferBarrier(gpuBuffer, rhi::ResourceState::Undefined, rhi::ResourceState::TransferDst);
+    cmd->CopyBuffer(staging, 0, gpuBuffer, 0, size);
+    cmd->BufferBarrier(gpuBuffer, rhi::ResourceState::TransferDst, rhi::ResourceState::VertexBuffer);
+    cmd->End();
+    device->SubmitCommandList(cmd);
+
+    // Destroy staging buffer (safe after submit since GPU will have a copy)
+    device->DestroyBuffer(staging);
+}
+
+// Upload pixel data to a GPU-only texture via a staging buffer.
+void UploadTextureViaStaging(rhi::IDevice* device, rhi::TextureHandle gpuTexture,
+                              const void* data, usize size, u32 /*width*/, u32 /*height*/) {
+    // Create staging buffer
+    rhi::BufferDesc stagingDesc;
+    stagingDesc.size = size;
+    stagingDesc.usage = rhi::BufferUsage::TransferSrc;
+    stagingDesc.memoryUsage = rhi::MemoryUsage::CPU_To_GPU;
+    stagingDesc.debugName = "staging_texture_upload";
+    auto staging = device->CreateBuffer(stagingDesc);
+    if (!staging.IsValid()) {
+        NGE_LOG_ERROR("Failed to create staging buffer for texture upload");
+        return;
+    }
+
+    // Map, copy, unmap
+    void* mapped = device->MapBuffer(staging);
+    if (mapped) {
+        std::memcpy(mapped, data, size);
+        device->UnmapBuffer(staging);
+    }
+
+    // Record copy command and submit
+    auto* cmd = device->GetCommandList();
+    cmd->Begin();
+    cmd->BufferBarrier(staging, rhi::ResourceState::Undefined, rhi::ResourceState::TransferSrc);
+    cmd->TextureBarrier(gpuTexture, rhi::ResourceState::Undefined, rhi::ResourceState::TransferDst);
+    cmd->CopyBufferToTexture(staging, gpuTexture, 0, 0);
+    cmd->TextureBarrier(gpuTexture, rhi::ResourceState::TransferDst, rhi::ResourceState::ShaderRead);
+    cmd->End();
+    device->SubmitCommandList(cmd);
+
+    device->DestroyBuffer(staging);
+}
+
+} // anonymous namespace
+
+GLTFImportResult GLTFImporter::Import(
+    const std::string& path,
+    [[maybe_unused]] const GLTFImportOptions& options) {
     GLTFImportResult result;
 
     // Verify file exists
@@ -98,7 +177,8 @@ ecs::Entity GLTFImporter::ImportToWorld(const std::string& path, ecs::World& wor
             desc.usage = rhi::TextureUsage::ShaderRead | rhi::TextureUsage::TransferDst;
             desc.debugName = tex.name.c_str();
             auto handle = device->CreateTexture(desc);
-            // TODO: Upload tex.pixels to handle via staging buffer
+            UploadTextureViaStaging(device, handle, tex.pixels.data(),
+                tex.pixels.size(), tex.width, tex.height);
             gpuTextures.push_back(handle);
         }
     }
@@ -164,7 +244,10 @@ ecs::Entity GLTFImporter::ImportToWorld(const std::string& path, ecs::World& wor
         vbDesc.memoryUsage = rhi::MemoryUsage::GPU_Only;
         vbDesc.debugName = mesh.name.c_str();
         auto vb = device->CreateBuffer(vbDesc);
-        // TODO: Upload via staging
+        if (!vertices.empty()) {
+            UploadBufferViaStaging(device, vb, vertices.data(),
+                vertices.size() * sizeof(Vertex));
+        }
         vertexBuffers.push_back(vb);
 
         rhi::BufferDesc ibDesc;
@@ -173,7 +256,10 @@ ecs::Entity GLTFImporter::ImportToWorld(const std::string& path, ecs::World& wor
         ibDesc.memoryUsage = rhi::MemoryUsage::GPU_Only;
         ibDesc.debugName = mesh.name.c_str();
         auto ib = device->CreateBuffer(ibDesc);
-        // TODO: Upload via staging
+        if (!mesh.indices.empty()) {
+            UploadBufferViaStaging(device, ib, mesh.indices.data(),
+                mesh.indices.size() * sizeof(u32));
+        }
         indexBuffers.push_back(ib);
     }
 
@@ -184,15 +270,35 @@ ecs::Entity GLTFImporter::ImportToWorld(const std::string& path, ecs::World& wor
         const auto& node = result.nodes[i];
         entities[i] = world.CreateEntity();
 
-        // TODO: Apply transform via a TransformComponent once defined
-        // For now, store node transform data for later use
-        (void)node.translation;
-        (void)node.rotation;
-        (void)node.scale;
+        // Attach Transform component with TRS from glTF node
+        scene::Transform transform;
+        transform.SetPositionRotation(node.translation, {0, 1, 0}, 0);
+        // Apply scale (simplified: bake into motor)
+        if (node.scale.x != 1.0f || node.scale.y != 1.0f || node.scale.z != 1.0f) {
+            // TODO: Full TRS composition with PGA scale support
+        }
+        if (node.parentIndex >= 0) {
+            transform.parent = entities[node.parentIndex];
+        }
+        transform.dirty = true;
+        world.AddComponent(entities[i], transform);
 
-        // Attach mesh component
+        // Attach MeshRenderer component
         if (node.meshIndex >= 0 && node.meshIndex < static_cast<i32>(result.meshes.size())) {
-            // TODO: Add MeshRenderer component with vertex/index buffers and material
+            scene::MeshRenderer mr;
+            mr.meshId = renderer::INVALID_MESH_ID; // Will be set when registered with MeshRegistry
+            mr.submeshIndex = 0;
+            if (!materialIds.empty()) {
+                u32 matIdx = result.meshes[node.meshIndex].primitives.empty()
+                    ? 0 : result.meshes[node.meshIndex].primitives[0].materialIndex;
+                if (matIdx < materialIds.size()) {
+                    mr.materialId = materialIds[matIdx];
+                }
+            }
+            mr.visible = true;
+            mr.castShadow = true;
+            mr.receiveShadow = true;
+            world.AddComponent(entities[i], mr);
         }
     }
 
