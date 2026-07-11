@@ -31,6 +31,8 @@ struct PhysicsWorld::Impl {
         ShapeType  shapeType = ShapeType::Box;
         math::Vec3 halfExtents = {0.5f, 0.5f, 0.5f};
         f32        radius = 0.5f;
+        f32        capsuleRadius = 0.5f;
+        f32        capsuleHalfHeight = 0.5f;
         math::Vec3 position;
         math::Vec4 rotation = {0, 0, 0, 1};
         math::Vec3 linearVelocity;
@@ -63,6 +65,10 @@ struct PhysicsWorld::Impl {
         if (b.shapeType == ShapeType::Sphere) {
             box.min = {b.position.x - b.radius, b.position.y - b.radius, b.position.z - b.radius};
             box.max = {b.position.x + b.radius, b.position.y + b.radius, b.position.z + b.radius};
+        } else if (b.shapeType == ShapeType::Capsule) {
+            f32 h = b.capsuleHalfHeight + b.capsuleRadius;
+            box.min = {b.position.x - b.capsuleRadius, b.position.y - h, b.position.z - b.capsuleRadius};
+            box.max = {b.position.x + b.capsuleRadius, b.position.y + h, b.position.z + b.capsuleRadius};
         } else {
             box.min = {b.position.x - b.halfExtents.x, b.position.y - b.halfExtents.y, b.position.z - b.halfExtents.z};
             box.max = {b.position.x + b.halfExtents.x, b.position.y + b.halfExtents.y, b.position.z + b.halfExtents.z};
@@ -338,6 +344,8 @@ BodyId PhysicsWorld::CreateBody(const BodyDesc& desc) {
     body.shapeType = desc.shape.type;
     body.halfExtents = desc.shape.halfExtents;
     body.radius = desc.shape.radius;
+    body.capsuleRadius = desc.shape.capsuleRadius;
+    body.capsuleHalfHeight = desc.shape.capsuleHalfHeight;
     body.position = desc.position;
     body.rotation = desc.rotation;
     body.linearVelocity = desc.linearVelocity;
@@ -599,6 +607,89 @@ std::vector<BodyId> PhysicsWorld::OverlapBox(const math::Vec3& center, const mat
         AABB bodyBox = m_impl->ComputeAABB(i);
         if (m_impl->AABBOverlap(queryBox, bodyBox)) {
             result.push_back(i);
+        }
+    }
+
+    return result;
+}
+
+ShapeCastResult PhysicsWorld::ShapeCastSphere(const math::Vec3& origin, f32 sphereRadius,
+                                                const math::Vec3& direction, f32 maxDistance,
+                                                u16 layerMask) const {
+    ShapeCastResult result;
+    if (!m_impl) return result;
+
+    f32 dirLen = direction.Length();
+    if (dirLen < 1e-8f) return result;
+    math::Vec3 dir = direction * (1.0f / dirLen);
+    f32 maxT = maxDistance;
+
+    for (u32 i = 0; i < static_cast<u32>(m_impl->bodies.size()); ++i) {
+        const auto& body = m_impl->bodies[i];
+        if (!body.active) continue;
+        if (!(body.collisionLayer & layerMask)) continue;
+
+        f32 hitT = -1.0f;
+        math::Vec3 hitNormal;
+
+        if (body.shapeType == ShapeType::Sphere) {
+            // Sphere-sphere sweep: raycast against expanded sphere (radius + sphereRadius)
+            f32 R = body.radius + sphereRadius;
+            math::Vec3 oc = origin - body.position;
+            f32 a = dir.Dot(dir);
+            f32 b = oc.Dot(dir);
+            f32 c = oc.Dot(oc) - R * R;
+            f32 disc = b * b - a * c;
+            if (disc < 0) continue;
+            f32 sqD = std::sqrt(disc);
+            f32 t1 = (-b - sqD) / a;
+            f32 t2 = (-b + sqD) / a;
+            if (t1 > 0 && t1 < maxT) { hitT = t1; hitNormal = (origin + dir * t1 - body.position).Normalized(); }
+            else if (t2 > 0 && t2 < maxT) { hitT = t2; hitNormal = (origin + dir * t2 - body.position).Normalized(); }
+        } else {
+            // Sphere-AABB sweep: raycast against AABB expanded by sphereRadius (Minkowski)
+            AABB box = m_impl->ComputeAABB(i);
+            box.min.x -= sphereRadius; box.min.y -= sphereRadius; box.min.z -= sphereRadius;
+            box.max.x += sphereRadius; box.max.y += sphereRadius; box.max.z += sphereRadius;
+
+            f32 tmin = 0;
+            f32 tmax = maxT;
+            int hitAxis = -1;
+
+            for (int axis = 0; axis < 3; ++axis) {
+                f32 o = (axis == 0) ? origin.x : (axis == 1) ? origin.y : origin.z;
+                f32 d = (axis == 0) ? dir.x : (axis == 1) ? dir.y : dir.z;
+                f32 bmin = (axis == 0) ? box.min.x : (axis == 1) ? box.min.y : box.min.z;
+                f32 bmax = (axis == 0) ? box.max.x : (axis == 1) ? box.max.y : box.max.z;
+
+                if (std::abs(d) < 1e-8f) {
+                    if (o < bmin || o > bmax) { tmin = tmax + 1; break; }
+                } else {
+                    f32 invD = 1.0f / d;
+                    f32 t1 = (bmin - o) * invD;
+                    f32 t2 = (bmax - o) * invD;
+                    if (t1 > t2) std::swap(t1, t2);
+                    if (t1 > tmin) { tmin = t1; hitAxis = axis; }
+                    tmax = math::Min(tmax, t2);
+                    if (tmin > tmax) break;
+                }
+            }
+
+            if (tmin <= tmax && tmin >= 0 && tmin < maxT) {
+                hitT = tmin;
+                if (hitAxis == 0) hitNormal = {dir.x > 0 ? -1.0f : 1.0f, 0, 0};
+                else if (hitAxis == 1) hitNormal = {0, dir.y > 0 ? -1.0f : 1.0f, 0};
+                else hitNormal = {0, 0, dir.z > 0 ? -1.0f : 1.0f};
+            }
+        }
+
+        if (hitT > 0 && (!result.hit || hitT < result.distance)) {
+            result.hit = true;
+            result.distance = hitT;
+            result.hitPoint = origin + dir * hitT;
+            result.hitNormal = hitNormal;
+            result.bodyId = i;
+            result.userData = body.userData;
         }
     }
 

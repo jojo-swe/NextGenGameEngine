@@ -1,7 +1,7 @@
 # NextGenGameEngine
 
 [![CI](https://github.com/jojo-swe/NextGenGameEngine/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jojo-swe/NextGenGameEngine/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
 [![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://en.cppreference.com/)
 [![CMake](https://img.shields.io/badge/CMake-3.28%2B-blue)](https://cmake.org/)
 
@@ -188,11 +188,7 @@ Direct links to key plan sections:
 
 ## Contributing
 
-Pull requests are welcome. For larger changes, open an issue first with:
-
-- Problem statement
-- Proposed approach
-- Validation plan (tests, perf, compatibility)
+This is a proprietary project. External contributions are not accepted at this time.
 
 CI runs repository sanity checks plus:
 
@@ -201,5 +197,5 @@ CI runs repository sanity checks plus:
 
 ## License
 
-Licensed under the MIT License.
+Proprietary — All rights reserved.
 See `LICENSE`.

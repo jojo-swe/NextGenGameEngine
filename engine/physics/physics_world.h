@@ -90,6 +90,15 @@ struct ContactPoint {
     BodyId     bodyB;
 };
 
+struct ShapeCastResult {
+    bool       hit = false;
+    math::Vec3 hitPoint;
+    math::Vec3 hitNormal;
+    f32        distance = 0;
+    BodyId     bodyId = INVALID_BODY;
+    u64        userData = 0;
+};
+
 // ─── Collision Callback ──────────────────────────────────────────────────
 using ContactCallback = std::function<void(const ContactPoint& contact)>;
 using TriggerCallback = std::function<void(BodyId trigger, BodyId other, bool entered)>;
@@ -158,6 +167,11 @@ public:
                                         u16 layerMask = 0xFFFF) const;
     std::vector<BodyId> OverlapBox(const math::Vec3& center, const math::Vec3& halfExtents,
                                      const math::Vec4& rotation, u16 layerMask = 0xFFFF) const;
+
+    // Shape cast — sweep a sphere along a direction and return the first hit
+    ShapeCastResult ShapeCastSphere(const math::Vec3& origin, f32 sphereRadius,
+                                      const math::Vec3& direction, f32 maxDistance,
+                                      u16 layerMask = 0xFFFF) const;
 
     // Callbacks
     void SetContactCallback(ContactCallback cb) { m_contactCallback = std::move(cb); }
