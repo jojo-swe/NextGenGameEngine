@@ -223,7 +223,7 @@ LODSelectorStats MeshLODSelector::GetStats() const {
     return stats;
 }
 
-u32 MeshLODSelector::SelectLODInternal(const MeshLODChain& mesh, float distance, float screenSize) const {
+u32 MeshLODSelector::SelectLODInternal(const MeshLODChain& mesh, float distance, [[maybe_unused]] float screenSize) const {
     if (mesh.lods.empty()) return 0;
 
     // Screen-space error selection: find the coarsest LOD whose error is below threshold

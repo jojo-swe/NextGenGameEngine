@@ -172,7 +172,7 @@ PipelineStatsAggregatorStats PipelineStatsAggregator::GetStats() const {
     stats.totalFramesRecorded = m_totalFrames;
 
     u64 totalVtx = 0, totalFrag = 0, totalCompute = 0;
-    u32 totalEntries = 0;
+    [[maybe_unused]] u32 totalEntries = 0;
 
     for (const auto& [name, history] : m_passHistories) {
         for (const auto& entry : history.entries) {

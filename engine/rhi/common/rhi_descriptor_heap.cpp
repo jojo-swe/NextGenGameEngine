@@ -102,7 +102,7 @@ f32 DescriptorHeap::GetOccupancy() const {
 
 // ─── DescriptorRingBuffer ────────────────────────────────────────────────
 
-bool DescriptorRingBuffer::Init(IDevice* device, DescriptorHeapType type,
+bool DescriptorRingBuffer::Init(IDevice* device, [[maybe_unused]] DescriptorHeapType type,
                                   u32 capacity, u32 framesInFlight) {
     m_device = device;
     m_framesInFlight = framesInFlight;

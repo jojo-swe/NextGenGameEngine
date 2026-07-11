@@ -28,7 +28,7 @@ TEST(LinearAllocator, Reset) {
     alignas(64) byte buffer[1024];
     LinearAllocator alloc(buffer, 1024);
 
-    alloc.Allocate(512);
+    (void)alloc.Allocate(512);
     EXPECT_EQ(alloc.GetAllocatedSize(), 512u);
 
     alloc.Reset();
@@ -50,7 +50,7 @@ TEST(LinearAllocator, Alignment) {
     alignas(64) byte buffer[4096];
     LinearAllocator alloc(buffer, 4096);
 
-    alloc.Allocate(1); // 1 byte
+    (void)alloc.Allocate(1); // 1 byte
     void* p = alloc.Allocate(16, 16); // Request 16-byte alignment
     EXPECT_TRUE(IsAligned(reinterpret_cast<usize>(p), 16));
 }
@@ -62,8 +62,8 @@ TEST(StackAllocator, MarkerRestore) {
     StackAllocator alloc(buffer, 4096);
 
     auto marker = alloc.GetMarker();
-    alloc.Allocate(256);
-    alloc.Allocate(256);
+    (void)alloc.Allocate(256);
+    (void)alloc.Allocate(256);
     EXPECT_EQ(alloc.GetAllocatedSize(), 512u);
 
     alloc.FreeToMarker(marker);
@@ -74,11 +74,11 @@ TEST(StackAllocator, ScopeGuard) {
     alignas(64) byte buffer[4096];
     StackAllocator alloc(buffer, 4096);
 
-    alloc.Allocate(100);
+    (void)alloc.Allocate(100);
     {
         StackScope scope(alloc);
-        alloc.Allocate(200);
-        alloc.Allocate(300);
+        (void)alloc.Allocate(200);
+        (void)alloc.Allocate(300);
         // ~StackScope restores to before the block
     }
 
@@ -168,8 +168,8 @@ TEST(TLSFAllocator, Reset) {
     alignas(64) byte buffer[65536];
     TLSFAllocator alloc(buffer, 65536);
 
-    alloc.Allocate(1024);
-    alloc.Allocate(2048);
+    (void)alloc.Allocate(1024);
+    (void)alloc.Allocate(2048);
     EXPECT_GT(alloc.GetAllocatedSize(), 0u);
 
     alloc.Reset();

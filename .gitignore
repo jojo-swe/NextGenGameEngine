@@ -54,6 +54,10 @@ cooked/
 !CMakeLists.txt
 !vcpkg.json
 
+# Local build/test scratch — never commit (any directory)
+test_output*.txt
+build_error*.log
+
 # Temp batch scripts
 _*.bat
 build_*.bat

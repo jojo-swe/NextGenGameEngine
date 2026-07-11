@@ -164,7 +164,7 @@ TEST(MipmapGen, GetPendingTextures) {
     mgr.Init();
 
     u32 id1 = mgr.RegisterTexture(256, 256, 9); // Starts Pending
-    u32 id2 = mgr.RegisterTexture(512, 512, 10); // Starts Pending
+    [[maybe_unused]] u32 id2 = mgr.RegisterTexture(512, 512, 10); // Starts Pending
 
     auto pending = mgr.GetPendingTextures();
     EXPECT_EQ(pending.size(), 2u);

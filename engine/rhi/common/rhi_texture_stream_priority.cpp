@@ -194,7 +194,7 @@ TextureStreamStats TextureStreamPriorityManager::GetStats() const {
         ? static_cast<float>(stats.totalVRAMUsed) / static_cast<float>(m_config.vramBudget)
         : 0.0f;
 
-    u32 fullRes = 0, streaming = 0, evictable = 0;
+    u32 fullRes = 0, streaming = 0;
     for (const auto& [id, info] : m_textures) {
         if (info.residentMipLevel == 0) fullRes++;
         if (info.requestedMipLevel < info.residentMipLevel) streaming++;

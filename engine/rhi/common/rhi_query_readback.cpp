@@ -86,7 +86,7 @@ void QueryReadbackManager::WriteTimestamp(ICommandList* cmd, u32 groupId, u32 qu
 void QueryReadbackManager::ResolveQueries(ICommandList* cmd) {
     std::lock_guard lock(m_mutex);
 
-    for (const auto& group : m_groups) {
+    for ([[maybe_unused]] const auto& group : m_groups) {
         // TODO: vkCmdCopyQueryPoolResults(cmd, queryPool,
         //     group.heapOffset, group.desc.queryCount,
         //     readbackBuffer, bufferOffset, stride,

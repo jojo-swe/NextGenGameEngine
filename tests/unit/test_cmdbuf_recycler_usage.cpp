@@ -133,7 +133,7 @@ TEST(CommandBufferRecycler, RecordedCountTracking) {
     recycler.Init(nullptr);
 
     u32 id0 = recycler.AcquireSecondary(0, "A");
-    u32 id1 = recycler.AcquireSecondary(0, "B");
+    [[maybe_unused]] u32 id1 = recycler.AcquireSecondary(0, "B");
     u32 id2 = recycler.AcquireSecondary(0, "C");
 
     recycler.MarkRecorded(id0);

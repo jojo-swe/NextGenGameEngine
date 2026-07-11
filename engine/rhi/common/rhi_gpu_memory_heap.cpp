@@ -127,7 +127,7 @@ void GPUMemoryHeapManager::RecordFree(u64 allocationId) {
     m_allocations.erase(it);
 }
 
-u32 GPUMemoryHeapManager::FindBestHeap(HeapType preferredType, u64 size, AllocUsage usage) const {
+u32 GPUMemoryHeapManager::FindBestHeap(HeapType preferredType, u64 size, [[maybe_unused]] AllocUsage usage) const {
     std::lock_guard lock(m_mutex);
 
     u32 bestHeap = UINT32_MAX;

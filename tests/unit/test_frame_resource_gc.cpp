@@ -18,7 +18,7 @@ TEST(FrameResourceGC, QueueDestroy) {
 
     bool destroyed = false;
     EXPECT_TRUE(gc.QueueDestroy(100, GCResourceType::Buffer, 0,
-                                 [&](u64 h) { destroyed = true; }, "TestBuffer"));
+                                 [&]([[maybe_unused]] u64 h) { destroyed = true; }, "TestBuffer"));
     EXPECT_EQ(gc.GetPendingCount(), 1u);
     EXPECT_TRUE(gc.IsPending(100));
 

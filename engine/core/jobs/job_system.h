@@ -28,7 +28,10 @@ struct Job {
 };
 
 // ─── Chase-Lev Work-Stealing Deque ───────────────────────────────────────
-// Lock-free deque: owning thread pushes/pops from bottom; thieves steal from top.
+// Lock-free deque: owning thread pushes/pops from bottom; thieves steal from
+// top. Slots hold atomic Job POINTERS: a thief may racily read a slot before
+// winning the CAS on top, which is only safe for trivially copyable payloads.
+// Ownership of the pointed-to Job transfers to whichever side wins.
 class WorkStealingDeque {
     static constexpr usize INITIAL_CAPACITY = 4096;
 
@@ -36,26 +39,29 @@ public:
     WorkStealingDeque();
     ~WorkStealingDeque();
 
-    void Push(Job job);
-    bool Pop(Job& job);      // Owner pops from bottom
-    bool Steal(Job& job);    // Thief steals from top
+    void Push(Job* job);
+    bool Pop(Job*& job);      // Owner pops from bottom
+    bool Steal(Job*& job);    // Thief steals from top
 
     usize Size() const;
 
 private:
     struct CircularArray {
-        usize       capacity;
-        Job*        buffer;
+        usize               capacity;
+        std::atomic<Job*>*  buffer;
 
         CircularArray(usize cap)
             : capacity(cap)
-            , buffer(new Job[cap])
+            , buffer(new std::atomic<Job*>[cap])
         {}
 
         ~CircularArray() { delete[] buffer; }
 
-        Job& Get(i64 index) { return buffer[index & (capacity - 1)]; }
-        void Put(i64 index, Job job) { buffer[index & (capacity - 1)] = std::move(job); }
+        // Put releases so a thief's acquire Get sees the pointed-to Job's
+        // contents (the pointer value alone is not enough — the payload
+        // written before Push must be visible to the stealing thread).
+        Job* Get(i64 index) { return buffer[index & (capacity - 1)].load(std::memory_order_acquire); }
+        void Put(i64 index, Job* job) { buffer[index & (capacity - 1)].store(job, std::memory_order_release); }
 
         CircularArray* Grow(i64 bottom, i64 top) {
             auto* newArr = new CircularArray(capacity * 2);
@@ -97,11 +103,11 @@ public:
 private:
     static void WorkerThread(u32 threadIndex);
     static bool TryExecuteOne(u32 threadIndex);
+    static void ExecuteJob(Job* job);
 
     inline static std::vector<std::thread>         s_workers;
     inline static std::vector<WorkStealingDeque*>   s_deques;
     inline static std::atomic<bool>                 s_running{false};
-    inline static std::atomic<u32>                  s_nextDeque{0};
     inline static u32                               s_workerCount = 0;
 
     // Notification

@@ -42,7 +42,10 @@ public:
         u32 maxSize = 256 * 1024 * 1024;     // 256 MB max
     };
 
-    bool Init(IDevice* device, const Config& config = {});
+    // No default argument: Config's default member initializers cannot be
+    // used in a default argument while the enclosing class is incomplete.
+    bool Init(IDevice* device, const Config& config);
+    bool Init(IDevice* device) { return Init(device, Config{}); }
     void Shutdown();
 
     // Call at frame start

@@ -87,20 +87,20 @@ TEST(WorkStealingDeque, PushPop) {
     WorkStealingDeque deque;
     std::atomic<int> counter{0};
 
-    Job job1; job1.function = [&]() { counter++; };
-    Job job2; job2.function = [&]() { counter += 10; };
-
-    deque.Push(std::move(job1));
-    deque.Push(std::move(job2));
+    // The deque holds heap-allocated jobs; the taker owns and deletes them.
+    deque.Push(new Job{[&]() { counter++; }, nullptr});
+    deque.Push(new Job{[&]() { counter += 10; }, nullptr});
     EXPECT_EQ(deque.Size(), 2u);
 
-    Job out;
+    Job* out = nullptr;
     EXPECT_TRUE(deque.Pop(out));
-    out.function();
+    out->function();
+    delete out;
     EXPECT_EQ(counter.load(), 10); // Last pushed (LIFO)
 
     EXPECT_TRUE(deque.Pop(out));
-    out.function();
+    out->function();
+    delete out;
     EXPECT_EQ(counter.load(), 11);
 
     EXPECT_FALSE(deque.Pop(out)); // Empty
@@ -110,20 +110,23 @@ TEST(WorkStealingDeque, Steal) {
     WorkStealingDeque deque;
     std::atomic<int> val{0};
 
-    Job job1; job1.function = [&]() { val = 1; };
-    Job job2; job2.function = [&]() { val = 2; };
-    Job job3; job3.function = [&]() { val = 3; };
+    deque.Push(new Job{[&]() { val = 1; }, nullptr});
+    deque.Push(new Job{[&]() { val = 2; }, nullptr});
+    deque.Push(new Job{[&]() { val = 3; }, nullptr});
 
-    deque.Push(std::move(job1));
-    deque.Push(std::move(job2));
-    deque.Push(std::move(job3));
-
-    Job stolen;
+    Job* stolen = nullptr;
     EXPECT_TRUE(deque.Steal(stolen)); // Steals from top (FIFO)
-    stolen.function();
+    stolen->function();
+    delete stolen;
     EXPECT_EQ(val.load(), 1); // First pushed
 
     EXPECT_TRUE(deque.Steal(stolen));
-    stolen.function();
+    stolen->function();
+    delete stolen;
     EXPECT_EQ(val.load(), 2);
+
+    // Drain the remaining job so the deque does not leak it
+    Job* last = nullptr;
+    EXPECT_TRUE(deque.Pop(last));
+    delete last;
 }

@@ -7,6 +7,7 @@
 #include <typeindex>
 #include <memory>
 #include <mutex>
+#include <algorithm>
 
 namespace nge::events {
 

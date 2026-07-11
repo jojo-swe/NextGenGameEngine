@@ -57,7 +57,10 @@ public:
         u32 framesInFlight = 3;
     };
 
-    bool Init(rhi::IDevice* device, const Config& config = {});
+    // No default argument: Config's default member initializers cannot be
+    // used in a default argument while the enclosing class is incomplete.
+    bool Init(rhi::IDevice* device, const Config& config);
+    bool Init(rhi::IDevice* device) { return Init(device, Config{}); }
     void Shutdown();
 
     // Per-frame lifecycle

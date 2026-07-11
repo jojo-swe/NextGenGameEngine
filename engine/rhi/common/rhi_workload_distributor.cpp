@@ -116,6 +116,7 @@ std::vector<ScheduleResult> WorkloadDistributor::Schedule() {
             case QueueType::Graphics: m_workloadsOnGraphics++; break;
             case QueueType::Compute:  m_workloadsOnCompute++; break;
             case QueueType::Transfer: m_workloadsOnTransfer++; break;
+            case QueueType::Count:    break;
         }
 
         // Track cross-queue syncs from dependencies

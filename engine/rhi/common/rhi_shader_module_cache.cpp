@@ -19,7 +19,7 @@ bool ShaderModuleCache::Init(IDevice* device, const ShaderModuleCacheConfig& con
 
 void ShaderModuleCache::Shutdown() {
     std::lock_guard lock(m_mutex);
-    for (auto& [hash, mod] : m_modules) {
+    for ([[maybe_unused]] auto& entry : m_modules) {
         // TODO: vkDestroyShaderModule(device, mod.handle, nullptr);
     }
     m_modules.clear();
@@ -156,7 +156,7 @@ void ShaderModuleCache::Invalidate(const std::filesystem::path& filePath) {
 
 void ShaderModuleCache::InvalidateAll() {
     std::lock_guard lock(m_mutex);
-    for (auto& [hash, mod] : m_modules) {
+    for ([[maybe_unused]] auto& entry : m_modules) {
         // TODO: vkDestroyShaderModule
     }
     m_modules.clear();

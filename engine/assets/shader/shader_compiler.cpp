@@ -9,6 +9,7 @@
 
 #if defined(NGE_PLATFORM_WINDOWS)
 #include <windows.h>
+#include <algorithm>
 #endif
 
 namespace fs = std::filesystem;

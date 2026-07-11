@@ -179,7 +179,7 @@ TEST(WorkloadDistributor, TransferPrefersDedicated) {
     config.preferDedicatedTransfer = true;
     dist.Init(config);
 
-    u32 gfx = dist.RegisterQueue(QueueType::Graphics, 0);
+    [[maybe_unused]] u32 gfx = dist.RegisterQueue(QueueType::Graphics, 0);
     u32 xfer = dist.RegisterQueue(QueueType::Transfer, 2);
 
     WorkloadDesc desc;

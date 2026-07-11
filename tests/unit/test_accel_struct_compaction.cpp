@@ -140,9 +140,9 @@ TEST(AccelStructCompaction, GetBuiltStructures) {
     AccelStructCompactionManager mgr;
     mgr.Init();
 
-    u64 id1 = mgr.RegisterBuilt(AccelStructType::BLAS, 100, 200, 65536, 1);
+    [[maybe_unused]] u64 id1 = mgr.RegisterBuilt(AccelStructType::BLAS, 100, 200, 65536, 1);
     u64 id2 = mgr.RegisterBuilt(AccelStructType::BLAS, 101, 201, 32768, 1);
-    u64 id3 = mgr.RegisterBuilt(AccelStructType::BLAS, 102, 202, 16384, 1);
+    [[maybe_unused]] u64 id3 = mgr.RegisterBuilt(AccelStructType::BLAS, 102, 202, 16384, 1);
 
     mgr.MarkQueryPending(id2); // Move id2 out of Built state
 
@@ -269,7 +269,7 @@ TEST(AccelStructCompaction, StatsTracking) {
     mgr.Init(config);
 
     u64 id1 = mgr.RegisterBuilt(AccelStructType::BLAS, 100, 200, 100000, 1);
-    u64 id2 = mgr.RegisterBuilt(AccelStructType::BLAS, 101, 201, 50000, 1);
+    [[maybe_unused]] u64 id2 = mgr.RegisterBuilt(AccelStructType::BLAS, 101, 201, 50000, 1);
 
     mgr.MarkQueryPending(id1);
     mgr.SetCompactedSize(id1, 60000);

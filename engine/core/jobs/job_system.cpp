@@ -5,6 +5,15 @@
 
 namespace nge::jobs {
 
+// Chase-Lev deques allow Push/Pop only from the owning thread; other threads
+// may only Steal. Track which deque the current thread owns: workers own
+// index threadIndex (1..N), every other thread (incl. main) uses index 0.
+// Contract: Submit/SubmitBatch/Wait must be called from the main thread or
+// from inside a job — never from arbitrary foreign threads.
+namespace {
+thread_local u32 t_ownDeque = 0;
+}
+
 // ─── WorkStealingDeque Implementation ────────────────────────────────────
 
 WorkStealingDeque::WorkStealingDeque() {
@@ -16,7 +25,7 @@ WorkStealingDeque::~WorkStealingDeque() {
     for (auto* arr : m_garbage) delete arr;
 }
 
-void WorkStealingDeque::Push(Job job) {
+void WorkStealingDeque::Push(Job* job) {
     i64 b = m_bottom.load(std::memory_order_relaxed);
     i64 t = m_top.load(std::memory_order_acquire);
     CircularArray* arr = m_array.load(std::memory_order_relaxed);
@@ -24,57 +33,62 @@ void WorkStealingDeque::Push(Job job) {
     if (b - t >= static_cast<i64>(arr->capacity) - 1) {
         CircularArray* newArr = arr->Grow(b, t);
         m_garbage.push_back(arr);
-        m_array.store(newArr, std::memory_order_relaxed);
+        // Release so thieves that acquire-load m_array see the copied slots
+        m_array.store(newArr, std::memory_order_release);
         arr = newArr;
     }
 
-    arr->Put(b, std::move(job));
+    arr->Put(b, job);
     std::atomic_thread_fence(std::memory_order_release);
     m_bottom.store(b + 1, std::memory_order_relaxed);
 }
 
-bool WorkStealingDeque::Pop(Job& job) {
+bool WorkStealingDeque::Pop(Job*& job) {
     i64 b = m_bottom.load(std::memory_order_relaxed) - 1;
-    m_bottom.store(b, std::memory_order_relaxed);
     CircularArray* arr = m_array.load(std::memory_order_relaxed);
+    m_bottom.store(b, std::memory_order_relaxed);
     std::atomic_thread_fence(std::memory_order_seq_cst);
     i64 t = m_top.load(std::memory_order_relaxed);
 
     if (t <= b) {
+        // Reading the slot is a relaxed atomic pointer load; the Job itself is
+        // only dereferenced by the side that ends up owning it.
         job = arr->Get(b);
         if (t == b) {
-            // Last element — race with steal
+            // Last element — race with a thief for it
             if (!m_top.compare_exchange_strong(t, t + 1,
                     std::memory_order_seq_cst, std::memory_order_relaxed)) {
-                // Lost the race
-                m_bottom.store(t + 1, std::memory_order_relaxed);
+                // Lost: the thief owns the job
+                m_bottom.store(b + 1, std::memory_order_relaxed);
                 return false;
             }
-            m_bottom.store(t + 1, std::memory_order_relaxed);
+            m_bottom.store(b + 1, std::memory_order_relaxed);
         }
         return true;
     }
 
     // Deque was empty
-    m_bottom.store(t, std::memory_order_relaxed);
+    m_bottom.store(b + 1, std::memory_order_relaxed);
     return false;
 }
 
-bool WorkStealingDeque::Steal(Job& job) {
+bool WorkStealingDeque::Steal(Job*& job) {
     i64 t = m_top.load(std::memory_order_acquire);
     std::atomic_thread_fence(std::memory_order_seq_cst);
     i64 b = m_bottom.load(std::memory_order_acquire);
 
     if (t >= b) return false; // Empty
 
-    CircularArray* arr = m_array.load(std::memory_order_consume);
-    job = arr->Get(t);
+    // Load the pointer BEFORE the CAS; dereference only after winning it.
+    CircularArray* arr = m_array.load(std::memory_order_acquire);
+    Job* candidate = arr->Get(t);
 
     if (!m_top.compare_exchange_strong(t, t + 1,
             std::memory_order_seq_cst, std::memory_order_relaxed)) {
-        return false; // Lost race with another thief or owner
+        return false; // Lost race with another thief or the owner
     }
 
+    job = candidate;
     return true;
 }
 
@@ -93,6 +107,9 @@ void JobSystem::Init(u32 numThreads) {
 
     s_workerCount = numThreads;
     s_running.store(true, std::memory_order_relaxed);
+    // A fresh system has no pending work; clear any drift from a previous
+    // Init/Shutdown cycle so idle workers sleep instead of spinning.
+    s_jobCount.store(0, std::memory_order_relaxed);
 
     // Create per-thread deques (including main thread at index 0)
     s_deques.resize(numThreads + 1);
@@ -119,6 +136,15 @@ void JobSystem::Shutdown() {
     s_workers.clear();
 
     for (auto* deque : s_deques) {
+        // Drain unexecuted jobs so their allocations are not leaked and
+        // the pending-work counter does not stay inflated across restarts
+        Job* leftover = nullptr;
+        while (deque->Pop(leftover)) {
+            if (leftover) {
+                s_jobCount.fetch_sub(1, std::memory_order_relaxed);
+                delete leftover;
+            }
+        }
         delete deque;
     }
     s_deques.clear();
@@ -130,13 +156,12 @@ JobHandle JobSystem::Submit(JobFunction fn) {
     auto* counter = new std::atomic<i32>(1);
     JobHandle handle{counter};
 
-    Job job;
-    job.function = std::move(fn);
-    job.counter = counter;
+    auto* job = new Job{std::move(fn), counter};
 
-    // Push to main thread's deque (index 0) or round-robin
-    u32 idx = s_nextDeque.fetch_add(1, std::memory_order_relaxed) % (s_workerCount + 1);
-    s_deques[idx]->Push(std::move(job));
+    // Push to the calling thread's own deque (Chase-Lev owner-only Push);
+    // idle workers redistribute the load by stealing. The deque owns the
+    // Job allocation until an executor takes and deletes it.
+    s_deques[t_ownDeque]->Push(job);
 
     s_jobCount.fetch_add(1, std::memory_order_release);
     s_wakeCondition.notify_one();
@@ -149,12 +174,8 @@ JobHandle JobSystem::SubmitBatch(JobFunction* functions, u32 count) {
     JobHandle handle{counter};
 
     for (u32 i = 0; i < count; ++i) {
-        Job job;
-        job.function = std::move(functions[i]);
-        job.counter = counter;
-
-        u32 idx = s_nextDeque.fetch_add(1, std::memory_order_relaxed) % (s_workerCount + 1);
-        s_deques[idx]->Push(std::move(job));
+        auto* job = new Job{std::move(functions[i]), counter};
+        s_deques[t_ownDeque]->Push(job);
     }
 
     s_jobCount.fetch_add(count, std::memory_order_release);
@@ -185,8 +206,8 @@ JobHandle JobSystem::ParallelFor(u32 count, std::function<void(u32 begin, u32 en
 
 void JobSystem::Wait(JobHandle handle) {
     while (!handle.IsComplete()) {
-        // Help process jobs while waiting
-        if (!TryExecuteOne(0)) {
+        // Help process jobs while waiting (pop own deque, steal from others)
+        if (!TryExecuteOne(t_ownDeque)) {
             std::this_thread::yield();
         }
     }
@@ -197,6 +218,7 @@ void JobSystem::Wait(JobHandle handle) {
 u32 JobSystem::GetWorkerCount() { return s_workerCount; }
 
 void JobSystem::WorkerThread(u32 threadIndex) {
+    t_ownDeque = threadIndex;
     while (s_running.load(std::memory_order_relaxed)) {
         if (!TryExecuteOne(threadIndex)) {
             // No work found — wait for notification
@@ -210,15 +232,11 @@ void JobSystem::WorkerThread(u32 threadIndex) {
 }
 
 bool JobSystem::TryExecuteOne(u32 threadIndex) {
-    Job job;
+    Job* job = nullptr;
 
     // Try own deque first
     if (s_deques[threadIndex]->Pop(job)) {
-        job.function();
-        if (job.counter) {
-            job.counter->fetch_sub(1, std::memory_order_release);
-        }
-        s_jobCount.fetch_sub(1, std::memory_order_relaxed);
+        ExecuteJob(job);
         return true;
     }
 
@@ -228,16 +246,21 @@ bool JobSystem::TryExecuteOne(u32 threadIndex) {
     for (u32 i = 0; i < totalDeques - 1; ++i) {
         u32 victim = (start + i) % totalDeques;
         if (s_deques[victim]->Steal(job)) {
-            job.function();
-            if (job.counter) {
-                job.counter->fetch_sub(1, std::memory_order_release);
-            }
-            s_jobCount.fetch_sub(1, std::memory_order_relaxed);
+            ExecuteJob(job);
             return true;
         }
     }
 
     return false;
+}
+
+void JobSystem::ExecuteJob(Job* job) {
+    job->function();
+    if (job->counter) {
+        job->counter->fetch_sub(1, std::memory_order_release);
+    }
+    s_jobCount.fetch_sub(1, std::memory_order_relaxed);
+    delete job;
 }
 
 } // namespace nge::jobs

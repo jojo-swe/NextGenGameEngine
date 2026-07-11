@@ -222,7 +222,6 @@ bool FrameTimelineManager::IsCpuBound() const {
 }
 
 std::string FrameTimelineManager::GetBottleneckDescription() const {
-    auto stats = GetPacingStats();
     auto latest = GetLatestFrame();
 
     if (latest.cpuDurationMs <= 0.01 && latest.gpuDurationMs <= 0.01) {

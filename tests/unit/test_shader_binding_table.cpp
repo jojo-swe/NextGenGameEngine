@@ -179,7 +179,7 @@ TEST(ShaderBindingTable, WriteToBufferTooSmall) {
 
     sbt.AddRayGenRecord(1);
 
-    auto layout = sbt.BuildLayout();
+    [[maybe_unused]] auto layout = sbt.BuildLayout();
 
     std::vector<u8> buffer(1, 0); // Too small
     u64 written = sbt.WriteToBuffer(buffer.data(), buffer.size());
