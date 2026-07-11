@@ -1,8 +1,8 @@
 #include "engine/core/app/application.h"
 #include "engine/core/profiling/profiler.h"
 
+#ifdef NGE_DEBUG_TRACE
 #include <cstdio>
-
 static void AppTraceLog(const char* msg) {
     FILE* f = nullptr;
     fopen_s(&f, "editor_debug_trace.log", "a");
@@ -12,6 +12,10 @@ static void AppTraceLog(const char* msg) {
         fclose(f);
     }
 }
+#define APP_TRACE(msg) AppTraceLog(msg)
+#else
+#define APP_TRACE(msg)
+#endif
 
 namespace nge {
 
@@ -35,7 +39,7 @@ int Application::Run() {
 
 bool Application::InitSubsystems() {
     // ─── Logging ──────────────────────────────────────────────────────
-    AppTraceLog("[APP] Log::Init()\n");
+    APP_TRACE("[APP] Log::Init()\n");
     Log::Init();
     NGE_LOG_INFO("=== NextGen Engine v{}.{}.{} ===", 0, 1, 0);
 
@@ -50,7 +54,7 @@ bool Application::InitSubsystems() {
     windowDesc.title  = m_config.title;
     windowDesc.width  = m_config.width;
     windowDesc.height = m_config.height;
-    AppTraceLog("[APP] creating window\n");
+    APP_TRACE("[APP] creating window\n");
     m_window = platform::Window::Create(windowDesc);
     if (!m_window) {
         NGE_LOG_ERROR("Failed to create window");
@@ -58,7 +62,7 @@ bool Application::InitSubsystems() {
     }
 
     // ─── RHI Device ───────────────────────────────────────────────────
-    AppTraceLog("[APP] creating RHI device\n");
+    APP_TRACE("[APP] creating RHI device\n");
     m_device = rhi::IDevice::Create(m_config.graphicsAPI);
     if (!m_device) {
         NGE_LOG_ERROR("Failed to create RHI device");
@@ -75,7 +79,7 @@ bool Application::InitSubsystems() {
     }
 
     // ─── Render Pipeline ──────────────────────────────────────────────
-    AppTraceLog("[APP] init render pipeline\n");
+    APP_TRACE("[APP] init render pipeline\n");
     if (!m_renderPipeline.Init(m_device.get(), m_config.width, m_config.height)) {
         NGE_LOG_ERROR("Failed to initialize render pipeline");
         return false;
@@ -95,7 +99,7 @@ bool Application::InitSubsystems() {
     cam.isActive = true;
     cam.projection.aspectRatio = static_cast<f32>(m_config.width) / static_cast<f32>(m_config.height);
 
-    AppTraceLog("[APP] all subsystems initialized\n");
+    APP_TRACE("[APP] all subsystems initialized\n");
     NGE_LOG_INFO("All subsystems initialized");
     return true;
 }

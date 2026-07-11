@@ -105,3 +105,87 @@ GitHub Actions (`.github/workflows/ci.yml`) runs three jobs:
 1. **repo-sanity** — Validates required files and JSON configs
 2. **build-and-test** — Cross-platform (Windows + Linux) with Vulkan disabled
 3. **build-and-test-full-windows** — Full build with all vcpkg features enabled
+
+## Repository Rules
+
+These rules apply to all implementation work in this repository.
+
+### Plan and scope
+
+- Read `MASTERPLAN.md` before starting nontrivial work. Prioritize the current
+  program gate and do not add later-phase features while the current gate is
+  failing.
+- Keep each change centered on one observable outcome. Avoid combining feature
+  work, broad refactors, formatting, and cleanup in the same change.
+- Preserve user changes and unrelated work in a dirty worktree. Never discard,
+  overwrite, or reformat files outside the requested scope.
+- Do not add a new subsystem, third-party dependency, or public abstraction
+  without an explicit request and a demonstrated integration need.
+
+### Truthful feature status
+
+- Use the maturity terms from `MASTERPLAN.md`: Sketch, Prototype, Integrated,
+  Verified, and Shippable.
+- A header, class, shader, mock, or stub does not make a feature Integrated.
+  Integration requires a real runtime call path in a sample or the editor.
+- Do not describe a stubbed, mocked, commented-out, or unwired path as an
+  implemented engine feature. Update nearby documentation when feature status
+  changes.
+- Never add silent stub or placeholder fallbacks to production paths. Return a
+  clear error with enough context to diagnose the missing capability.
+- Experimental shaders are promoted only together with shader compilation, a
+  live C++ call site, runtime coverage, and relevant validation evidence.
+
+### Implementation quality
+
+- Prefer finishing an end-to-end vertical path over adding breadth to an
+  isolated subsystem.
+- Search for existing APIs and patterns before creating a parallel manager,
+  cache, allocator, descriptor abstraction, or utility.
+- Define ownership and lifetime for every GPU resource, asynchronous task, and
+  callback. Destruction must be safe with frames and jobs in flight.
+- Keep CPU structures and shader layouts explicitly synchronized with static
+  assertions or reflection-based validation where practical.
+- Treat Vulkan validation errors, resource leaks, data races, nondeterminism,
+  and scene corruption as blockers for the affected path.
+- Do not mix drive-by cleanup with a functional fix. Record adjacent problems
+  as follow-up work packages in `MASTERPLAN.md`.
+
+### Tests and verification
+
+- Reproduce a defect before fixing it, preferably with a failing automated
+  test. New behavior requires tests at the lowest useful layer.
+- A test that exercises only a mock must not be used as evidence that the real
+  Vulkan, audio, physics, scripting, filesystem, or network integration works.
+- Run the narrowest relevant tests during iteration, then the applicable build
+  and CTest suite before reporting completion.
+- If CTest reports `No tests were found`, do not report success. Verify that the
+  build was configured with `NGE_BUILD_TESTS=ON` and that `EngineTests` exists.
+- For GPU changes, run a debug build with Vulkan validation enabled and report
+  validation output. If no suitable GPU is available, explicitly mark runtime
+  verification as not performed.
+- Never claim a command passed unless it was run in the current worktree.
+  Report unavailable environmental checks separately from verified results.
+- Bug fixes should add regression coverage. Numerical tests must use deliberate
+  tolerances and include boundary or long-composition cases where relevant.
+
+### Generated files and diagnostics
+
+- Do not write logs, traces, caches, editor layouts, screenshots, or generated
+  assets to the repository root. Put build artifacts under `build/` and runtime
+  diagnostics under an ignored, dedicated directory.
+- Temporary diagnostic logging must be scoped, actionable, and removed or
+  converted to the normal logging system once the issue is resolved.
+- Do not commit generated binaries, local machine paths, credentials, SDK
+  locations, or user-specific editor state.
+
+### Performance and documentation
+
+- Do not make performance claims without a repeatable workload, named build
+  configuration, reference hardware, and before/after measurements.
+- Performance work must preserve correctness checks and include the metric it
+  intends to improve.
+- Update README, samples, and maturity status in the same change when user-
+  visible behavior or support changes.
+- Add a short architecture decision record under `docs/adr/` for durable,
+  cross-subsystem choices that would otherwise be repeatedly reconsidered.

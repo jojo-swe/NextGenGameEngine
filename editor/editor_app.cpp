@@ -4,8 +4,8 @@
 #include "engine/core/platform/window.h"
 #include "engine/rhi/common/rhi_device.h"
 
+#ifdef NGE_DEBUG_TRACE
 #include <cstdio>
-
 static void EditorTraceLog(const char* msg) {
     FILE* f = nullptr;
     fopen_s(&f, "editor_debug_trace.log", "a");
@@ -15,6 +15,10 @@ static void EditorTraceLog(const char* msg) {
         fclose(f);
     }
 }
+#define ED_TRACE(msg) EditorTraceLog(msg)
+#else
+#define ED_TRACE(msg)
+#endif
 
 #ifdef NGE_HAS_IMGUI
 #include <imgui.h>
@@ -50,12 +54,12 @@ EditorApp::EditorApp(const EditorConfig& config)
 EditorApp::~EditorApp() = default;
 
 void EditorApp::OnInit() {
-    EditorTraceLog("[EDITOR] OnInit()\n");
+    ED_TRACE("[EDITOR] OnInit()\n");
     NGE_LOG_INFO("Editor initializing...");
 
-    EditorTraceLog("[EDITOR] calling InitImGui()\n");
+    ED_TRACE("[EDITOR] calling InitImGui()\n");
     InitImGui();
-    EditorTraceLog("[EDITOR] InitImGui() done\n");
+    ED_TRACE("[EDITOR] InitImGui() done\n");
 
     m_menus.push_back({"File", {
         {"New Scene",  [this]() { NGE_LOG_INFO("New Scene"); }},
@@ -175,7 +179,7 @@ void EditorApp::ClearSelection() {
 
 void EditorApp::InitImGui() {
 #ifdef NGE_HAS_IMGUI
-    EditorTraceLog("[EDITOR] InitImGui: CreateContext\n");
+    ED_TRACE("[EDITOR] InitImGui: CreateContext\n");
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
 
@@ -186,7 +190,7 @@ void EditorApp::InitImGui() {
 
     ImGui::StyleColorsDark();
 
-    EditorTraceLog("[EDITOR] InitImGui: dynamic_cast\n");
+    ED_TRACE("[EDITOR] InitImGui: dynamic_cast\n");
     auto* vkDevice = dynamic_cast<nge::rhi::vulkan::VulkanDevice*>(m_device.get());
     if (!vkDevice) {
         NGE_LOG_ERROR("Editor requires Vulkan backend for ImGui");
@@ -202,10 +206,10 @@ void EditorApp::InitImGui() {
     poolInfo.maxSets = 1;
     poolInfo.poolSizeCount = 1;
     poolInfo.pPoolSizes = poolSizes;
-    EditorTraceLog("[EDITOR] InitImGui: vkCreateDescriptorPool\n");
+    ED_TRACE("[EDITOR] InitImGui: vkCreateDescriptorPool\n");
     vkCreateDescriptorPool(vkDevice->GetVkDevice(), &poolInfo, nullptr, &g_imguiDescriptorPool);
 
-    EditorTraceLog("[EDITOR] InitImGui: ImGui_ImplWin32_Init\n");
+    ED_TRACE("[EDITOR] InitImGui: ImGui_ImplWin32_Init\n");
     ImGui_ImplWin32_Init(m_window->GetNativeHandle());
 
     // Route Win32 messages through ImGui's WndProc handler
@@ -238,13 +242,13 @@ void EditorApp::InitImGui() {
     VkFormat colorFormat = vkDevice->GetVkSwapchainFormat();
     initInfo.PipelineRenderingCreateInfo.pColorAttachmentFormats = &colorFormat;
 
-    EditorTraceLog("[EDITOR] InitImGui: ImGui_ImplVulkan_Init\n");
+    ED_TRACE("[EDITOR] InitImGui: ImGui_ImplVulkan_Init\n");
     if (!ImGui_ImplVulkan_Init(&initInfo)) {
         NGE_LOG_ERROR("Failed to initialize ImGui Vulkan backend");
         return;
     }
 
-    EditorTraceLog("[EDITOR] InitImGui: CreateFontsTexture\n");
+    ED_TRACE("[EDITOR] InitImGui: CreateFontsTexture\n");
     ImGui_ImplVulkan_CreateFontsTexture();
 
     m_renderPipeline.SetPostRenderCallback([this](nge::rhi::ICommandList* cmd) {

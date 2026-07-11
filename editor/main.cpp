@@ -1,8 +1,8 @@
 #include "editor/editor_app.h"
 #include "editor/panels/viewport_panel.h"
 
+#ifdef NGE_DEBUG_TRACE
 #include <cstdio>
-
 static void TraceLog(const char* msg) {
     FILE* f = nullptr;
     fopen_s(&f, "editor_debug_trace.log", "a");
@@ -12,53 +12,54 @@ static void TraceLog(const char* msg) {
         fclose(f);
     }
 }
+#define TRACE(msg) TraceLog(msg)
+#else
+#define TRACE(msg)
+#endif
 
 using namespace nge;
 using namespace nge::editor;
 
 int main() {
-    TraceLog("[EDITOR] main() entered\n");
+    TRACE("[EDITOR] main() entered\n");
 
     EditorConfig config;
     config.projectPath = ".";
     config.enableDocking = true;
 
-    TraceLog("[EDITOR] creating EditorApp\n");
+    TRACE("[EDITOR] creating EditorApp\n");
     EditorApp app(config);
-    TraceLog("[EDITOR] EditorApp created\n");
+    TRACE("[EDITOR] EditorApp created\n");
 
     // Register built-in panels
-    TraceLog("[EDITOR] creating ViewportPanel\n");
+    TRACE("[EDITOR] creating ViewportPanel\n");
     auto viewport = std::make_unique<ViewportPanel>();
-    TraceLog("[EDITOR] ViewportPanel constructed\n");
     viewport->SetEditorApp(&app);
-    TraceLog("[EDITOR] ViewportPanel SetEditorApp\n");
     app.AddPanel(std::move(viewport));
-    TraceLog("[EDITOR] ViewportPanel added\n");
 
-    TraceLog("[EDITOR] creating HierarchyPanel\n");
+    TRACE("[EDITOR] creating HierarchyPanel\n");
     auto hierarchy = std::make_unique<HierarchyPanel>();
     hierarchy->SetEditorApp(&app);
     app.AddPanel(std::move(hierarchy));
 
-    TraceLog("[EDITOR] creating InspectorPanel\n");
+    TRACE("[EDITOR] creating InspectorPanel\n");
     auto inspector = std::make_unique<InspectorPanel>();
     inspector->SetEditorApp(&app);
     app.AddPanel(std::move(inspector));
 
-    TraceLog("[EDITOR] creating ConsolePanel\n");
+    TRACE("[EDITOR] creating ConsolePanel\n");
     auto console = std::make_unique<ConsolePanel>();
     app.AddPanel(std::move(console));
 
-    TraceLog("[EDITOR] creating AssetBrowserPanel\n");
+    TRACE("[EDITOR] creating AssetBrowserPanel\n");
     auto assets = std::make_unique<AssetBrowserPanel>();
     assets->SetRootPath(config.projectPath);
     app.AddPanel(std::move(assets));
 
-    TraceLog("[EDITOR] creating ProfilerPanel\n");
+    TRACE("[EDITOR] creating ProfilerPanel\n");
     auto profiler = std::make_unique<ProfilerPanel>();
     app.AddPanel(std::move(profiler));
 
-    TraceLog("[EDITOR] calling app.Run()\n");
+    TRACE("[EDITOR] calling app.Run()\n");
     return app.Run();
 }
