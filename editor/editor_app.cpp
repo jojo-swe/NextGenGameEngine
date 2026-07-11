@@ -208,6 +208,16 @@ void EditorApp::InitImGui() {
     EditorTraceLog("[EDITOR] InitImGui: ImGui_ImplWin32_Init\n");
     ImGui_ImplWin32_Init(m_window->GetNativeHandle());
 
+    // Route Win32 messages through ImGui's WndProc handler
+    extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+    m_window->SetEventCallback([](void* hwnd, u32 msg, u64 wParam, i64 lParam) -> bool {
+        return ImGui_ImplWin32_WndProcHandler(
+            static_cast<HWND>(hwnd),
+            static_cast<UINT>(msg),
+            static_cast<WPARAM>(wParam),
+            static_cast<LPARAM>(lParam)) != 0;
+    });
+
     ImGui_ImplVulkan_InitInfo initInfo{};
     initInfo.ApiVersion = VK_API_VERSION_1_3;
     initInfo.Instance = vkDevice->GetVkInstance();
@@ -237,11 +247,24 @@ void EditorApp::InitImGui() {
     EditorTraceLog("[EDITOR] InitImGui: CreateFontsTexture\n");
     ImGui_ImplVulkan_CreateFontsTexture();
 
-    m_renderPipeline.SetPostRenderCallback([this](nge::rhi::ICommandList* /*cmd*/) {
+    m_renderPipeline.SetPostRenderCallback([this](nge::rhi::ICommandList* cmd) {
         if (!m_imguiInitialized) return;
         auto* vkDev = dynamic_cast<nge::rhi::vulkan::VulkanDevice*>(m_device.get());
         if (!vkDev) return;
+
+        // ImGui needs to render inside a dynamic rendering pass on the swapchain
+        rhi::TextureHandle swapchain = m_device->GetSwapchainTexture();
+        rhi::Viewport viewport{0, 0,
+            static_cast<f32>(m_device->GetSwapchainWidth()),
+            static_cast<f32>(m_device->GetSwapchainHeight()), 0, 1};
+        rhi::Scissor scissor{0, 0,
+            m_device->GetSwapchainWidth(),
+            m_device->GetSwapchainHeight()};
+        rhi::LoadOp loadOp = rhi::LoadOp::Load;
+        cmd->BeginRendering(&swapchain, 1, rhi::TextureHandle{}, nullptr,
+            viewport, scissor, &loadOp);
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vkDev->GetCurrentCommandBuffer());
+        cmd->EndRendering();
     });
 
     m_imguiInitialized = true;

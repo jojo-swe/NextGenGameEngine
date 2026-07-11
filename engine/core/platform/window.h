@@ -3,6 +3,7 @@
 #include "engine/core/types.h"
 #include <memory>
 #include <string>
+#include <functional>
 
 namespace nge::platform {
 
@@ -14,6 +15,10 @@ struct WindowDesc {
     bool        resizable   = true;
     bool        vsync       = false;
 };
+
+// Platform-agnostic event callback for message interception (e.g. ImGui).
+// Returns true if the message was handled and default processing should be skipped.
+using EventCallback = std::function<bool(void* hwnd, u32 msg, u64 wParam, i64 lParam)>;
 
 class Window {
 public:
@@ -37,7 +42,12 @@ public:
     virtual void* GetInstanceHandle() const = 0; // HINSTANCE
 #endif
 
+    void SetEventCallback(EventCallback cb) { m_eventCallback = std::move(cb); }
+
     static std::unique_ptr<Window> Create(const WindowDesc& desc);
+
+protected:
+    EventCallback m_eventCallback;
 };
 
 } // namespace nge::platform

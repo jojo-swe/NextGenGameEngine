@@ -156,6 +156,16 @@ private:
         }
 
         if (self) {
+            // Let external callback (e.g. ImGui) handle the message first
+            if (self->m_eventCallback) {
+                if (self->m_eventCallback(reinterpret_cast<void*>(hwnd),
+                        static_cast<u32>(msg),
+                        static_cast<u64>(wParam),
+                        static_cast<i64>(lParam))) {
+                    return 0;
+                }
+            }
+
             switch (msg) {
                 case WM_CLOSE:
                     self->m_shouldClose = true;
