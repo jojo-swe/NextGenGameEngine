@@ -1,7 +1,7 @@
 # NextGenGameEngine
 
 [![CI](https://github.com/jojo-swe/NextGenGameEngine/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jojo-swe/NextGenGameEngine/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
 [![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://en.cppreference.com/)
 [![CMake](https://img.shields.io/badge/CMake-3.28%2B-blue)](https://cmake.org/)
 
@@ -22,6 +22,8 @@ A next-generation 3D game engine built from scratch in C++20, targeting Vulkan 1
 - **CDLOD Terrain** — Clipmap rendering with procedural generation and 16-layer material splatting
 - **GPU Particles** — Compute-driven emit/simulate/sort with curl noise turbulence
 - **Full Post-Processing Stack** — TAA, FXAA, bloom, TSR, tone mapping, DOF bokeh, motion blur, chromatic aberration, film grain, vignette, SVGF denoise, auto-exposure, CAS sharpen, GTAO (horizon-based + temporal + spatial denoise), SSR, VRS, volumetric clouds, screen-space contact shadows, volumetric light scattering (god rays), screen-space subsurface scattering (separable SSS + transmittance), lens flare (ghosts + halo + starburst + lens dirt), SSGI (screen-space global illumination with temporal + spatial denoise), bent normal cone AO (specular occlusion + visibility cone), generic temporal reprojection filter (Catmull-Rom + variance clip), parallax occlusion mapping (steep + binary refinement + self-shadow), water caustics (Voronoi + chromatic dispersion), SSR probe fallback (Hi-Z + reflection probe blending), hair shading (Marschner R/TT/TRT + melanin + deep opacity), eye shading (cornea refraction + iris caustics + pupil dilation), cloth shading (Charlie sheen + anisotropic + fuzz + transmission), skin SSS (pre-integrated diffuse + dual-lobe specular + transmittance), procedural skybox (Preetham/Hosek-Wilkie + sun disc + night sky), terrain detail blending (triplanar + height + slope), SDF generator (JFA + brute force + sign determination), ice/frost crystallization (Voronoi + dendritic branching + refraction), rain/wetness (ripples + puddles + streaks + drip trails), cloud noise generator (3D Worley/Perlin/curl), underwater caustics + god rays (volumetric + Beer-Lambert), grass wind simulation (procedural field + player interaction + spring dynamics), AO + contact shadows composite (GTAO + screen-space ray march + multi-bounce), fire/flame volumetric (FBM noise + blackbody + embers), snow accumulation (height/slope/normal + icicle drip + sparkle), heat distortion (multi-source shimmer + chromatic aberration), lightning bolt generator (midpoint displacement + branching), ink/paint splatter (Voronoi + drip trails + brush strokes + edge detection), hologram/scan-line (Fresnel glow + glitch + chromatic), portal/warp distortion (gravitational lensing + accretion disc + Doppler), dissolve/disintegration (FBM noise + directional sweep + ash particles), force field/energy shield (hex grid + Fresnel + impact ripples), matrix/digital rain (column cascade + procedural glyphs + head glow), color grading LUT (procedural lift/gamma/gain + ACES/Reinhard/Uncharted2 tonemapping + split toning + channel mixer), halftone/dithering (circular dots + CMYK screens + 8x8 Bayer + cross-hatch + blue noise), watercolor/painterly (Kuwahara filter + wet-edge darkening + rice paper + pigment granulation), glitch/data corruption (block displacement + RGB split + VHS tracking + scanline jitter + posterize), ink/sumi-e painting (Sobel outlines + rice paper + ink diffusion + dry brush + splatter), night vision (intensifier tube + phosphor glow + noise), pixelation/mosaic (Voronoi + hex + diamond cells), chromatic vignette (barrel distortion + spectral fringe), speed lines/radial blur (zoom blur + manga lines + chromatic separation), ASCII art (luminance-to-glyph + edge enhancement + color modes), outline/edge detection (depth + normal + color + object ID discontinuities), CRT scanline (phosphor mask + barrel warp + interlace + signal noise), neon glow (threshold + dual-axis Kawase blur + chromatic fringe), thermal vision (palette ramp + heat diffusion + edge overlay + noise), depth fog (linear/exp/exp2 + height fog + inscattering), vignette (circular/elliptical + tint + pulse), gaussian blur utility (separable H+V, 1-32 taps), tilt-shift miniature (focus band + disc blur + saturation boost), film noir (S-curve B&W + selective color + halation + grain + scratches), lens distortion (barrel/pincushion/mustache + chromatic fringe)
+- **Physics (Stub)** — Euler integration, sphere/box/capsule shapes, AABB computation, sphere-sphere/sphere-box/box-box collision detection with impulse response, raycasting (sphere + box + ground plane), OverlapSphere/OverlapBox queries, ShapeCastSphere sweep, collision layers/masks, contact callbacks, trigger volumes
+- **Character Controller** — Kinematic controller with sphere-sweep collision, ground detection with slope filtering, step climbing, jump, gravity, acceleration/deceleration, wall sliding
 - **Asset Pipeline** — glTF 2.0 importer, shader permutation system, DXC→SPIR-V compilation, hot-reload, dependency-aware include resolver, async loader, SPIR-V shader reflection, shader variant warm-up, persistent shader variant cache (on-disk .svc binary format), shader file watcher (filesystem monitoring + recompilation trigger)
 - **GPU Memory Management** — Buffer pool, frame allocator, staging manager, transient resource pool (aliased), memory defragmenter, aliasing optimizer (graph-coloring), deletion queue, upload ring buffer, descriptor heap + ring buffer, fence pool, resource lifetime manager, buffer suballocator (first-fit + coalescing), memory budget tracker (VK_EXT_memory_budget), async copy engine (dedicated transfer queue DMA), render target pool (format/size-aware recycling), command pool ring (per-frame recycling), descriptor set allocator (transient + persistent), dynamic buffer allocator (ring-buffer per-draw constants), sampler feedback manager (texture streaming residency), bindless texture manager (16K global array + residency), descriptor pool manager (auto-growing + per-type tracking), heap inspector (per-heap allocation tracking + visualization), ping-pong buffer manager (double/triple buffer rotation), timeline semaphore pool (reusable cross-queue sync), command buffer recycler (secondary CB reuse), buffer usage tracker (access pattern analysis + aliasing detection), queue capability manager (per-family capability tracking), barrier batch optimizer (redundancy + merge + split + batch), format negotiator (per-attachment optimal format + fallback), occlusion compactor (stream compact visible instances), mip bias controller (dynamic per-material LOD bias), draw call merger (batch compatible draws into MDI), async readback manager (non-blocking GPU-to-CPU ring buffer), frame resource tracker (per-frame usage + leak detection), aliasing validator (debug-mode overlap detection), pipeline stats collector (per-pass query aggregation), indirect dispatch builder (GPU-driven compute dispatches), resource version tracker (per-resource generation + stale detection), descriptor pool fragmentation analyzer (utilization + waste + recommendations), queue family arbiter (multi-queue scheduling + load balancing), shader variant dispatch table (permutation key → PSO map + fallback chain), command buffer state validator (bound state tracking + draw validation), pipeline layout compatibility checker (set + push constant validation), timestamp query pool manager (frame-scoped GPU timing + ring buffer), mipmap generation scheduler (async compute mip chain + format-aware dispatch), subresource state tracker (per-mip per-layer layout + access), descriptor set update batcher (coalesce writes for batch flush), shader hot reload manager (file watch + include dependency + recompile trigger), descriptor pool allocator (growable pool hierarchy + per-type tracking + compaction hints), dynamic state tracker (Vulkan dynamic states + redundancy detection + validation), frame resource garbage collector (deferred GPU resource destruction + frame-based deferral), subpass input attachment manager (input/output declaration + dependency generation + validation), render pass merge optimizer (compatible pass merging + load/store ops saved + tile-based GPU optimization), viewport/scissor state manager (push/pop stack + multi-viewport + redundancy detection)
 - **GPU Submission** — Submission batcher (minimize vkQueueSubmit), render pass cache, pipeline layout cache, sampler pool, command signature builder, PSO builder (fluent API + validation + presets), PSO hash (FNV-1a deduplication), multi-queue sync manager (timeline semaphores), bindless table updater (batched descriptor writes), timestamp calibration (CPU↔GPU clock sync), viewport state manager (dynamic stack), push constant manager (type-safe validation + range merging), specialization constant manager (named presets), pipeline cache manager (disk persistence + PSO dedup), shader module cache (SPIR-V deduplication + lazy loading), image layout tracker (automatic transitions), resource state validator (debug-mode hazard detection), query readback manager (async collection + aggregation), indirect count builder (VK_KHR_draw_indirect_count), frame timeline manager (CPU/GPU overlap + pacing), render pass manager (automatic pass merging + subpass deps), deferred lighting resolve (clustered + tiled hybrid), atmospheric scattering LUT precompute (transmittance + multi-scatter + sky-view), pass dependency analyzer (automatic RAW/WAR/WAW inference + topological sort)
@@ -72,7 +74,7 @@ A next-generation 3D game engine built from scratch in C++20, targeting Vulkan 1
 │   ├── assets/         # Mesh/texture/shader loaders, resource manager, glTF importer, shader permutations, include resolver, shader warmup, async loader, shader reflection, shader variant cache, file watcher
 │   ├── scene/          # Camera, transforms, serialization, prefab system
 │   ├── network/        # UDP socket, server, client, reliable delivery
-│   ├── physics/        # Jolt wrapper + stub Euler simulation
+│   ├── physics/        # Stub physics (Euler, collision detection, raycast, overlap, shape cast, character controller)
 │   ├── audio/          # Miniaudio wrapper + stub
 │   ├── animation/      # Skeleton, clips, blend tree, PGA interpolation
 │   ├── scripting/      # Lua/Sol2 wrapper, hot-reload
@@ -89,11 +91,10 @@ A next-generation 3D game engine built from scratch in C++20, targeting Vulkan 1
 │   ├── terrain/        # Terrain CDLOD rendering
 │   └── debug/          # Debug lines + text rendering
 ├── samples/triangle/   # Minimal sample app
-├── tests/              # 96 test files (unit + integration)
+├── tests/              # 97 test files (unit + integration)
 ├── CMakeLists.txt
 ├── CMakePresets.json
 ├── vcpkg.json
-└── frolicking-tumbling-pond.md  # Master implementation plan
 ```
 
 ## Requirements
@@ -142,7 +143,7 @@ Run tests with:
 ctest --test-dir build -C Debug --output-on-failure
 ```
 
-Note: test infrastructure is configured, but test coverage is still being built out.
+1409 tests across 126 test suites — covering physics, character controller, animation, RHI systems, rendering, ECS, AI, networking, and more.
 
 ## Dependencies
 
@@ -174,25 +175,9 @@ Execution follows phased delivery:
 - Lighting, GI, and path tracing
 - Tooling, scripting, and networking
 
-Detailed milestones, gates, and scene profile IDs live in:
-
-- `frolicking-tumbling-pond.md`
-
-Direct links to key plan sections:
-
-- [Phase 0: Delivery and Risk](frolicking-tumbling-pond.md#phase-0-delivery-risk)
-- [Phase 2.4: DirectX 12 Backend](frolicking-tumbling-pond.md#phase-2-4-directx12-backend)
-- [Phase 6.4: Serialization and Versioning](frolicking-tumbling-pond.md#phase-6-4-serialization-versioning)
-- [Phase 10.2: Protocol, Rollback, Determinism](frolicking-tumbling-pond.md#phase-10-2-network-protocol-rollback)
-- [CI/CD Quality Gates](frolicking-tumbling-pond.md#ci-cd-quality-gates)
-
 ## Contributing
 
-Pull requests are welcome. For larger changes, open an issue first with:
-
-- Problem statement
-- Proposed approach
-- Validation plan (tests, perf, compatibility)
+This is a proprietary project. External contributions are not accepted at this time.
 
 CI runs repository sanity checks plus:
 
@@ -201,5 +186,5 @@ CI runs repository sanity checks plus:
 
 ## License
 
-Licensed under the MIT License.
+Proprietary — All rights reserved.
 See `LICENSE`.

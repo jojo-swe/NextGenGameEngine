@@ -49,7 +49,15 @@ cooked/
 # Logs
 *.log
 
-# Local build/test scratch — never commit
+# Temp test output / scratch files (root-level only)
+/*.txt
+!CMakeLists.txt
+!vcpkg.json
+
+# Local build/test scratch — never commit (any directory)
 test_output*.txt
-build_temp.bat
 build_error*.log
+
+# Temp batch scripts
+_*.bat
+build_*.bat
