@@ -117,7 +117,6 @@ void EditorApp::OnShutdown() {
 }
 
 void EditorApp::AddPanel(std::unique_ptr<EditorPanel> panel) {
-    NGE_LOG_INFO("Added editor panel: {}", panel->GetName());
     m_panels.push_back(std::move(panel));
 }
 

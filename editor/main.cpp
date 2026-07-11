@@ -30,8 +30,11 @@ int main() {
     // Register built-in panels
     TraceLog("[EDITOR] creating ViewportPanel\n");
     auto viewport = std::make_unique<ViewportPanel>();
+    TraceLog("[EDITOR] ViewportPanel constructed\n");
     viewport->SetEditorApp(&app);
+    TraceLog("[EDITOR] ViewportPanel SetEditorApp\n");
     app.AddPanel(std::move(viewport));
+    TraceLog("[EDITOR] ViewportPanel added\n");
 
     TraceLog("[EDITOR] creating HierarchyPanel\n");
     auto hierarchy = std::make_unique<HierarchyPanel>();
