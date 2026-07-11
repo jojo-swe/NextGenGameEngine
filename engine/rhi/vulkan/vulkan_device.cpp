@@ -761,7 +761,13 @@ void VulkanDevice::Present() {
     presentInfo.pSwapchains        = &m_swapchain;
     presentInfo.pImageIndices      = &m_currentImageIndex;
 
-    vkQueuePresentKHR(m_graphicsQueue, &presentInfo);
+    VkResult result = vkQueuePresentKHR(m_graphicsQueue, &presentInfo);
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+        // Swapchain needs recreation — the main loop will detect the size
+        // change and call ResizeSwapchain on the next iteration.
+        NGE_LOG_DEBUG("Swapchain {} during present, will recreate next frame",
+            result == VK_ERROR_OUT_OF_DATE_KHR ? "out of date" : "suboptimal");
+    }
 }
 
 void VulkanDevice::EndFrame() {

@@ -4,6 +4,22 @@
 #include "engine/core/platform/window.h"
 #include "engine/rhi/common/rhi_device.h"
 
+#ifdef NGE_DEBUG_TRACE
+#include <cstdio>
+static void EditorTraceLog(const char* msg) {
+    FILE* f = nullptr;
+    fopen_s(&f, "editor_debug_trace.log", "a");
+    if (f) {
+        fprintf(f, "%s", msg);
+        fflush(f);
+        fclose(f);
+    }
+}
+#define ED_TRACE(msg) EditorTraceLog(msg)
+#else
+#define ED_TRACE(msg)
+#endif
+
 #ifdef NGE_HAS_IMGUI
 #include <imgui.h>
 #include <imgui_impl_vulkan.h>
@@ -38,9 +54,12 @@ EditorApp::EditorApp(const EditorConfig& config)
 EditorApp::~EditorApp() = default;
 
 void EditorApp::OnInit() {
+    ED_TRACE("[EDITOR] OnInit()\n");
     NGE_LOG_INFO("Editor initializing...");
 
+    ED_TRACE("[EDITOR] calling InitImGui()\n");
     InitImGui();
+    ED_TRACE("[EDITOR] InitImGui() done\n");
 
     m_menus.push_back({"File", {
         {"New Scene",  [this]() { NGE_LOG_INFO("New Scene"); }},
@@ -102,7 +121,6 @@ void EditorApp::OnShutdown() {
 }
 
 void EditorApp::AddPanel(std::unique_ptr<EditorPanel> panel) {
-    NGE_LOG_INFO("Added editor panel: {}", panel->GetName());
     m_panels.push_back(std::move(panel));
 }
 
@@ -161,6 +179,7 @@ void EditorApp::ClearSelection() {
 
 void EditorApp::InitImGui() {
 #ifdef NGE_HAS_IMGUI
+    ED_TRACE("[EDITOR] InitImGui: CreateContext\n");
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
 
@@ -171,6 +190,7 @@ void EditorApp::InitImGui() {
 
     ImGui::StyleColorsDark();
 
+    ED_TRACE("[EDITOR] InitImGui: dynamic_cast\n");
     auto* vkDevice = dynamic_cast<nge::rhi::vulkan::VulkanDevice*>(m_device.get());
     if (!vkDevice) {
         NGE_LOG_ERROR("Editor requires Vulkan backend for ImGui");
@@ -186,9 +206,21 @@ void EditorApp::InitImGui() {
     poolInfo.maxSets = 1;
     poolInfo.poolSizeCount = 1;
     poolInfo.pPoolSizes = poolSizes;
+    ED_TRACE("[EDITOR] InitImGui: vkCreateDescriptorPool\n");
     vkCreateDescriptorPool(vkDevice->GetVkDevice(), &poolInfo, nullptr, &g_imguiDescriptorPool);
 
+    ED_TRACE("[EDITOR] InitImGui: ImGui_ImplWin32_Init\n");
     ImGui_ImplWin32_Init(m_window->GetNativeHandle());
+
+    // Route Win32 messages through ImGui's WndProc handler
+    extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+    m_window->SetEventCallback([](void* hwnd, u32 msg, u64 wParam, i64 lParam) -> bool {
+        return ImGui_ImplWin32_WndProcHandler(
+            static_cast<HWND>(hwnd),
+            static_cast<UINT>(msg),
+            static_cast<WPARAM>(wParam),
+            static_cast<LPARAM>(lParam)) != 0;
+    });
 
     ImGui_ImplVulkan_InitInfo initInfo{};
     initInfo.ApiVersion = VK_API_VERSION_1_3;
@@ -210,18 +242,33 @@ void EditorApp::InitImGui() {
     VkFormat colorFormat = vkDevice->GetVkSwapchainFormat();
     initInfo.PipelineRenderingCreateInfo.pColorAttachmentFormats = &colorFormat;
 
+    ED_TRACE("[EDITOR] InitImGui: ImGui_ImplVulkan_Init\n");
     if (!ImGui_ImplVulkan_Init(&initInfo)) {
         NGE_LOG_ERROR("Failed to initialize ImGui Vulkan backend");
         return;
     }
 
+    ED_TRACE("[EDITOR] InitImGui: CreateFontsTexture\n");
     ImGui_ImplVulkan_CreateFontsTexture();
 
-    m_renderPipeline.SetPostRenderCallback([this](nge::rhi::ICommandList* /*cmd*/) {
+    m_renderPipeline.SetPostRenderCallback([this](nge::rhi::ICommandList* cmd) {
         if (!m_imguiInitialized) return;
         auto* vkDev = dynamic_cast<nge::rhi::vulkan::VulkanDevice*>(m_device.get());
         if (!vkDev) return;
+
+        // ImGui needs to render inside a dynamic rendering pass on the swapchain
+        rhi::TextureHandle swapchain = m_device->GetSwapchainTexture();
+        rhi::Viewport viewport{0, 0,
+            static_cast<f32>(m_device->GetSwapchainWidth()),
+            static_cast<f32>(m_device->GetSwapchainHeight()), 0, 1};
+        rhi::Scissor scissor{0, 0,
+            m_device->GetSwapchainWidth(),
+            m_device->GetSwapchainHeight()};
+        rhi::LoadOp loadOp = rhi::LoadOp::Load;
+        cmd->BeginRendering(&swapchain, 1, rhi::TextureHandle{}, nullptr,
+            viewport, scissor, &loadOp);
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vkDev->GetCurrentCommandBuffer());
+        cmd->EndRendering();
     });
 
     m_imguiInitialized = true;

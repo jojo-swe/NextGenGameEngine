@@ -50,6 +50,19 @@ target_link_libraries(NextGenEngine
         fmt::fmt
 )
 
+# Optional rendering dependencies (available when vcpkg "rendering" feature is enabled)
+find_path(CGLTF_INCLUDE_DIR cgltf.h)
+if(CGLTF_INCLUDE_DIR)
+    target_include_directories(NextGenEngine PRIVATE ${CGLTF_INCLUDE_DIR})
+    target_compile_definitions(NextGenEngine PUBLIC NGE_HAS_CGLTF=1)
+endif()
+
+find_path(STB_INCLUDE_DIR stb_image.h)
+if(STB_INCLUDE_DIR)
+    target_include_directories(NextGenEngine PRIVATE ${STB_INCLUDE_DIR})
+    target_compile_definitions(NextGenEngine PUBLIC NGE_HAS_STB=1)
+endif()
+
 if(NGE_ENABLE_VULKAN)
     target_link_libraries(NextGenEngine PUBLIC Vulkan::Vulkan)
     target_compile_definitions(NextGenEngine PUBLIC NGE_ENABLE_VULKAN=1)
