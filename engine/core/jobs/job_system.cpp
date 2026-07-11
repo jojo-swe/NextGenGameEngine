@@ -107,6 +107,9 @@ void JobSystem::Init(u32 numThreads) {
 
     s_workerCount = numThreads;
     s_running.store(true, std::memory_order_relaxed);
+    // A fresh system has no pending work; clear any drift from a previous
+    // Init/Shutdown cycle so idle workers sleep instead of spinning.
+    s_jobCount.store(0, std::memory_order_relaxed);
 
     // Create per-thread deques (including main thread at index 0)
     s_deques.resize(numThreads + 1);
@@ -133,10 +136,14 @@ void JobSystem::Shutdown() {
     s_workers.clear();
 
     for (auto* deque : s_deques) {
-        // Drain unexecuted jobs so their allocations are not leaked
+        // Drain unexecuted jobs so their allocations are not leaked and
+        // the pending-work counter does not stay inflated across restarts
         Job* leftover = nullptr;
         while (deque->Pop(leftover)) {
-            if (leftover) delete leftover;
+            if (leftover) {
+                s_jobCount.fetch_sub(1, std::memory_order_relaxed);
+                delete leftover;
+            }
         }
         delete deque;
     }
