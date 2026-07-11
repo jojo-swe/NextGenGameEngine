@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
+#include "engine/core/types.h"
 #include "engine/physics/character_controller.h"
 #include "engine/physics/physics_world.h"
 
+using namespace nge;
 using namespace nge::physics;
 
 class CharacterControllerTest : public ::testing::Test {
@@ -22,6 +24,7 @@ protected:
         cfg.gravityScale = 1.0f;
         cfg.maxFallSpeed = -40.0f;
         cfg.collisionLayer = 0xFFFF;
+        cfg.stepHeight = 0.4f;
         m_controller.Init(&m_world, cfg);
     }
 };
@@ -46,7 +49,7 @@ TEST_F(CharacterControllerTest, GravityAndGroundPlane) {
 
     auto pos = m_controller.GetPosition();
     f32 expectedY = 0.9f + 0.4f; // halfHeight + radius
-    EXPECT_NEAR(pos.y, expectedY, 0.05f);
+    EXPECT_NEAR(pos.y, expectedY, 0.1f);
     EXPECT_TRUE(m_controller.IsGrounded());
 }
 

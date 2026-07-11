@@ -94,17 +94,32 @@ void CharacterController::MoveHorizontal(f32 deltaTime) {
             moveDir, moveDist, m_config.collisionLayer);
 
         if (hit.hit) {
-            // Project velocity onto the collision plane (slide)
-            math::Vec3 normal = hit.hitNormal;
-            // Remove the normal component from velocity
-            f32 dot = m_state.velocity.x * normal.x + m_state.velocity.z * normal.z;
-            m_state.velocity.x -= normal.x * dot;
-            m_state.velocity.z -= normal.z * dot;
+            // Try step-up: raise sweep origin by stepHeight and re-sweep
+            math::Vec3 raisedOrigin = sweepOrigin;
+            raisedOrigin.y += m_config.stepHeight;
 
-            // Move up to the hit point
-            f32 actualDist = math::Max(hit.distance - m_config.skinWidth, 0.0f);
-            m_state.position.x += moveDir.x * actualDist;
-            m_state.position.z += moveDir.z * actualDist;
+            auto stepHit = m_world->ShapeCastSphere(
+                raisedOrigin, m_config.radius + m_config.skinWidth,
+                moveDir, moveDist, m_config.collisionLayer);
+
+            if (!stepHit.hit && m_state.isGrounded) {
+                // Step is clear — move up and forward
+                m_state.position.y += m_config.stepHeight;
+                m_state.position.x += moveDir.x * moveDist;
+                m_state.position.z += moveDir.z * moveDist;
+            } else {
+                // Project velocity onto the collision plane (slide)
+                math::Vec3 normal = hit.hitNormal;
+                // Remove the normal component from velocity
+                f32 dot = m_state.velocity.x * normal.x + m_state.velocity.z * normal.z;
+                m_state.velocity.x -= normal.x * dot;
+                m_state.velocity.z -= normal.z * dot;
+
+                // Move up to the hit point
+                f32 actualDist = math::Max(hit.distance - m_config.skinWidth, 0.0f);
+                m_state.position.x += moveDir.x * actualDist;
+                m_state.position.z += moveDir.z * actualDist;
+            }
         } else {
             m_state.position.x += moveDir.x * moveDist;
             m_state.position.z += moveDir.z * moveDist;
