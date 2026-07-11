@@ -4,6 +4,13 @@
 #include "engine/core/platform/window.h"
 #include "engine/rhi/common/rhi_device.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#define DBG_PRINT(msg) OutputDebugStringA(msg)
+#else
+#define DBG_PRINT(msg)
+#endif
+
 #ifdef NGE_HAS_IMGUI
 #include <imgui.h>
 #include <imgui_impl_vulkan.h>
@@ -38,9 +45,12 @@ EditorApp::EditorApp(const EditorConfig& config)
 EditorApp::~EditorApp() = default;
 
 void EditorApp::OnInit() {
+    DBG_PRINT("[EDITOR] OnInit()\n");
     NGE_LOG_INFO("Editor initializing...");
 
+    DBG_PRINT("[EDITOR] calling InitImGui()\n");
     InitImGui();
+    DBG_PRINT("[EDITOR] InitImGui() done\n");
 
     m_menus.push_back({"File", {
         {"New Scene",  [this]() { NGE_LOG_INFO("New Scene"); }},
@@ -161,6 +171,7 @@ void EditorApp::ClearSelection() {
 
 void EditorApp::InitImGui() {
 #ifdef NGE_HAS_IMGUI
+    DBG_PRINT("[EDITOR] InitImGui: CreateContext\n");
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
 
@@ -171,6 +182,7 @@ void EditorApp::InitImGui() {
 
     ImGui::StyleColorsDark();
 
+    DBG_PRINT("[EDITOR] InitImGui: dynamic_cast\n");
     auto* vkDevice = dynamic_cast<nge::rhi::vulkan::VulkanDevice*>(m_device.get());
     if (!vkDevice) {
         NGE_LOG_ERROR("Editor requires Vulkan backend for ImGui");
@@ -186,8 +198,10 @@ void EditorApp::InitImGui() {
     poolInfo.maxSets = 1;
     poolInfo.poolSizeCount = 1;
     poolInfo.pPoolSizes = poolSizes;
+    DBG_PRINT("[EDITOR] InitImGui: vkCreateDescriptorPool\n");
     vkCreateDescriptorPool(vkDevice->GetVkDevice(), &poolInfo, nullptr, &g_imguiDescriptorPool);
 
+    DBG_PRINT("[EDITOR] InitImGui: ImGui_ImplWin32_Init\n");
     ImGui_ImplWin32_Init(m_window->GetNativeHandle());
 
     ImGui_ImplVulkan_InitInfo initInfo{};
@@ -210,11 +224,13 @@ void EditorApp::InitImGui() {
     VkFormat colorFormat = vkDevice->GetVkSwapchainFormat();
     initInfo.PipelineRenderingCreateInfo.pColorAttachmentFormats = &colorFormat;
 
+    DBG_PRINT("[EDITOR] InitImGui: ImGui_ImplVulkan_Init\n");
     if (!ImGui_ImplVulkan_Init(&initInfo)) {
         NGE_LOG_ERROR("Failed to initialize ImGui Vulkan backend");
         return;
     }
 
+    DBG_PRINT("[EDITOR] InitImGui: CreateFontsTexture\n");
     ImGui_ImplVulkan_CreateFontsTexture();
 
     m_renderPipeline.SetPostRenderCallback([this](nge::rhi::ICommandList* /*cmd*/) {
