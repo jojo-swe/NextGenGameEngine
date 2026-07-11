@@ -48,3 +48,12 @@ cooked/
 
 # Logs
 *.log
+
+# Temp test output / scratch files (root-level only)
+/*.txt
+!CMakeLists.txt
+!vcpkg.json
+
+# Temp batch scripts
+_*.bat
+build_*.bat

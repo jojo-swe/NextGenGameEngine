@@ -1,8 +1,0 @@
-P:\Development\personal\games\NextGenGameEngine\tests\core\test_ecs.cpp(25): error: Value of: world.IsAlive(e)
-  Actual: true
-Expected: false
-
-[  FAILED  ] ECS.DestroyEntity (1 ms)
-[17:38:04.327] [info] [job_system.cpp:109] Job system initialized: 4 worker threads
-[17:38:04.330] [info] [job_system.cpp:126] Job system shut down
-[17:38:04.331] [info] [job_system.cpp:109] Job system initialized: 4 worker threads
