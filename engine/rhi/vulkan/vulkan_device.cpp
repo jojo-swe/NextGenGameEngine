@@ -1423,20 +1423,3 @@ VkPipelineStageFlags2 VulkanDevice::ToVkStage(ResourceState state) const {
 }
 
 } // namespace nge::rhi::vulkan
-
-// ─── Device Factory ──────────────────────────────────────────────────────
-
-namespace nge::rhi {
-
-std::unique_ptr<IDevice> IDevice::Create(GraphicsAPI api) {
-    switch (api) {
-        case GraphicsAPI::Vulkan:
-            return std::make_unique<vulkan::VulkanDevice>();
-        case GraphicsAPI::DirectX12:
-            NGE_LOG_ERROR("DX12 backend not yet implemented");
-            return nullptr;
-    }
-    return nullptr;
-}
-
-} // namespace nge::rhi

@@ -61,6 +61,10 @@ void EditorApp::OnInit() {
     InitImGui();
     ED_TRACE("[EDITOR] InitImGui() done\n");
 
+    if (!m_services.InitializeAll()) {
+        throw std::runtime_error("Failed to initialize editor services");
+    }
+
     m_menus.push_back({"File", {
         {"New Scene",  [this]() { NGE_LOG_INFO("New Scene"); }},
         {"Open Scene", [this]() { NGE_LOG_INFO("Open Scene"); }},
@@ -86,27 +90,20 @@ void EditorApp::OnInit() {
         {"About", [this]() { NGE_LOG_INFO("NextGen Engine Editor v0.1"); }},
     }});
 
-    NGE_LOG_INFO("Editor initialized with {} panels", m_panels.size());
+    NGE_LOG_INFO("Editor initialized with {} panels and {} services",
+        m_panelManager.Size(), m_services.Size());
 }
 
 void EditorApp::OnUpdate(f32 deltaTime) {
     HandleShortcuts();
 
-    for (auto& panel : m_panels) {
-        if (panel->IsVisible()) {
-            panel->OnUpdate(deltaTime);
-        }
-    }
+    m_panelManager.UpdateVisible(deltaTime);
 
     BeginImGuiFrame();
     DrawDockSpace();
     DrawMenuBar();
 
-    for (auto& panel : m_panels) {
-        if (panel->IsVisible()) {
-            panel->OnDraw();
-        }
-    }
+    m_panelManager.DrawVisible();
 
     EndImGuiFrame();
 }
@@ -115,20 +112,20 @@ void EditorApp::OnShutdown() {
     if (m_device) {
         m_device->WaitIdle();
     }
+    m_services.ShutdownAll();
+    m_panelManager.Clear();
     ShutdownImGui();
-    m_panels.clear();
     NGE_LOG_INFO("Editor shut down");
 }
 
 void EditorApp::AddPanel(std::unique_ptr<EditorPanel> panel) {
-    m_panels.push_back(std::move(panel));
+    if (!m_panelManager.Register(std::move(panel))) {
+        NGE_LOG_WARN("Rejected invalid or duplicate editor panel registration");
+    }
 }
 
 EditorPanel* EditorApp::GetPanel(const char* name) {
-    for (auto& panel : m_panels) {
-        if (std::string(panel->GetName()) == name) return panel.get();
-    }
-    return nullptr;
+    return name ? m_panelManager.Find(name) : nullptr;
 }
 
 void EditorApp::AddMenuItem(const std::string& menu, const std::string& item, MenuCallback callback) {
