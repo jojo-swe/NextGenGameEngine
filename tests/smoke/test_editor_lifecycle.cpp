@@ -110,9 +110,14 @@ TEST(RHISmoke, CreateDevice) {
         GTEST_SKIP() << "Vulkan not available, skipping RHI smoke test";
     }
 
+#if defined(NGE_PLATFORM_WINDOWS)
+    void* instanceHandle = window->GetInstanceHandle(); // HINSTANCE
+#else
+    void* instanceHandle = nullptr; // No HINSTANCE equivalent on this platform
+#endif
     ASSERT_TRUE(device->Init(
         window->GetNativeHandle(),
-        window->GetInstanceHandle(),
+        instanceHandle,
         320, 240));
 
     EXPECT_GT(device->GetSwapchainWidth(), 0u);
