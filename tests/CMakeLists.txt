@@ -16,6 +16,14 @@ if(NOT NGE_ENABLE_VULKAN)
     list(FILTER TEST_SOURCES EXCLUDE REGEX "test_desclayout_pipestats|test_swapfmt_skinshader|test_sparse_residency_barrier|test_timeline_sem_shader_obj")
 endif()
 
+# The editor lifecycle smoke test exercises the windowing backend, which is
+# currently implemented only for Windows (window_win32.cpp, gated by WIN32 in
+# engine/CMakeLists.txt). Without a window backend, Window::Create is an
+# undefined reference, so exclude the test elsewhere to keep the suite linkable.
+if(NOT WIN32)
+    list(FILTER TEST_SOURCES EXCLUDE REGEX "test_editor_lifecycle")
+endif()
+
 add_executable(EngineTests ${TEST_SOURCES})
 
 target_link_libraries(EngineTests
