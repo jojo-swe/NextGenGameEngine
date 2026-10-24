@@ -74,8 +74,7 @@ void VisibilityRenderer::CreatePipelines() {
     NGE_LOG_DEBUG("Visibility renderer pipelines (deferred until shader compilation)");
 }
 
-void VisibilityRenderer::SetInstances(const InstanceGPUData* instances, u32 count) {
-    (void)instances; // Upload path is deferred until shader compilation is wired up.
+void VisibilityRenderer::SetInstances([[maybe_unused]] const InstanceGPUData* instances, u32 count) {
     m_instanceCount = count;
     // TODO: Upload instance data to GPU via staging buffer
     // m_device->UploadBufferData(m_instanceBuffer, instances, count * sizeof(InstanceGPUData));

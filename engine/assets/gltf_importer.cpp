@@ -92,10 +92,9 @@ void UploadTextureViaStaging(rhi::IDevice* device, rhi::TextureHandle gpuTexture
 
 } // anonymous namespace
 
-GLTFImportResult GLTFImporter::Import(const std::string& path, const GLTFImportOptions& options) {
-#ifndef NGE_HAS_CGLTF
-    static_cast<void>(options);
-#endif
+GLTFImportResult GLTFImporter::Import(
+    const std::string& path,
+    [[maybe_unused]] const GLTFImportOptions& options) {
     GLTFImportResult result;
 
     // Verify file exists

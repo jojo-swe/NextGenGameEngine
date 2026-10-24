@@ -11,7 +11,9 @@ bool LightCullingSystem::Init(rhi::IDevice* device, const ClusterGridConfig& con
 
     u32 totalClusters = GetTotalClusters();
 
-    if (device) {
+    if (!device) {
+        NGE_LOG_WARN("LightCullingSystem::Init: null device — CPU-only mode, no GPU buffers created (tests only)");
+    } else {
         // Light structured buffer
         {
             rhi::BufferDesc desc;

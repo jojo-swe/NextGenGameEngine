@@ -12,7 +12,7 @@ Motor Motor::Multiply(const Motor& a, const Motor& b) {
     // e31' = a.s*b.e31 + a.e31*b.s + a.e12*b.e23 - a.e23*b.e12
     // e12' = a.s*b.e12 + a.e12*b.s + a.e23*b.e31 - a.e31*b.e23
 
-    // Scalar product for all motor coefficients.
+    // Scalar implementation (a future SIMD version must match these formulas):
     f32 rs   = a.s*b.s     - a.e23*b.e23   - a.e31*b.e31   - a.e12*b.e12;
     f32 re23 = a.s*b.e23   + a.e23*b.s     + a.e31*b.e12   - a.e12*b.e31;
     f32 re31 = a.s*b.e31   + a.e31*b.s     + a.e12*b.e23   - a.e23*b.e12;

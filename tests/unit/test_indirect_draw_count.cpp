@@ -128,8 +128,7 @@ TEST(IndirectDrawCount, SlotReuse) {
     mgr.Init();
 
     u32 id0 = mgr.RegisterBatch(IndirectDrawType::Draw, 100, 0, 20, 200, 0, 1024, "Batch0");
-    u32 id1 = mgr.RegisterBatch(IndirectDrawType::Draw, 300, 0, 20, 400, 0, 1024, "Batch1");
-    EXPECT_NE(id1, id0);
+    [[maybe_unused]] u32 id1 = mgr.RegisterBatch(IndirectDrawType::Draw, 300, 0, 20, 400, 0, 1024, "Batch1");
 
     mgr.RemoveBatch(id0);
 

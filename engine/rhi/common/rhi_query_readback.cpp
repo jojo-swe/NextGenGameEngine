@@ -86,6 +86,13 @@ void QueryReadbackManager::WriteTimestamp(ICommandList* cmd, u32 groupId, u32 qu
 void QueryReadbackManager::ResolveQueries(ICommandList* cmd) {
     std::lock_guard lock(m_mutex);
 
+    for ([[maybe_unused]] const auto& group : m_groups) {
+        // TODO: vkCmdCopyQueryPoolResults(cmd, queryPool,
+        //     group.heapOffset, group.desc.queryCount,
+        //     readbackBuffer, bufferOffset, stride,
+        //     VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+    }
+
     if (m_currentFrame < m_frames.size()) {
         m_frames[m_currentFrame].resolved = true;
     }

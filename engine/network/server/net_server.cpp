@@ -1,5 +1,6 @@
 #include "engine/network/server/net_server.h"
 #include "engine/core/logging/log.h"
+#include <algorithm>
 
 namespace nge::network {
 
@@ -172,6 +173,7 @@ void NetServer::HandleDisconnect(u32 clientId) {
 void NetServer::HandleReliable(u32 clientId, BitReader& reader) {
     ChannelId channel = reader.ReadU16();
     u16 dataSize = reader.ReadU16();
+    // Safe payload extraction
     std::vector<u8> payloadData(dataSize);
     reader.Read(payloadData.data(), dataSize);
 

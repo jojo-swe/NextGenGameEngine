@@ -29,6 +29,8 @@ file(GLOB_RECURSE ENGINE_HEADERS
     "${CMAKE_CURRENT_SOURCE_DIR}/network/*.h"
 )
 
+# The Vulkan backend includes <vulkan/vulkan.h> unconditionally, so it can
+# only be compiled when Vulkan integration is enabled.
 if(NOT NGE_ENABLE_VULKAN)
     list(FILTER ENGINE_SOURCES EXCLUDE REGEX "rhi/vulkan/")
 endif()

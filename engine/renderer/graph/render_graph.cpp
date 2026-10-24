@@ -141,6 +141,7 @@ bool RenderGraph::Compile() {
 
     m_compiled = true;
 
+    // Only read by NGE_LOG_DEBUG, which is compiled out above the debug log level.
     [[maybe_unused]] u32 culled = GetCulledPassCount();
     [[maybe_unused]] u32 asyncCount = static_cast<u32>(m_asyncExecutionOrder.size());
     NGE_LOG_DEBUG("Render graph compiled: {} passes ({} active, {} culled, {} async), {} resources",

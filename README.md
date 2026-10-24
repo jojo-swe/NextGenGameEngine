@@ -5,13 +5,70 @@
 [![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://en.cppreference.com/)
 [![CMake](https://img.shields.io/badge/CMake-3.28%2B-blue)](https://cmake.org/)
 
-A next-generation 3D game engine built from scratch in C++20, targeting Vulkan 1.3 with a GPU-driven rendering pipeline, real-time path tracing, and novel mathematical foundations using Projective Geometric Algebra (PGA).
+Rigid transforms are PGA motors: eight floats that carry rotation and translation together.
+
+## Why PGA?
+
+A typical engine splits a rigid transform into a quaternion, a translation vector, and a 4×4 matrix that exists only to multiply them and upload them. Projective Geometric Algebra (PGA, basis ℝ(3,0,1)) keeps that motion as one even-grade element, a **motor**.
+
+The implementation is `nge::pga` in `engine/core/math/pga.h` and `engine/core/math/pga.cpp`:
+
+- **Points, lines, and planes are the same algebra.** `Point` (grade 3), `Line` (grade 2, Plücker coordinates), and `Plane` (grade 1) are the objects. `Join(a, b)` is the line through two points, `Join(a, b, c)` is the plane through three, `Meet` is the line where two planes intersect, and `InnerProduct(plane, point)` is signed distance. `DistancePointPoint`, `DistancePointLine`, `DistancePointPlane`, and `AngleBetweenPlanes` sit on those same types.
+- **A motor is the rigid transform.** `Motor` is eight floats: rotor `(s, e23, e31, e12)` plus ideal part `(e0123, e01, e02, e03)`, stored as two aligned `__m128` halves. That is half the floats of a `math::Mat4`. Build one with `Motor::Rotation`, `Motor::Translation`, or `Motor::FromRotationTranslation` (rotate, then translate). `Motor::Multiply(a, b)` applies `b`, then `a`. `Reverse()` is the inverse of a normalized motor. `Apply` (alias `Transform`) is the sandwich product on a point, a line, or a plane. Motors are rigid: they do not store scale. The product, sandwich, log, and exp in `pga.cpp` are scalar; the `__m128` layout is the storage format.
+- **The stored rotation is a rotor, so composition has no Euler gimbal lock.** `Motor::Rotation` builds a half-angle rotor from an axis and an angle, the same construction as a quaternion. Composing motors never turns that rotor into yaw, pitch, and roll. `FreeFlyController` in `engine/scene/camera/camera.h` still reads mouse yaw and pitch, then builds two axis-angle motors with `Motor::Rotation` and `Motor::Multiply`.
+- **Interpolation and skinning use that one object.** `Motor::Slerp(a, b, t)` is the geodesic `exp(t * log(b * ~a)) * a`, via `Motor::Log` and `Motor::Exp`. `AnimationSystem::InterpolateKeyframes` and the blend-tree `Blend` / `Additive` paths in `engine/animation/animation_system.cpp` call `Motor::Slerp` on bone motors. Skinning is `Motor::Multiply(worldMotor, invBindPose)`, then `ToMat4()` into `skinningMatrices`.
+- **The scene graph stores motors.** `scene::Transform` holds `localMotor` and `worldMotor` (`engine/scene/transform/transform.h`). `TransformSystem::UpdateHierarchy` sets `worldMotor = Motor::Multiply(parentWorld, localMotor)`. `Camera::GetViewMatrix` is `worldMotor.Reverse().ToMat4()`. Projection matrices stay `math::Mat4`; `ToMat4()` is the GPU boundary.
+
+`PhysicsWorld::GetMotor` and `SetMotor` in `engine/physics/physics_world.cpp` round-trip translation through `Motor::Translation` and `Motor::Transform`. The rotation half of that bridge is still a TODO, so physics is not a full motor pipeline yet.
+
+Coverage for identity, translation, rotation, `Multiply`, `Reverse`, `Slerp`, `ToMat4`, `Join`/`ThroughPoints`, distances, and `Meet` is in `tests/core/test_pga.cpp`.
+
+### Matrix style vs this API
+
+```cpp
+// Usual split (illustrative — these helpers are not in this repo).
+Quat q = QuatFromAxisAngle(axis, angle);
+Mat4 local = Mul(Translate(pos), QuatToMat4(q));
+Mat4 world = Mul(parent, local);
+Vec3 moved = TransformPoint(world, p);
+Quat qMid = Slerp(q0, q1, t);    // rotation only
+Vec3 pMid = Lerp(pos0, pos1, t); // translation apart
+```
+
+```cpp
+// nge::pga — engine/core/math/pga.h
+using nge::pga::Motor;
+using nge::pga::Point;
+
+Motor local = Motor::FromRotationTranslation(axis, angle, pos);
+Motor world = Motor::Multiply(parent, local); // apply local, then parent
+Point moved = world.Apply(p);
+
+Motor mid = Motor::Slerp(a, b, t); // rotation and translation on one geodesic
+nge::math::Mat4 gpu = world.ToMat4();
+```
+
+## Also in the tree
+
+The rest of the engine is C++20 (`nge` types in `engine/core/types.h`), a Vulkan 1.3 backend in `engine/rhi/vulkan/`, a GPU-driven pipeline under `engine/renderer/pipeline/`, and a path tracer in `shaders/pathtracing/pathtracer.hlsl`. Several of those GPU passes are still unwired; the motor API above is the path with a live call site and tests.
+
+```mermaid
+flowchart LR
+  Point -->|Join| Line
+  Point -->|Join| Plane
+  Plane -->|Meet| Line
+  Motor -->|Apply| Point
+  Motor -->|Apply| Line
+  Motor -->|Apply| Plane
+  Motor -->|Slerp and Multiply| Motor
+  Motor -->|ToMat4| Mat4["math::Mat4"]
+```
 
 ## Key Features
 
 - **GPU-Driven Rendering** — Visibility buffer, mesh shaders, meshlet LOD selection, two-pass HZB occlusion culling, indirect draw argument builder, clustered light culling, GPU frustum culling, instance manager, mesh registry, GPU scene buffer, draw call merger, indirect cull pipeline, occlusion feedback, texture atlas
 - **Real-Time Path Tracing** — ReSTIR direct illumination + hybrid GI with SH probes + SVGF denoiser
-- **Projective Geometric Algebra** — PGA motors for all transforms (rotation + translation in a single algebraic element)
+- **Projective Geometric Algebra** — PGA motors for scene and animation transforms (see [Why PGA?](#why-pga); `ToMat4()` at the GPU boundary)
 - **Render Graph** — Automatic pass scheduling with async compute, barrier insertion, transient resource aliasing, dead-code elimination, cross-queue timeline semaphore sync, resource versioning (RAW/WAR/WAW hazards), work graph scheduler (multi-queue dependency resolution), frame graph compiler (pass ordering + aliasing optimization), pass profiler (auto-injected GPU timers), transient resource pool (typed allocation + eviction)
 - **Scene Renderer** — Top-level render loop tying ECS → mesh extraction → GPU upload → culling → render graph → present, TAA jitter via Halton sequence
 - **Render Compositor** — Orchestrates rasterization/path-tracing paths, full post-process chain, async compute passes

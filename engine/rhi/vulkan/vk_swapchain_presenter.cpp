@@ -27,7 +27,7 @@ void SwapchainPresenter::Shutdown() {
 }
 
 u32 SwapchainPresenter::AcquireNextImage() {
-    auto& sync = m_frameSyncs[m_currentFrame];
+    [[maybe_unused]] auto& sync = m_frameSyncs[m_currentFrame];
 
     // TODO: Wait for this frame's fence
     // vkWaitForFences(device, 1, &sync.inFlightFence, VK_TRUE, UINT64_MAX);
@@ -65,7 +65,7 @@ void SwapchainPresenter::BlitToSwapchain(ICommandList* cmd, TextureHandle source
 }
 
 bool SwapchainPresenter::Present() {
-    auto& sync = m_frameSyncs[m_currentFrame];
+    [[maybe_unused]] auto& sync = m_frameSyncs[m_currentFrame];
 
     // TODO: Submit command buffer with proper semaphore signaling
     // VkSubmitInfo submitInfo{};

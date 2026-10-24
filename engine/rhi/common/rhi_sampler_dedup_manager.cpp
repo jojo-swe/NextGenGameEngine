@@ -233,8 +233,7 @@ SamplerDesc SamplerDedupManager::Canonicalize(const SamplerDesc& desc) const {
     return canonical;
 }
 
-u64 SamplerDedupManager::CreateSamplerHandle(const SamplerDesc& desc) {
-    (void)desc; // Native sampler creation is deferred until the Vulkan backend is wired.
+u64 SamplerDedupManager::CreateSamplerHandle([[maybe_unused]] const SamplerDesc& desc) {
     // TODO: vkCreateSampler with the provided desc
     // For now return a unique placeholder handle
     return m_nextHandle++;

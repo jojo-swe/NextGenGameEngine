@@ -1,5 +1,6 @@
 #include "engine/rhi/common/rhi_subpass_input_manager.h"
 #include "engine/core/logging/log.h"
+#include <algorithm>
 
 namespace nge::rhi {
 

@@ -60,6 +60,8 @@ public:
         u32 maxResources = 512;
     };
 
+    // No default argument: Config's default member initializers cannot be
+    // used in a default argument while the enclosing class is incomplete.
     bool Init(IDevice* device, const Config& config);
     bool Init(IDevice* device) { return Init(device, Config{}); }
     void Shutdown();

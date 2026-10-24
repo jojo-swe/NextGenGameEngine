@@ -239,7 +239,7 @@ TEST(SamplerDedupManager, PurgeUnreferenced) {
     auto d3 = MakeDesc(SamplerFilter::Linear, SamplerFilter::Nearest);
 
     u64 h1 = mgr.Acquire(d1);
-    u64 h2 = mgr.Acquire(d2);
+    [[maybe_unused]] u64 h2 = mgr.Acquire(d2);
     u64 h3 = mgr.Acquire(d3);
 
     // Release h1 and h3, keep h2

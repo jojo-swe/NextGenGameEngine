@@ -5,6 +5,10 @@
 #include "engine/rhi/vulkan/vulkan_device.h"
 #endif
 
+// Device factory. Lives in rhi/common (always compiled) so executables that
+// link the engine without the Vulkan backend still resolve IDevice::Create —
+// they get a clear error and nullptr instead of a link failure.
+
 namespace nge::rhi {
 
 std::unique_ptr<IDevice> IDevice::Create(GraphicsAPI api) {

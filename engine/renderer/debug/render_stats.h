@@ -63,6 +63,8 @@ public:
         bool enableDetailedTimers = false;
     };
 
+    // No default argument: Config's default member initializers cannot be
+    // used in a default argument while the enclosing class is incomplete.
     bool Init(const Config& config);
     bool Init() { return Init(Config{}); }
     void Shutdown();

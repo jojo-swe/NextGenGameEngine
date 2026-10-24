@@ -114,6 +114,7 @@ void SubmissionBatcher::FlushBatch(QueueType queue, QueueBatch& batch) {
     // vkQueueSubmit2(GetQueue(queue), submitInfoCount, submitInfos, lastFence);
 
     m_batchedSubmits++;
+    // Only read by NGE_LOG_DEBUG, which is compiled out above the debug log level.
     [[maybe_unused]] u32 entryCount = static_cast<u32>(batch.entries.size());
 
     NGE_LOG_DEBUG("Submission batcher: flushed {} entries on queue {} as 1 batched submit",
@@ -129,7 +130,7 @@ u32 SubmissionBatcher::GetPendingSubmitCount(QueueType queue) const {
         case QueueType::Graphics: return static_cast<u32>(m_graphicsBatch.entries.size());
         case QueueType::Compute:  return static_cast<u32>(m_computeBatch.entries.size());
         case QueueType::Transfer: return static_cast<u32>(m_transferBatch.entries.size());
-        case QueueType::Count:    return 0;
+        case QueueType::Count:    break;
     }
     return 0;
 }

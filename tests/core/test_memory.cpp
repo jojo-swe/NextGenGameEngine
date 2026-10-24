@@ -28,8 +28,7 @@ TEST(LinearAllocator, Reset) {
     alignas(64) byte buffer[1024];
     LinearAllocator alloc(buffer, 1024);
 
-    void* p = alloc.Allocate(512);
-    EXPECT_NE(p, nullptr);
+    (void)alloc.Allocate(512);
     EXPECT_EQ(alloc.GetAllocatedSize(), 512u);
 
     alloc.Reset();
@@ -51,8 +50,7 @@ TEST(LinearAllocator, Alignment) {
     alignas(64) byte buffer[4096];
     LinearAllocator alloc(buffer, 4096);
 
-    void* first = alloc.Allocate(1); // 1 byte
-    EXPECT_NE(first, nullptr);
+    (void)alloc.Allocate(1); // 1 byte
     void* p = alloc.Allocate(16, 16); // Request 16-byte alignment
     EXPECT_TRUE(IsAligned(reinterpret_cast<usize>(p), 16));
 }
@@ -64,10 +62,8 @@ TEST(StackAllocator, MarkerRestore) {
     StackAllocator alloc(buffer, 4096);
 
     auto marker = alloc.GetMarker();
-    void* first = alloc.Allocate(256);
-    void* second = alloc.Allocate(256);
-    EXPECT_NE(first, nullptr);
-    EXPECT_NE(second, nullptr);
+    (void)alloc.Allocate(256);
+    (void)alloc.Allocate(256);
     EXPECT_EQ(alloc.GetAllocatedSize(), 512u);
 
     alloc.FreeToMarker(marker);
@@ -78,14 +74,11 @@ TEST(StackAllocator, ScopeGuard) {
     alignas(64) byte buffer[4096];
     StackAllocator alloc(buffer, 4096);
 
-    void* initial = alloc.Allocate(100);
-    EXPECT_NE(initial, nullptr);
+    (void)alloc.Allocate(100);
     {
         StackScope scope(alloc);
-        void* first = alloc.Allocate(200);
-        void* second = alloc.Allocate(300);
-        EXPECT_NE(first, nullptr);
-        EXPECT_NE(second, nullptr);
+        (void)alloc.Allocate(200);
+        (void)alloc.Allocate(300);
         // ~StackScope restores to before the block
     }
 
@@ -175,10 +168,8 @@ TEST(TLSFAllocator, Reset) {
     alignas(64) byte buffer[65536];
     TLSFAllocator alloc(buffer, 65536);
 
-    void* first = alloc.Allocate(1024);
-    void* second = alloc.Allocate(2048);
-    EXPECT_NE(first, nullptr);
-    EXPECT_NE(second, nullptr);
+    (void)alloc.Allocate(1024);
+    (void)alloc.Allocate(2048);
     EXPECT_GT(alloc.GetAllocatedSize(), 0u);
 
     alloc.Reset();

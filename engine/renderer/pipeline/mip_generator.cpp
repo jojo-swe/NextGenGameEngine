@@ -135,7 +135,8 @@ void MipGenerator::DispatchMipLevel(rhi::ICommandList* cmd, rhi::TextureHandle t
         f32 invDstWidth;
         f32 invDstHeight;
     };
-    [[maybe_unused]] MipConstants constants{};
+    // Consumed by cmd->PushConstants once the dispatch above is wired up.
+    [[maybe_unused]] MipConstants constants;
 
     constants.srcMip = srcMip;
     constants.dstMip = dstMip;

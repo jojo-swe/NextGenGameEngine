@@ -53,6 +53,13 @@ bool AliasingValidator::Validate() {
         }
     }
 
+    // Sort by id so violations are reported deterministically (unordered_map
+    // iteration order differs between standard library implementations).
+    std::sort(transients.begin(), transients.end(),
+              [](const ResourceAllocation* x, const ResourceAllocation* y) {
+                  return x->resourceId < y->resourceId;
+              });
+
     // O(n^2) pairwise check — acceptable for debug mode
     for (size_t i = 0; i < transients.size(); ++i) {
         for (size_t j = i + 1; j < transients.size(); ++j) {

@@ -100,9 +100,8 @@ SubAllocatorStats BufferSubAllocator::GetStats() const {
     for (const auto& heap : m_heaps) {
         u64 usedPlusFree = heap.allocated;
         for (const auto& b : heap.freeBlocks) usedPlusFree += b.size;
-        u64 tailFree = heap.capacity - usedPlusFree;
-        stats.totalFree += tailFree;
-        largestFree = std::max(largestFree, tailFree);
+        [[maybe_unused]] u64 tailFree = heap.capacity - usedPlusFree;
+        // Tail free space is implicit — not tracked as a free block
     }
 
     stats.fragmentation = stats.totalFree > 0
@@ -129,14 +128,10 @@ SubAllocation BufferSubAllocator::AllocateFromHeap(u32 heapIndex, u64 size, u32 
             alloc.heapIndex = heapIndex;
             alloc.valid = true;
 
-            // Preserve free space on both sides of the aligned allocation.
-            const u64 tailSize = it->size - totalNeeded;
-            if (padding > 0) {
-                it->size = padding;
-                if (tailSize > 0) {
-                    heap.freeBlocks.insert(it + 1, FreeBlock{alignedOffset + size, tailSize});
-                }
-            } else if (tailSize > 0) {
+            // Shrink or remove free block.
+            // NOTE: alignment padding at the block's start is currently NOT
+            // re-added as a free block, so those bytes are lost until Reset.
+            if (it->size - totalNeeded > 0) {
                 it->offset = alignedOffset + size;
                 it->size = tailSize;
             } else {
