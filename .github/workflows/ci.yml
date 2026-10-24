@@ -31,7 +31,7 @@ jobs:
           test -f CMakeLists.txt
           test -f CMakePresets.json
           test -f vcpkg.json
-          test -f frolicking-tumbling-pond.md
+          test -f MASTERPLAN.md
 
       - name: Validate JSON files
         run: |
@@ -52,8 +52,10 @@ jobs:
         include:
           - os: windows-latest
             configure_preset: windows-debug
+            compiler_flags: -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl
           - os: ubuntu-latest
             configure_preset: linux-debug
+            compiler_flags: ""
 
     steps:
       - name: Checkout
@@ -80,8 +82,15 @@ jobs:
         with:
           vcpkgJsonGlob: "vcpkg.json"
 
+      - name: Fetch full vcpkg history for versioned dependencies
+        run: python -c "import subprocess; repo=['git','-C','vcpkg']; shallow=subprocess.check_output(repo+['rev-parse','--is-shallow-repository'], text=True).strip(); subprocess.run(repo+['fetch','--unshallow','origin'], check=True) if shallow == 'true' else None"
+
+      - name: Set up MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
       - name: Configure
-        run: cmake --preset ${{ matrix.configure_preset }} -DNGE_ENABLE_VULKAN=OFF -DNGE_BUILD_SAMPLES=OFF
+        run: cmake --preset ${{ matrix.configure_preset }} ${{ matrix.compiler_flags }} -DNGE_ENABLE_VULKAN=OFF -DNGE_BUILD_SAMPLES=OFF -DNGE_BUILD_EDITOR=OFF -DNGE_BUILD_TESTS=ON -DVCPKG_MANIFEST_FEATURES=""
 
       - name: Build
         run: cmake --build build --config Debug --parallel
@@ -118,8 +127,14 @@ jobs:
         with:
           vcpkgJsonGlob: "vcpkg.json"
 
+      - name: Fetch full vcpkg history for versioned dependencies
+        run: python -c "import subprocess; repo=['git','-C','vcpkg']; shallow=subprocess.check_output(repo+['rev-parse','--is-shallow-repository'], text=True).strip(); subprocess.run(repo+['fetch','--unshallow','origin'], check=True) if shallow == 'true' else None"
+
+      - name: Set up MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
+
       - name: Configure (full manifest features)
-        run: cmake --preset windows-debug -DNGE_ENABLE_VULKAN=OFF -DNGE_BUILD_SAMPLES=ON -DVCPKG_MANIFEST_FEATURES="rendering;gameplay"
+        run: cmake --preset windows-debug -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DNGE_ENABLE_VULKAN=OFF -DNGE_BUILD_SAMPLES=ON -DNGE_BUILD_EDITOR=OFF -DNGE_BUILD_TESTS=ON -DVCPKG_MANIFEST_FEATURES="rendering;gameplay"
 
       - name: Build
         run: cmake --build build --config Debug --parallel

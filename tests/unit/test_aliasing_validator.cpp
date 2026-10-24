@@ -104,8 +104,8 @@ TEST(AliasingValidator, DetectsViolation) {
     EXPECT_EQ(validator.GetViolations().size(), 1u);
 
     const auto& v = validator.GetViolations()[0];
-    EXPECT_EQ(v.resourceA, 1u);
-    EXPECT_EQ(v.resourceB, 2u);
+    EXPECT_TRUE((v.resourceA == 1u && v.resourceB == 2u) ||
+                (v.resourceA == 2u && v.resourceB == 1u));
     EXPECT_EQ(v.overlapOffset, 2048u);
     EXPECT_EQ(v.overlapSize, 2048u);
     EXPECT_FALSE(v.message.empty());

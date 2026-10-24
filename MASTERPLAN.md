@@ -4,7 +4,8 @@ This is the execution roadmap for turning NextGenGameEngine from a broad engine
 prototype into a reliable, demonstrable game engine. The long-term vision stays
 ambitious, but near-term work is judged by integrated, observable results.
 
-Last grounded against the repository: **2026-07-11**.
+G0 build/test evidence refreshed: **2026-10-24**. Broader feature inventory last
+grounded against the repository: **2026-07-11**.
 
 ## North star
 
@@ -38,9 +39,10 @@ shipped engine features.
   scripting, audio, physics integration, serialization, prefabs, and parts of
   Vulkan descriptor handling.
 - The README describes more capability than has been demonstrated end to end.
-- The existing build directory currently discovers no CTest tests, so a clean
-  configure/build/test cycle must be re-established.
-- CI repo sanity requires `frolicking-tumbling-pond.md`, which is absent.
+- The old `build/` cache discovers no CTest tests. Fresh G0 build directories
+  restore registration; evidence and remaining gate checks are recorded below.
+- Hosted baseline and full Windows/Linux CI evidence is recorded in WP-G0-001;
+  later source or workflow changes must rerun those checks.
 - Runtime logs and diagnostic output at repository root obscure normal state.
 - Breadth is growing faster than integration confidence.
 
@@ -103,6 +105,72 @@ G0 Trustworthy repository
 - The full Windows dependency configuration compiles.
 - Repository root remains clean after building and running tests.
 - No required CI file is missing.
+
+### WP-G0-001 — Reliable Vulkan-off build and test chain
+
+Outcome: matching baseline CI configurations and CTest runs that fail when no
+tests are registered. **G0 remains open.**
+
+In scope: CI-required files, explicit backend/feature/test options, separate
+Windows build directories, and blockers reproduced by their test suites.
+
+Reproduction and implementation:
+
+- The historical design document was deliberately deleted. Repo sanity now
+  checks the maintained `MASTERPLAN.md` instead.
+- `ctest --test-dir build -C Debug --output-on-failure --no-tests=error`
+  reproduced zero discovery with exit code 8. Fresh configuration generated
+  root test registration without another CMake change.
+- The initial baseline run failed `JobSystemTest.ManyJobs` (1,001 executions
+  for 1,000 submissions). After the job system moved to owner-thread-only
+  Chase-Lev deques, submissions are limited to the main thread or a job. The
+  batch regression checks exactly-once execution under that supported path.
+- Pending work is counted before a job becomes visible to a worker and reset
+  during initialization. The 4,096-job batch regression and `ManyJobs` passed
+  in the hosted baseline lanes.
+- `AppSmoke.InitUpdateShutdown` expected a Vulkan application in a build with
+  Vulkan disabled. It now reports a capability skip before starting the
+  application, consistent with the existing RHI smoke test.
+- Both glTF fixture tests previously skipped because `tests/fixtures` was
+  resolved from the build tree. Their source fixture directory is now supplied
+  by the test target, and a missing checked-in fixture fails the test. All three
+  importer tests passed in the full dependency configuration; the baseline
+  explicitly skips the two tests requiring cgltf.
+
+Verification commands: the G0 commands in `README.md`, with `--parallel 8`
+for the local Debug builds. Full dependency verification uses
+`build/g0-full`, samples ON, and `rendering;gameplay`, while Vulkan/editor stay
+OFF and tests stay ON.
+
+| Check | Local result, 2026-10-24 |
+|---|---|
+| Required CI files and JSON parsing | Passed |
+| Fresh Windows baseline configure/build | Passed |
+| Baseline CTest | 1,366 discovered: 1,362 passed, 4 capability skips, 0 failures |
+| Full Windows dependency configure | Passed |
+| Full Windows build | Passed, including SampleTriangle compilation/linking |
+| Full Windows CTest | 1,366 discovered: 1,364 passed, 2 Vulkan skips, 0 failures |
+| Hosted Linux baseline CI | 1,361/1,361 passed; [GitHub Actions run](https://github.com/jojo-swe/NextGenGameEngine/actions/runs/40117717697) |
+| Hosted Windows baseline CI | 1,366/1,366 passed; [GitHub Actions run](https://github.com/jojo-swe/NextGenGameEngine/actions/runs/40117717697) |
+| Hosted full Windows CI | 1,366/1,366 passed; SampleTriangle built; [GitHub Actions run](https://github.com/jojo-swe/NextGenGameEngine/actions/runs/40117717697) |
+| Vulkan validation/runtime | Not performed; Vulkan disabled in all listed configurations |
+
+Toolchain: CMake 4.4.4, Ninja 1.13.2, MSVC 19.51.36260, manifest baseline
+`e238b4b4a4239829e1fde2c7db2ab668b65ae1dd`. Diagnostics are under
+`build/g0-core/` and `build/g0-full/`; no machine-specific tool paths are needed
+in tracked configuration. Final suite logs are `build/g0-core/ctest-final.log`
+and `build/g0-full/ctest-final.log`. The baseline skips the RHI/application
+Vulkan tests and the two cgltf tests; the full configuration skips only the two
+Vulkan tests.
+
+Remaining G0 work: smoke labels, generated runtime artifact hygiene, CMake
+requirement alignment, and the broader README maturity audit. Application
+cleanup after partial initialization failure remains G1 work; skipping
+unavailable GPU tests does not verify that path.
+
+Rollback: revert this package's CI, job queue, regression/smoke, fixture wiring,
+and documentation changes together. No gate is promoted solely by local CPU
+tests.
 
 ## Phase 1 — Stabilize the real editor/render loop
 
@@ -345,12 +413,10 @@ numbers chosen without measurement.
 
 ### Now — unblock G0
 
-1. Resolve the missing CI-required design document.
-2. Reconfigure a clean build and restore CTest discovery.
-3. Run the Vulkan-off build/test matrix locally where possible.
-4. Run the full feature build and capture the first real compiler/runtime fault.
-5. Clean runtime artifacts from repository root.
-6. Rewrite README feature claims using the maturity vocabulary.
+1. Add a focused smoke label with explicit CPU/GPU capability boundaries.
+2. Clean runtime artifacts from repository root.
+3. Align CMake requirements between README, root CMake, and preset schema.
+4. Rewrite README feature claims using the maturity vocabulary.
 
 ### Next — reach G1 and G2
 

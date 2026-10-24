@@ -2,29 +2,14 @@
 
 #include "engine/core/app/application.h"
 #include "engine/core/types.h"
+#include "editor/core/panel_manager.h"
+#include "editor/core/service_container.h"
 #include <vector>
 #include <memory>
 #include <string>
 #include <functional>
 
 namespace nge::editor {
-
-// ─── Editor Panel Interface ──────────────────────────────────────────────
-// All editor panels (viewport, hierarchy, inspector, etc.) implement this.
-
-class EditorPanel {
-public:
-    virtual ~EditorPanel() = default;
-
-    virtual const char* GetName() const = 0;
-    virtual void OnDraw() = 0;                   // ImGui draw
-    virtual void OnUpdate(f32 deltaTime) = 0;    // Logic update
-    virtual bool IsVisible() const { return m_visible; }
-    virtual void SetVisible(bool v) { m_visible = v; }
-
-protected:
-    bool m_visible = true;
-};
 
 // ─── Editor Configuration ────────────────────────────────────────────────
 
@@ -58,6 +43,8 @@ public:
     // Panel management
     void AddPanel(std::unique_ptr<EditorPanel> panel);
     EditorPanel* GetPanel(const char* name);
+    PanelManager& GetPanelManager() { return m_panelManager; }
+    EditorServiceContainer& GetServices() { return m_services; }
 
     // Menu bar callbacks
     using MenuCallback = std::function<void()>;
@@ -85,7 +72,8 @@ private:
     void HandleShortcuts();
 
     EditorConfig m_editorConfig;
-    std::vector<std::unique_ptr<EditorPanel>> m_panels;
+    PanelManager m_panelManager;
+    EditorServiceContainer m_services;
 
     // Menu system
     struct MenuItem {

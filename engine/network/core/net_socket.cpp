@@ -31,6 +31,12 @@ using AddrLen = socklen_t;
 
 namespace nge::network {
 
+#if defined(NGE_PLATFORM_WINDOWS)
+using SocketLength = int;
+#else
+using SocketLength = socklen_t;
+#endif
+
 bool UDPSocket::s_initialized = false;
 
 bool UDPSocket::InitSockets() {

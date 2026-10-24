@@ -4,7 +4,7 @@ namespace nge::pga {
 
 // ─── Motor Geometric Product (Composition) ───────────────────────────────
 // M_result = a * b (apply b first, then a)
-// Uses SIMD for the 8-component even-subalgebra product.
+// The current implementation uses explicit scalar equations for correctness.
 Motor Motor::Multiply(const Motor& a, const Motor& b) {
     // Rotor-rotor product (scalar part of result)
     // s' = a.s*b.s - a.e23*b.e23 - a.e31*b.e31 - a.e12*b.e12

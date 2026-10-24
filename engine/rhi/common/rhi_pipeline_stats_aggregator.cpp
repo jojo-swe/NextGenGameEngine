@@ -179,7 +179,6 @@ PipelineStatsAggregatorStats PipelineStatsAggregator::GetStats() const {
             totalVtx += entry.stats.vertexShaderInvocations;
             totalFrag += entry.stats.fragmentShaderInvocations;
             totalCompute += entry.stats.computeShaderInvocations;
-            totalEntries++;
         }
     }
 

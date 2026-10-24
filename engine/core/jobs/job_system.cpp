@@ -161,9 +161,9 @@ JobHandle JobSystem::Submit(JobFunction fn) {
     // Push to the calling thread's own deque (Chase-Lev owner-only Push);
     // idle workers redistribute the load by stealing. The deque owns the
     // Job allocation until an executor takes and deletes it.
+    s_jobCount.fetch_add(1, std::memory_order_release);
     s_deques[t_ownDeque]->Push(job);
 
-    s_jobCount.fetch_add(1, std::memory_order_release);
     s_wakeCondition.notify_one();
 
     return handle;
@@ -173,12 +173,12 @@ JobHandle JobSystem::SubmitBatch(JobFunction* functions, u32 count) {
     auto* counter = new std::atomic<i32>(static_cast<i32>(count));
     JobHandle handle{counter};
 
+    s_jobCount.fetch_add(count, std::memory_order_release);
     for (u32 i = 0; i < count; ++i) {
         auto* job = new Job{std::move(functions[i]), counter};
         s_deques[t_ownDeque]->Push(job);
     }
 
-    s_jobCount.fetch_add(count, std::memory_order_release);
     s_wakeCondition.notify_all();
 
     return handle;

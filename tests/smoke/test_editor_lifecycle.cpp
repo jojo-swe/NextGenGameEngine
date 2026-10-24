@@ -14,6 +14,7 @@ using namespace nge::rhi;
 
 // ─── Window lifecycle smoke tests ──────────────────────────────────────────
 
+#if defined(NGE_PLATFORM_WINDOWS)
 TEST(WindowLifecycle, CreateAndDestroy) {
     WindowDesc desc;
     desc.title  = "Test Window";
@@ -93,10 +94,12 @@ TEST(WindowLifecycle, EventCallback) {
     // but setting it should not crash.
     SUCCEED();
 }
+#endif
 
 // ─── RHI device creation smoke test (requires Vulkan) ──────────────────────
 
 TEST(RHISmoke, CreateDevice) {
+#if defined(NGE_PLATFORM_WINDOWS)
     WindowDesc desc;
     desc.title  = "RHI Test";
     desc.width  = 320;
@@ -125,6 +128,9 @@ TEST(RHISmoke, CreateDevice) {
 
     device->WaitIdle();
     device->Shutdown();
+#else
+    GTEST_SKIP() << "RHI smoke test requires the Windows Vulkan surface path";
+#endif
 }
 
 // ─── Application init/shutdown smoke test ──────────────────────────────────

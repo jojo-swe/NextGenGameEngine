@@ -382,6 +382,7 @@ bool ResourceManager::LoadSound([[maybe_unused]] ResourceEntry& entry) {
 
 bool ResourceManager::UploadMeshToGPU([[maybe_unused]] ResourceEntry& entry) {
     if (!m_device) return false;
+    static_cast<void>(entry);
     // TODO: Create vertex/index buffers, upload via staging
     NGE_LOG_DEBUG("Uploading mesh to GPU: {}", entry.path);
     return true;
@@ -389,6 +390,7 @@ bool ResourceManager::UploadMeshToGPU([[maybe_unused]] ResourceEntry& entry) {
 
 bool ResourceManager::UploadTextureToGPU([[maybe_unused]] ResourceEntry& entry) {
     if (!m_device) return false;
+    static_cast<void>(entry);
     // TODO: Create texture, upload via staging buffer
     NGE_LOG_DEBUG("Uploading texture to GPU: {}", entry.path);
     return true;

@@ -249,6 +249,7 @@ TEST(SamplerDedupManager, PurgeUnreferenced) {
     // h1 and h3 were destroyed on Release since refCount hit 0
     // So count should be 1
     EXPECT_EQ(mgr.GetCount(), 1u);
+    EXPECT_EQ(mgr.Acquire(d2), h2);
 
     mgr.Shutdown();
 }

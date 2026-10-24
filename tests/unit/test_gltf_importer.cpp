@@ -8,7 +8,7 @@ using namespace nge;
 using namespace nge::assets;
 
 namespace {
-const char* FIXTURE_DIR = "tests/fixtures";
+const char* FIXTURE_DIR = NGE_TEST_FIXTURE_DIR;
 }
 
 TEST(GLTFImporter, ImportNonExistentFile) {
@@ -21,9 +21,7 @@ TEST(GLTFImporter, ImportNonExistentFile) {
 
 TEST(GLTFImporter, ImportTriangleFixture) {
     std::string path = std::string(FIXTURE_DIR) + "/triangle.gltf";
-    if (!std::filesystem::exists(path)) {
-        GTEST_SKIP() << "Fixture not found: " << path;
-    }
+    ASSERT_TRUE(std::filesystem::exists(path)) << "Fixture not found: " << path;
 
     GLTFImporter importer;
     GLTFImportOptions options;
@@ -59,9 +57,7 @@ TEST(GLTFImporter, ImportTriangleFixture) {
 
 TEST(GLTFImporter, ImportOptionsDisableAnimations) {
     std::string path = std::string(FIXTURE_DIR) + "/triangle.gltf";
-    if (!std::filesystem::exists(path)) {
-        GTEST_SKIP() << "Fixture not found: " << path;
-    }
+    ASSERT_TRUE(std::filesystem::exists(path)) << "Fixture not found: " << path;
 
     GLTFImporter importer;
     GLTFImportOptions options;

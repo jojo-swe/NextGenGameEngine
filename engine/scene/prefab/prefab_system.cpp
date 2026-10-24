@@ -139,7 +139,7 @@ ecs::Entity PrefabManager::Instantiate(ecs::World& world, PrefabId id,
         if (i == 0) {
             // Root node: apply instantiation params
             pos = pos + params.position;
-            // TODO: Compose rotations properly (quaternion multiply)
+            // TODO: Apply prefab rotations once Transform supports quaternion setters.
             scl = {scl.x * params.scale.x, scl.y * params.scale.y, scl.z * params.scale.z};
         }
 

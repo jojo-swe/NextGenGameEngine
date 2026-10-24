@@ -147,6 +147,9 @@ TEST(SubresourceStateTracker, RedundantTransitionDetection) {
     // Transition to same layout should be redundant
     [[maybe_unused]] auto barrier = tracker.TransitionSubresource(1, 0, 0,
         ImageLayout::ShaderReadOnly, static_cast<u32>(AccessFlags::ShaderRead));
+    EXPECT_EQ(barrier.oldLayout, ImageLayout::ShaderReadOnly);
+    EXPECT_EQ(barrier.newLayout, ImageLayout::ShaderReadOnly);
+    EXPECT_EQ(barrier.dstAccessMask, static_cast<u32>(AccessFlags::ShaderRead));
 
     // The state was already ShaderReadOnly with access None, but access mask differs
     // so it shouldn't count as fully redundant unless both match

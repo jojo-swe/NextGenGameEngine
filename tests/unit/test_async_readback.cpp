@@ -24,6 +24,7 @@ TEST(AsyncReadback, SubmitAndComplete) {
     mgr.Init();
 
     bool callbackFired = false;
+    bool callbackSucceeded = false;
     u64 receivedSize = 0;
 
     ReadbackRequest req;
@@ -35,6 +36,7 @@ TEST(AsyncReadback, SubmitAndComplete) {
     req.debugName = "TestReadback";
     req.callback = [&]([[maybe_unused]] const void* data, u64 size, [[maybe_unused]] bool success) {
         callbackFired = true;
+        callbackSucceeded = success;
         receivedSize = size;
     };
 
@@ -50,6 +52,7 @@ TEST(AsyncReadback, SubmitAndComplete) {
 
     mgr.Update(2);
     EXPECT_TRUE(callbackFired);
+    EXPECT_TRUE(callbackSucceeded);
     EXPECT_EQ(receivedSize, 256u);
     EXPECT_EQ(mgr.GetPendingCount(), 0u);
 
