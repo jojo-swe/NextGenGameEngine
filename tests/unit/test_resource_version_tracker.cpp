@@ -180,6 +180,7 @@ TEST(ResourceVersionTracker, MaxGenerationTracked) {
     tracker.Init();
 
     auto vh = tracker.Register(1, "Recycled");
+    EXPECT_EQ(vh.generation, 1u);
     tracker.Destroy(1);               // gen 2
     tracker.Reregister(1, "Recycled");// gen 3
     tracker.Destroy(1);               // gen 4

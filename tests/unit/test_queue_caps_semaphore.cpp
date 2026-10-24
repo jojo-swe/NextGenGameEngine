@@ -130,6 +130,9 @@ TEST(SemaphoreQueueIntegration, AcquirePerQueue) {
 
     auto gfx = queueMgr.GetGraphicsQueue();
     auto compute = queueMgr.GetAsyncComputeQueue();
+    EXPECT_TRUE(gfx.valid);
+    EXPECT_TRUE(compute.valid);
+    EXPECT_NE(gfx.familyIndex, compute.familyIndex);
 
     // Acquire semaphores for cross-queue sync
     u32 gfxToCompute = semPool.Acquire("GfxToCompute");
