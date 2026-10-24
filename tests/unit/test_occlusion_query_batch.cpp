@@ -237,6 +237,7 @@ TEST(OcclusionQueryBatch, FreeAndReallocate) {
 
     u32 s1 = mgr.AllocateQuery(1);
     u32 s2 = mgr.AllocateQuery(2);
+    EXPECT_NE(s2, s1);
     EXPECT_EQ(mgr.AllocateQuery(3), UINT32_MAX); // Full
 
     mgr.FreeQuery(s1);
