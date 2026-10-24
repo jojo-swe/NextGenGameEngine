@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <algorithm>
 #include "engine/core/types.h"
 #include "engine/rhi/common/rhi_accel_struct_compaction.h"
 
@@ -148,6 +149,8 @@ TEST(AccelStructCompaction, GetBuiltStructures) {
 
     auto built = mgr.GetBuiltStructures();
     EXPECT_EQ(built.size(), 2u); // id1 and id3
+    EXPECT_NE(std::find(built.begin(), built.end(), id1), built.end());
+    EXPECT_NE(std::find(built.begin(), built.end(), id3), built.end());
 
     mgr.Shutdown();
 }
@@ -270,6 +273,9 @@ TEST(AccelStructCompaction, StatsTracking) {
 
     u64 id1 = mgr.RegisterBuilt(AccelStructType::BLAS, 100, 200, 100000, 1);
     u64 id2 = mgr.RegisterBuilt(AccelStructType::BLAS, 101, 201, 50000, 1);
+    EXPECT_NE(id1, id2);
+    EXPECT_NE(id1, 0u);
+    EXPECT_NE(id2, 0u);
 
     mgr.MarkQueryPending(id1);
     mgr.SetCompactedSize(id1, 60000);
