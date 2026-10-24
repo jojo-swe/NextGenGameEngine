@@ -7,7 +7,9 @@
 #endif
 #include <WinSock2.h>
 #include <WS2tcpip.h>
+#if defined(_MSC_VER)
 #pragma comment(lib, "ws2_32.lib")
+#endif
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>

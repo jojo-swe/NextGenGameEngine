@@ -29,14 +29,6 @@ bool DescriptorSetAllocator::Init(IDevice* device, const DescriptorAllocatorConf
 }
 
 void DescriptorSetAllocator::Shutdown() {
-    for (auto& frame : m_transientFrames) {
-        for (auto& pool : frame.pools) {
-            // TODO: vkDestroyDescriptorPool(device, pool.handle, nullptr);
-        }
-    }
-    for (auto& pool : m_persistentPools) {
-        // TODO: vkDestroyDescriptorPool(device, pool.handle, nullptr);
-    }
     m_transientFrames.clear();
     m_persistentPools.clear();
 }
