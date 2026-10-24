@@ -174,6 +174,11 @@ TEST(FrameGraphAliaser, ComplexGraphAliasing) {
     u32 postTemp = aliaser.DeclareResource(AliasResourceType::RenderTarget, 8000, 2, 3, "PostTemp");
     u32 finalRT  = aliaser.DeclareResource(AliasResourceType::RenderTarget, 8000, 3, 3, "Final");
 
+    EXPECT_TRUE(aliaser.Overlaps(albedo, normal));
+    EXPECT_FALSE(aliaser.Overlaps(albedo, postTemp));
+    EXPECT_FALSE(aliaser.Overlaps(normal, finalRT));
+    EXPECT_TRUE(aliaser.Overlaps(lighting, postTemp));
+
     auto groups = aliaser.ComputeAliasing();
 
     // Albedo [0,1] and postTemp [2,3] don't overlap -> can alias
@@ -328,6 +333,7 @@ TEST(FrameGraphAliaser, MinResourceSizeFilter) {
 
     // Small resources should not be aliased (below minResourceSize)
     EXPECT_EQ(groups.size(), 2u);
+    EXPECT_NE(aliaser.GetAliasGroup(a), aliaser.GetAliasGroup(b));
 
     aliaser.Shutdown();
 }
