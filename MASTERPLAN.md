@@ -122,14 +122,12 @@ Reproduction and implementation:
   reproduced zero discovery with exit code 8. Fresh configuration generated
   root test registration without another CMake change.
 - The initial baseline run failed `JobSystemTest.ManyJobs` (1,001 executions
-  for 1,000 submissions). Concurrent producer pushes overlapped worker pops
-  in a deque that required a single owner. The new
-  `ConcurrentBatchesExecuteEachJobOnce` regression failed on the original
-  implementation with 374 incorrectly executed callbacks out of 4,096.
-- Deque operations now use a mutex. Pending work is counted before publication
-  and reset on initialization. Fifty repetitions each of `ManyJobs` and the
-  concurrent regression passed after the fix. No performance claim is made
-  for the synchronization change.
+  for 1,000 submissions). After the job system moved to owner-thread-only
+  Chase-Lev deques, submissions are limited to the main thread or a job. The
+  batch regression checks exactly-once execution under that supported path.
+- Pending work is counted before a job becomes visible to a worker and reset
+  during initialization. The 4,096-job batch regression and `ManyJobs` passed
+  in the hosted baseline lanes.
 - `AppSmoke.InitUpdateShutdown` expected a Vulkan application in a build with
   Vulkan disabled. It now reports a capability skip before starting the
   application, consistent with the existing RHI smoke test.

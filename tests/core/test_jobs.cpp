@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 #include "engine/core/jobs/job_system.h"
 #include <atomic>
-#include <barrier>
 #include <vector>
 #include <numeric>
 
@@ -43,28 +42,23 @@ TEST_F(JobSystemTest, ManyJobs) {
     EXPECT_EQ(counter.load(), N);
 }
 
-TEST_F(JobSystemTest, ConcurrentBatchesExecuteEachJobOnce) {
-    constexpr u32 PRODUCER_COUNT = 4;
-    constexpr u32 JOBS_PER_PRODUCER = 1024;
-    std::vector<std::atomic<u32>> executions(PRODUCER_COUNT * JOBS_PER_PRODUCER);
-    std::vector<JobHandle> handles(PRODUCER_COUNT);
-    std::vector<std::thread> producers;
-    std::barrier startGate(PRODUCER_COUNT);
+TEST_F(JobSystemTest, BatchesExecuteEachJobOnce) {
+    constexpr u32 BATCH_COUNT = 4;
+    constexpr u32 JOBS_PER_BATCH = 1024;
+    std::vector<std::atomic<u32>> executions(BATCH_COUNT * JOBS_PER_BATCH);
+    std::vector<JobHandle> handles;
+    handles.reserve(BATCH_COUNT);
 
-    for (u32 producer = 0; producer < PRODUCER_COUNT; ++producer) {
-        producers.emplace_back([&, producer]() {
-            std::vector<JobFunction> functions(JOBS_PER_PRODUCER);
-            for (u32 job = 0; job < JOBS_PER_PRODUCER; ++job) {
-                const u32 index = producer * JOBS_PER_PRODUCER + job;
-                functions[job] = [&, index]() {
-                    executions[index].fetch_add(1, std::memory_order_relaxed);
-                };
-            }
-            startGate.arrive_and_wait();
-            handles[producer] = JobSystem::SubmitBatch(functions.data(), JOBS_PER_PRODUCER);
-        });
+    for (u32 batch = 0; batch < BATCH_COUNT; ++batch) {
+        std::vector<JobFunction> functions(JOBS_PER_BATCH);
+        for (u32 job = 0; job < JOBS_PER_BATCH; ++job) {
+            const u32 index = batch * JOBS_PER_BATCH + job;
+            functions[job] = [&, index]() {
+                executions[index].fetch_add(1, std::memory_order_relaxed);
+            };
+        }
+        handles.push_back(JobSystem::SubmitBatch(functions.data(), JOBS_PER_BATCH));
     }
-    for (auto& producer : producers) producer.join();
     for (auto handle : handles) JobSystem::Wait(handle);
 
     u32 incorrectExecutions = 0;

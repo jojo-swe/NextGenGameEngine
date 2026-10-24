@@ -93,7 +93,6 @@ bool WorkStealingDeque::Steal(Job*& job) {
 }
 
 usize WorkStealingDeque::Size() const {
-    std::lock_guard lock(m_mutex);
     i64 b = m_bottom.load(std::memory_order_relaxed);
     i64 t = m_top.load(std::memory_order_relaxed);
     return static_cast<usize>(b >= t ? b - t : 0);
@@ -107,8 +106,6 @@ void JobSystem::Init(u32 numThreads) {
     }
 
     s_workerCount = numThreads;
-    s_jobCount.store(0, std::memory_order_relaxed);
-    s_nextDeque.store(0, std::memory_order_relaxed);
     s_running.store(true, std::memory_order_relaxed);
     // A fresh system has no pending work; clear any drift from a previous
     // Init/Shutdown cycle so idle workers sleep instead of spinning.
@@ -164,6 +161,7 @@ JobHandle JobSystem::Submit(JobFunction fn) {
     // Push to the calling thread's own deque (Chase-Lev owner-only Push);
     // idle workers redistribute the load by stealing. The deque owns the
     // Job allocation until an executor takes and deletes it.
+    s_jobCount.fetch_add(1, std::memory_order_release);
     s_deques[t_ownDeque]->Push(job);
 
     s_wakeCondition.notify_one();

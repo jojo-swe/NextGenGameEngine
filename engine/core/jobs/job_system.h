@@ -72,7 +72,6 @@ private:
         }
     };
 
-    mutable std::mutex m_mutex;
     alignas(CACHE_LINE_SIZE) std::atomic<i64> m_bottom{0};
     alignas(CACHE_LINE_SIZE) std::atomic<i64> m_top{0};
     std::atomic<CircularArray*> m_array;
