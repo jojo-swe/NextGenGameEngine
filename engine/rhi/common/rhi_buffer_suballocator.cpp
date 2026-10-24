@@ -101,7 +101,8 @@ SubAllocatorStats BufferSubAllocator::GetStats() const {
         u64 usedPlusFree = heap.allocated;
         for (const auto& b : heap.freeBlocks) usedPlusFree += b.size;
         u64 tailFree = heap.capacity - usedPlusFree;
-        // Tail free space is implicit — not tracked as a free block
+        stats.totalFree += tailFree;
+        largestFree = std::max(largestFree, tailFree);
     }
 
     stats.fragmentation = stats.totalFree > 0

@@ -41,7 +41,7 @@ void CmdBufStateValidator::BindPipeline(u64 psoHandle) {
     m_boundPipeline = psoHandle;
 }
 
-void CmdBufStateValidator::BindVertexBuffer(u32 binding) {
+void CmdBufStateValidator::BindVertexBuffer(u32) {
     std::lock_guard lock(m_mutex);
     m_boundState |= static_cast<u32>(BoundStateFlag::VertexBuffer);
 }
@@ -72,7 +72,7 @@ void CmdBufStateValidator::SetScissor() {
     m_boundState |= static_cast<u32>(BoundStateFlag::Scissor);
 }
 
-void CmdBufStateValidator::PushConstants(u32 offset, u32 size) {
+void CmdBufStateValidator::PushConstants(u32, u32) {
     std::lock_guard lock(m_mutex);
     m_boundState |= static_cast<u32>(BoundStateFlag::PushConstants);
 }
