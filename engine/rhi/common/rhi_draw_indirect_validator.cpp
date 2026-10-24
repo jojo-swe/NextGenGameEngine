@@ -79,7 +79,7 @@ bool DrawIndirectValidator::ValidateDraw(const DrawIndirectArgs& args, u32 drawI
 }
 
 bool DrawIndirectValidator::ValidateDrawIndexed(const DrawIndexedIndirectArgs& args, u32 drawIndex,
-                                                  u32 indexBufferSize, u32 vertexBufferSize) {
+                                                  u32 indexBufferSize, u32) {
     std::lock_guard lock(m_mutex);
     m_totalIndexedDraws++;
     bool valid = true;
