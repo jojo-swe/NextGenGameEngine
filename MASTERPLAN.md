@@ -41,8 +41,8 @@ shipped engine features.
 - The README describes more capability than has been demonstrated end to end.
 - The old `build/` cache discovers no CTest tests. Fresh G0 build directories
   restore registration; evidence and remaining gate checks are recorded below.
-- The corrected CI configuration still needs Windows/Linux CI evidence for
-  the current revision.
+- Hosted baseline and full Windows/Linux CI evidence is recorded in WP-G0-001;
+  later source or workflow changes must rerun those checks.
 - Runtime logs and diagnostic output at repository root obscure normal state.
 - Breadth is growing faster than integration confidence.
 
@@ -415,12 +415,10 @@ numbers chosen without measurement.
 
 ### Now — unblock G0
 
-1. Run the corrected baseline/full Windows and baseline Linux lanes in hosted
-   CI and record results for the current revision.
-2. Add a focused smoke label with explicit CPU/GPU capability boundaries.
-3. Clean runtime artifacts from repository root.
-4. Align CMake requirements between README, root CMake, and preset schema.
-5. Rewrite README feature claims using the maturity vocabulary.
+1. Add a focused smoke label with explicit CPU/GPU capability boundaries.
+2. Clean runtime artifacts from repository root.
+3. Align CMake requirements between README, root CMake, and preset schema.
+4. Rewrite README feature claims using the maturity vocabulary.
 
 ### Next — reach G1 and G2
 
