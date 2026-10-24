@@ -202,8 +202,12 @@ TEST_F(AnimationTest, CrossFade) {
 
     // Weights should be ~0.5 each
     for (const auto& node : state->activeNodes) {
-        if (node.clipIndex == clipIdA) EXPECT_NEAR(node.weight, 0.5f, 0.05f);
-        if (node.clipIndex == clipIdB) EXPECT_NEAR(node.weight, 0.5f, 0.05f);
+        if (node.clipIndex == clipIdA) {
+            EXPECT_NEAR(node.weight, 0.5f, 0.05f);
+        }
+        if (node.clipIndex == clipIdB) {
+            EXPECT_NEAR(node.weight, 0.5f, 0.05f);
+        }
     }
     EXPECT_TRUE(state->crossFade.active);
 
