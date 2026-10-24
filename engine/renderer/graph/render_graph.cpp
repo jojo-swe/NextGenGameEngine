@@ -141,8 +141,8 @@ bool RenderGraph::Compile() {
 
     m_compiled = true;
 
-    u32 culled = GetCulledPassCount();
-    u32 asyncCount = static_cast<u32>(m_asyncExecutionOrder.size());
+    [[maybe_unused]] u32 culled = GetCulledPassCount();
+    [[maybe_unused]] u32 asyncCount = static_cast<u32>(m_asyncExecutionOrder.size());
     NGE_LOG_DEBUG("Render graph compiled: {} passes ({} active, {} culled, {} async), {} resources",
                   m_passes.size(), m_passes.size() - culled, culled, asyncCount, m_resources.size());
     return true;
