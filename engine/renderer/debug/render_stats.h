@@ -63,7 +63,8 @@ public:
         bool enableDetailedTimers = false;
     };
 
-    bool Init(const Config& config = {});
+    bool Init(const Config& config);
+    bool Init() { return Init(Config{}); }
     void Shutdown();
 
     // Per-frame lifecycle

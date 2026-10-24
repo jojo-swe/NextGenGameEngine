@@ -52,7 +52,8 @@ public:
         u32 framesInFlight = 3;
     };
 
-    bool Init(IDevice* device, const Config& config = {});
+    bool Init(IDevice* device, const Config& config);
+    bool Init(IDevice* device) { return Init(device, Config{}); }
     void Shutdown();
 
     // Per-frame lifecycle
