@@ -58,6 +58,9 @@ jobs:
         with:
           vcpkgJsonGlob: "vcpkg.json"
 
+      - name: Fetch vcpkg manifest baseline
+        run: python -c "import json, subprocess; baseline=json.load(open('vcpkg.json', encoding='utf-8'))['builtin-baseline']; subprocess.run(['git', '-C', 'vcpkg', 'fetch', '--depth=1', 'origin', baseline], check=True)"
+
       - name: Configure
         run: cmake --preset ${{ matrix.configure_preset }} -DNGE_ENABLE_VULKAN=OFF -DNGE_BUILD_SAMPLES=OFF -DNGE_BUILD_EDITOR=OFF -DNGE_BUILD_TESTS=ON -DVCPKG_MANIFEST_FEATURES=""
 
@@ -81,6 +84,9 @@ jobs:
         uses: lukka/run-vcpkg@v11
         with:
           vcpkgJsonGlob: "vcpkg.json"
+
+      - name: Fetch vcpkg manifest baseline
+        run: python -c "import json, subprocess; baseline=json.load(open('vcpkg.json', encoding='utf-8'))['builtin-baseline']; subprocess.run(['git', '-C', 'vcpkg', 'fetch', '--depth=1', 'origin', baseline], check=True)"
 
       - name: Configure (full manifest features)
         run: cmake --preset windows-debug -DNGE_ENABLE_VULKAN=OFF -DNGE_BUILD_SAMPLES=ON -DNGE_BUILD_EDITOR=OFF -DNGE_BUILD_TESTS=ON -DVCPKG_MANIFEST_FEATURES="rendering;gameplay"
