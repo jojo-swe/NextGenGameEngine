@@ -175,6 +175,7 @@ void AccelStructCompactionManager::Unregister(u64 accelId) {
 }
 
 std::vector<u64> AccelStructCompactionManager::ProcessFrame(u32 currentFrame) {
+    (void)currentFrame; // Current-frame scheduling is not used by the synchronous query path.
     std::lock_guard lock(m_mutex);
 
     std::vector<u64> toCompact;

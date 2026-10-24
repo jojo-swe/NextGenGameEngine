@@ -75,6 +75,7 @@ void VisibilityRenderer::CreatePipelines() {
 }
 
 void VisibilityRenderer::SetInstances(const InstanceGPUData* instances, u32 count) {
+    (void)instances; // Upload path is deferred until shader compilation is wired up.
     m_instanceCount = count;
     // TODO: Upload instance data to GPU via staging buffer
     // m_device->UploadBufferData(m_instanceBuffer, instances, count * sizeof(InstanceGPUData));
