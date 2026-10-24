@@ -129,20 +129,16 @@ SubAllocation BufferSubAllocator::AllocateFromHeap(u32 heapIndex, u64 size, u32 
             alloc.heapIndex = heapIndex;
             alloc.valid = true;
 
-            // Shrink or remove free block
-            if (it->size - totalNeeded > 0) {
-                // Keep padding as free if significant
-                if (padding > 0) {
-                    FreeBlock paddingBlock;
-                    paddingBlock.offset = it->offset;
-                    paddingBlock.size = padding;
-                    // We'll add this after modifying the current block
+            // Preserve free space on both sides of the aligned allocation.
+            const u64 tailSize = it->size - totalNeeded;
+            if (padding > 0) {
+                it->size = padding;
+                if (tailSize > 0) {
+                    heap.freeBlocks.insert(it + 1, FreeBlock{alignedOffset + size, tailSize});
                 }
+            } else if (tailSize > 0) {
                 it->offset = alignedOffset + size;
-                it->size -= totalNeeded;
-                if (it->size == 0) {
-                    heap.freeBlocks.erase(it);
-                }
+                it->size = tailSize;
             } else {
                 heap.freeBlocks.erase(it);
             }
