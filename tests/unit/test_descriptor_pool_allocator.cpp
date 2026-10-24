@@ -35,6 +35,7 @@ TEST(DescriptorPoolAllocator, MultipleAllocations) {
 
     u32 id0 = alloc.Allocate(SimpleReq());
     u32 id1 = alloc.Allocate(SimpleReq());
+    EXPECT_NE(id1, id0);
     u32 id2 = alloc.Allocate(SimpleReq());
 
     EXPECT_NE(id0, UINT32_MAX);

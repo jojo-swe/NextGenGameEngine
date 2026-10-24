@@ -135,6 +135,8 @@ TEST(CommandBufferRecycler, RecordedCountTracking) {
     u32 id0 = recycler.AcquireSecondary(0, "A");
     u32 id1 = recycler.AcquireSecondary(0, "B");
     u32 id2 = recycler.AcquireSecondary(0, "C");
+    EXPECT_NE(id1, id0);
+    EXPECT_NE(id2, id1);
 
     recycler.MarkRecorded(id0);
     recycler.MarkRecorded(id2);
