@@ -14,6 +14,7 @@ using namespace nge::rhi;
 
 // ─── Window lifecycle smoke tests ──────────────────────────────────────────
 
+#if defined(NGE_PLATFORM_WINDOWS)
 TEST(WindowLifecycle, CreateAndDestroy) {
     WindowDesc desc;
     desc.title  = "Test Window";
@@ -93,6 +94,7 @@ TEST(WindowLifecycle, EventCallback) {
     // but setting it should not crash.
     SUCCEED();
 }
+#endif
 
 // ─── RHI device creation smoke test (requires Vulkan) ──────────────────────
 
