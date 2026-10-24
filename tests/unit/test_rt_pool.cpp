@@ -224,6 +224,8 @@ TEST(RenderTargetPool, CountAvailable) {
     u32 id1 = pool.Acquire(desc);
     u32 id2 = pool.Acquire(desc);
     u32 id3 = pool.Acquire(desc);
+    EXPECT_NE(id2, id1);
+    EXPECT_NE(id2, id3);
 
     pool.Release(id1);
     pool.Release(id3);
