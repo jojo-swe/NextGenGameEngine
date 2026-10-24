@@ -134,7 +134,8 @@ void MipGenerator::DispatchMipLevel(rhi::ICommandList* cmd, rhi::TextureHandle t
         u32 isSRGB;
         f32 invDstWidth;
         f32 invDstHeight;
-    } [[maybe_unused]] constants;
+    };
+    [[maybe_unused]] MipConstants constants{};
 
     constants.srcMip = srcMip;
     constants.dstMip = dstMip;
