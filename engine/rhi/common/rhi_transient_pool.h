@@ -60,7 +60,8 @@ public:
         u32 maxResources = 512;
     };
 
-    bool Init(IDevice* device, const Config& config = {});
+    bool Init(IDevice* device, const Config& config);
+    bool Init(IDevice* device) { return Init(device, Config{}); }
     void Shutdown();
 
     // Per-frame lifecycle

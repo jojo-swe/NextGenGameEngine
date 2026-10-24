@@ -29,7 +29,8 @@ public:
         u32 alignment = 256;                  // CBV alignment
     };
 
-    bool Init(IDevice* device, const Config& config = {});
+    bool Init(IDevice* device, const Config& config);
+    bool Init(IDevice* device) { return Init(device, Config{}); }
     void Shutdown();
 
     // Per-frame reset — reclaims the oldest frame's region

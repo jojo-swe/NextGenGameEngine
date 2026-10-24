@@ -43,7 +43,8 @@ public:
         u32 maxDeferredDeletes = 4096;
     };
 
-    bool Init(IDevice* device, const Config& config = {});
+    bool Init(IDevice* device, const Config& config);
+    bool Init(IDevice* device) { return Init(device, Config{}); }
     void Shutdown();
 
     // Register a new resource (starts with refCount=1)
