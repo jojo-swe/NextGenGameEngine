@@ -27,8 +27,8 @@ struct Job {
     std::atomic<i32>* counter = nullptr;
 };
 
-// ─── Chase-Lev Work-Stealing Deque ───────────────────────────────────────
-// Lock-free deque: owning thread pushes/pops from bottom; thieves steal from top.
+// ─── Work-Stealing Deque ─────────────────────────────────────────────────
+// Mutex-protected deque: submissions may push while workers pop or steal.
 class WorkStealingDeque {
     static constexpr usize INITIAL_CAPACITY = 4096;
 
@@ -37,7 +37,7 @@ public:
     ~WorkStealingDeque();
 
     void Push(Job job);
-    bool Pop(Job& job);      // Owner pops from bottom
+    bool Pop(Job& job);      // Pops from bottom (LIFO)
     bool Steal(Job& job);    // Thief steals from top
 
     usize Size() const;
@@ -66,6 +66,7 @@ private:
         }
     };
 
+    mutable std::mutex m_mutex;
     alignas(CACHE_LINE_SIZE) std::atomic<i64> m_bottom{0};
     alignas(CACHE_LINE_SIZE) std::atomic<i64> m_top{0};
     std::atomic<CircularArray*> m_array;

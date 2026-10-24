@@ -109,6 +109,45 @@ A next-generation 3D game engine built from scratch in C++20, targeting Vulkan 1
 
 ## Getting Started
 
+### G0 baseline build and tests
+
+The current program gate is **G0: Trustworthy repository**; see
+[MASTERPLAN.md](MASTERPLAN.md) for acceptance evidence and remaining work.
+The CI baseline compiles the engine and tests with Vulkan, the editor, samples,
+and optional vcpkg manifest features disabled. Run these commands from a Windows
+Visual Studio developer shell with `VCPKG_ROOT` set:
+
+```powershell
+cmake --preset windows-debug -B build/g0-core `
+  -DNGE_ENABLE_VULKAN=OFF -DNGE_BUILD_SAMPLES=OFF `
+  -DNGE_BUILD_EDITOR=OFF -DNGE_BUILD_TESTS=ON `
+  '-DVCPKG_MANIFEST_FEATURES='
+cmake --build build/g0-core --config Debug --parallel
+ctest --test-dir build/g0-core -C Debug --output-on-failure --no-tests=error
+```
+
+On Linux, use the same options with the `linux-debug` preset:
+
+```bash
+cmake --preset linux-debug -B build/g0-core \
+  -DNGE_ENABLE_VULKAN=OFF -DNGE_BUILD_SAMPLES=OFF \
+  -DNGE_BUILD_EDITOR=OFF -DNGE_BUILD_TESTS=ON \
+  -DVCPKG_MANIFEST_FEATURES=
+cmake --build build/g0-core --config Debug --parallel
+ctest --test-dir build/g0-core -C Debug --output-on-failure --no-tests=error
+```
+
+These commands use a separate build directory so an existing `build/` cache
+cannot hide configuration drift. CTest must discover and execute tests; zero
+tests is an error. If an older build directory discovers no tests, configure it
+again and confirm `NGE_BUILD_TESTS=ON` before diagnosing test registration.
+
+The full Windows dependency lane uses a separate `build/g0-full` directory,
+`-DNGE_BUILD_SAMPLES=ON`, and
+`'-DVCPKG_MANIFEST_FEATURES=rendering;gameplay'`; the other baseline options stay
+the same. It also keeps Vulkan disabled, so passing it provides compilation and
+CPU test evidence only. Vulkan runtime validation belongs to G1.
+
 ### 1. Configure (Windows)
 
 ```powershell
@@ -140,10 +179,13 @@ cmake --build build --config Debug
 Run tests with:
 
 ```powershell
-ctest --test-dir build -C Debug --output-on-failure
+ctest --test-dir build -C Debug --output-on-failure --no-tests=error
 ```
 
-1409 tests across 126 test suites — covering physics, character controller, animation, RHI systems, rendering, ECS, AI, networking, and more.
+Discovery and capability skips depend on the selected backend and manifest
+features. See the dated G0 evidence in [MASTERPLAN.md](MASTERPLAN.md) for actual
+run counts. CPU and mock tests do not verify Vulkan or optional runtime
+integrations.
 
 ## Dependencies
 

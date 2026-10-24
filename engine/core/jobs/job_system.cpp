@@ -17,6 +17,7 @@ WorkStealingDeque::~WorkStealingDeque() {
 }
 
 void WorkStealingDeque::Push(Job job) {
+    std::lock_guard lock(m_mutex);
     i64 b = m_bottom.load(std::memory_order_relaxed);
     i64 t = m_top.load(std::memory_order_acquire);
     CircularArray* arr = m_array.load(std::memory_order_relaxed);
@@ -34,6 +35,7 @@ void WorkStealingDeque::Push(Job job) {
 }
 
 bool WorkStealingDeque::Pop(Job& job) {
+    std::lock_guard lock(m_mutex);
     i64 b = m_bottom.load(std::memory_order_relaxed) - 1;
     m_bottom.store(b, std::memory_order_relaxed);
     CircularArray* arr = m_array.load(std::memory_order_relaxed);
@@ -61,6 +63,7 @@ bool WorkStealingDeque::Pop(Job& job) {
 }
 
 bool WorkStealingDeque::Steal(Job& job) {
+    std::lock_guard lock(m_mutex);
     i64 t = m_top.load(std::memory_order_acquire);
     std::atomic_thread_fence(std::memory_order_seq_cst);
     i64 b = m_bottom.load(std::memory_order_acquire);
@@ -79,6 +82,7 @@ bool WorkStealingDeque::Steal(Job& job) {
 }
 
 usize WorkStealingDeque::Size() const {
+    std::lock_guard lock(m_mutex);
     i64 b = m_bottom.load(std::memory_order_relaxed);
     i64 t = m_top.load(std::memory_order_relaxed);
     return static_cast<usize>(b >= t ? b - t : 0);
@@ -92,6 +96,8 @@ void JobSystem::Init(u32 numThreads) {
     }
 
     s_workerCount = numThreads;
+    s_jobCount.store(0, std::memory_order_relaxed);
+    s_nextDeque.store(0, std::memory_order_relaxed);
     s_running.store(true, std::memory_order_relaxed);
 
     // Create per-thread deques (including main thread at index 0)
@@ -136,9 +142,10 @@ JobHandle JobSystem::Submit(JobFunction fn) {
 
     // Push to main thread's deque (index 0) or round-robin
     u32 idx = s_nextDeque.fetch_add(1, std::memory_order_relaxed) % (s_workerCount + 1);
+    // Account for work before making it visible to a consumer.
+    s_jobCount.fetch_add(1, std::memory_order_release);
     s_deques[idx]->Push(std::move(job));
 
-    s_jobCount.fetch_add(1, std::memory_order_release);
     s_wakeCondition.notify_one();
 
     return handle;
@@ -148,6 +155,7 @@ JobHandle JobSystem::SubmitBatch(JobFunction* functions, u32 count) {
     auto* counter = new std::atomic<i32>(static_cast<i32>(count));
     JobHandle handle{counter};
 
+    s_jobCount.fetch_add(count, std::memory_order_release);
     for (u32 i = 0; i < count; ++i) {
         Job job;
         job.function = std::move(functions[i]);
@@ -157,7 +165,6 @@ JobHandle JobSystem::SubmitBatch(JobFunction* functions, u32 count) {
         s_deques[idx]->Push(std::move(job));
     }
 
-    s_jobCount.fetch_add(count, std::memory_order_release);
     s_wakeCondition.notify_all();
 
     return handle;

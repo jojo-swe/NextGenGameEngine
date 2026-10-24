@@ -147,6 +147,9 @@ public:
 } // namespace
 
 TEST(AppSmoke, InitUpdateShutdown) {
+#if !NGE_ENABLE_VULKAN
+    GTEST_SKIP() << "Application smoke test requires the Vulkan backend";
+#else
     SmokeApp app;
 
     EXPECT_EQ(app.Run(), 0);
@@ -157,4 +160,5 @@ TEST(AppSmoke, InitUpdateShutdown) {
     EXPECT_EQ(app.initCount.load(), 1);
     EXPECT_GE(app.updateCount.load(), 4);
     EXPECT_EQ(app.shutdownCount.load(), 1);
+#endif
 }

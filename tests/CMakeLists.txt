@@ -16,6 +16,10 @@ endif()
 
 add_executable(EngineTests ${TEST_SOURCES})
 
+target_compile_definitions(EngineTests PRIVATE
+    NGE_TEST_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures"
+)
+
 target_link_libraries(EngineTests
     PRIVATE
         NextGenEngine

@@ -24,7 +24,7 @@ jobs:
           test -f CMakeLists.txt
           test -f CMakePresets.json
           test -f vcpkg.json
-          test -f frolicking-tumbling-pond.md
+          test -f MASTERPLAN.md
 
       - name: Validate JSON files
         run: |
@@ -59,13 +59,13 @@ jobs:
           vcpkgJsonGlob: "vcpkg.json"
 
       - name: Configure
-        run: cmake --preset ${{ matrix.configure_preset }} -DNGE_ENABLE_VULKAN=OFF -DNGE_BUILD_SAMPLES=OFF
+        run: cmake --preset ${{ matrix.configure_preset }} -DNGE_ENABLE_VULKAN=OFF -DNGE_BUILD_SAMPLES=OFF -DNGE_BUILD_EDITOR=OFF -DNGE_BUILD_TESTS=ON -DVCPKG_MANIFEST_FEATURES=""
 
       - name: Build
         run: cmake --build build --config Debug --parallel
 
       - name: Test
-        run: ctest --test-dir build -C Debug --output-on-failure
+        run: ctest --test-dir build -C Debug --output-on-failure --no-tests=error
 
   build-and-test-full-windows:
     name: Build and Test Full (windows-latest)
@@ -83,10 +83,10 @@ jobs:
           vcpkgJsonGlob: "vcpkg.json"
 
       - name: Configure (full manifest features)
-        run: cmake --preset windows-debug -DNGE_ENABLE_VULKAN=OFF -DNGE_BUILD_SAMPLES=ON -DVCPKG_MANIFEST_FEATURES="rendering;gameplay"
+        run: cmake --preset windows-debug -DNGE_ENABLE_VULKAN=OFF -DNGE_BUILD_SAMPLES=ON -DNGE_BUILD_EDITOR=OFF -DNGE_BUILD_TESTS=ON -DVCPKG_MANIFEST_FEATURES="rendering;gameplay"
 
       - name: Build
         run: cmake --build build --config Debug --parallel
 
       - name: Test
-        run: ctest --test-dir build -C Debug --output-on-failure
+        run: ctest --test-dir build -C Debug --output-on-failure --no-tests=error
