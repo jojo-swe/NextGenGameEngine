@@ -36,7 +36,8 @@ public:
         u32         maxFramesInFlight = 3;
     };
 
-    bool Init(IDevice* device, const Config& config = {});
+    bool Init(IDevice* device, const Config& config);
+    bool Init(IDevice* device) { return Init(device, Config{}); }
     void Shutdown();
 
     // Call at frame boundaries

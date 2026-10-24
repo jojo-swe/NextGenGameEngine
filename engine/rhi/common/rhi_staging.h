@@ -42,7 +42,8 @@ public:
         u32 maxSize = 256 * 1024 * 1024;     // 256 MB max
     };
 
-    bool Init(IDevice* device, const Config& config = {});
+    bool Init(IDevice* device, const Config& config);
+    bool Init(IDevice* device) { return Init(device, Config{}); }
     void Shutdown();
 
     // Call at frame start

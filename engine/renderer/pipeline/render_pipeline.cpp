@@ -37,16 +37,6 @@ struct DemoPushConstants {
     nge::u32 pad2;
 };
 
-nge::math::Mat4 Transpose(const nge::math::Mat4& matrix) {
-    nge::math::Mat4 result{};
-    for (int row = 0; row < 4; ++row) {
-        for (int column = 0; column < 4; ++column) {
-            result.m[row][column] = matrix.m[column][row];
-        }
-    }
-    return result;
-}
-
 fs::path FindShaderRoot() {
     fs::path current = fs::current_path();
 

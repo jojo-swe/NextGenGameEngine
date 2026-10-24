@@ -104,7 +104,7 @@ void RenderCompositor::BuildRasterizationPasses(RenderGraph& graph, FrameResourc
     depthPass.WriteDepth(res.depthBuffer);
     depthPass.WriteColor(res.visibilityBuffer, 0);
     depthPass.SetViewport(w, h);
-    depthPass.SetExecute([this, &frameData](rhi::ICommandList* cmd) {
+    depthPass.SetExecute([&frameData](rhi::ICommandList* cmd) {
         // Bind early-z pipeline, draw visible meshlets from culling result
         // cmd->DrawIndexedIndirectCount(m_culling.GetDrawCommandBuffer(), 0,
         //                                m_culling.GetDrawCountBuffer(), 0, maxDraws, stride);
