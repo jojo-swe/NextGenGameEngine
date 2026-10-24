@@ -181,6 +181,7 @@ TEST(WorkloadDistributor, TransferPrefersDedicated) {
 
     u32 gfx = dist.RegisterQueue(QueueType::Graphics, 0);
     u32 xfer = dist.RegisterQueue(QueueType::Transfer, 2);
+    EXPECT_NE(gfx, xfer);
 
     WorkloadDesc desc;
     desc.preferredQueue = QueueType::Transfer;

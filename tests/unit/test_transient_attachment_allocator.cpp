@@ -74,6 +74,7 @@ TEST(TransientAttachmentAllocator, AliasingNonOverlapping) {
 
     // Pass 2-3: another color attachment (non-overlapping, should alias)
     auto h2 = alloc.Allocate(MakeDesc(1920, 1080), 2, 3);
+    EXPECT_NE(h2.id, 0u);
 
     auto stats = alloc.GetStats();
     EXPECT_EQ(stats.aliasedAllocations, 1u);
@@ -92,6 +93,7 @@ TEST(TransientAttachmentAllocator, NoAliasingOverlapping) {
     auto h1 = alloc.Allocate(MakeDesc(1920, 1080), 0, 2);
     // Pass 1-3 (overlaps with h1)
     auto h2 = alloc.Allocate(MakeDesc(1920, 1080), 1, 3);
+    EXPECT_NE(h1.id, h2.id);
 
     auto stats = alloc.GetStats();
     EXPECT_EQ(stats.aliasedAllocations, 0u); // No aliasing possible
@@ -108,6 +110,7 @@ TEST(TransientAttachmentAllocator, AliasingDisabled) {
     auto h1 = alloc.Allocate(MakeDesc(1920, 1080), 0, 1);
     alloc.Release(h1.id);
     auto h2 = alloc.Allocate(MakeDesc(1920, 1080), 2, 3);
+    EXPECT_NE(h2.id, 0u);
 
     auto stats = alloc.GetStats();
     EXPECT_EQ(stats.aliasedAllocations, 0u); // Disabled
@@ -187,16 +190,19 @@ TEST(TransientAttachmentAllocator, FormatSizeVariation) {
     alloc.Init();
 
     auto h8 = alloc.Allocate(MakeDesc(256, 256, AttachmentFormat::RGBA8_UNORM), 0, 0);
+    EXPECT_NE(h8.id, 0u);
     u64 mem8 = alloc.GetMemoryUsed();
 
     alloc.BeginFrame();
 
     auto h16 = alloc.Allocate(MakeDesc(256, 256, AttachmentFormat::RGBA16_FLOAT), 0, 0);
+    EXPECT_NE(h16.id, 0u);
     u64 mem16 = alloc.GetMemoryUsed();
 
     alloc.BeginFrame();
 
     auto h32 = alloc.Allocate(MakeDesc(256, 256, AttachmentFormat::RGBA32_FLOAT), 0, 0);
+    EXPECT_NE(h32.id, 0u);
     u64 mem32 = alloc.GetMemoryUsed();
 
     // RGBA8=4B, RGBA16F=8B, RGBA32F=16B per pixel
@@ -211,11 +217,13 @@ TEST(TransientAttachmentAllocator, MSAASampleCount) {
     alloc.Init();
 
     auto h1x = alloc.Allocate(MakeDesc(256, 256, AttachmentFormat::RGBA8_UNORM, 1), 0, 0);
+    EXPECT_NE(h1x.id, 0u);
     u64 mem1 = alloc.GetMemoryUsed();
 
     alloc.BeginFrame();
 
     auto h4x = alloc.Allocate(MakeDesc(256, 256, AttachmentFormat::RGBA8_UNORM, 4), 0, 0);
+    EXPECT_NE(h4x.id, 0u);
     u64 mem4 = alloc.GetMemoryUsed();
 
     // 4x MSAA should use ~4x memory
@@ -231,6 +239,7 @@ TEST(TransientAttachmentAllocator, PeakActiveCount) {
     auto h1 = alloc.Allocate(MakeDesc(256, 256), 0, 0);
     auto h2 = alloc.Allocate(MakeDesc(256, 256), 0, 0);
     auto h3 = alloc.Allocate(MakeDesc(256, 256), 0, 0);
+    EXPECT_NE(h3.id, 0u);
 
     alloc.Release(h1.id);
     alloc.Release(h2.id);
@@ -270,6 +279,7 @@ TEST(TransientAttachmentAllocator, MemorySavedTracking) {
     auto h1 = alloc.Allocate(MakeDesc(512, 512), 0, 0);
     alloc.Release(h1.id);
     auto h2 = alloc.Allocate(MakeDesc(512, 512), 1, 1);
+    EXPECT_NE(h2.id, h1.id);
 
     auto stats = alloc.GetStats();
     EXPECT_GT(stats.memoryWithoutAliasing, stats.totalMemoryUsed);
