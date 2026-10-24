@@ -152,8 +152,10 @@ OFF and tests stay ON.
 | Full Windows dependency configure | Passed |
 | Full Windows build | Passed, including SampleTriangle compilation/linking |
 | Full Windows CTest | 1,366 discovered: 1,364 passed, 2 Vulkan skips, 0 failures |
-| Linux and hosted CI | Not run for this change |
-| Vulkan validation/runtime | Not performed; both configurations disable Vulkan |
+| Hosted Linux baseline CI | 1,361/1,361 passed; [GitHub Actions run](https://github.com/jojo-swe/NextGenGameEngine/actions/runs/40117717697) |
+| Hosted Windows baseline CI | 1,366/1,366 passed; [GitHub Actions run](https://github.com/jojo-swe/NextGenGameEngine/actions/runs/40117717697) |
+| Hosted full Windows CI | 1,366/1,366 passed; SampleTriangle built; [GitHub Actions run](https://github.com/jojo-swe/NextGenGameEngine/actions/runs/40117717697) |
+| Vulkan validation/runtime | Not performed; Vulkan disabled in all listed configurations |
 
 Toolchain: CMake 4.4.4, Ninja 1.13.2, MSVC 19.51.36260, manifest baseline
 `e238b4b4a4239829e1fde2c7db2ab668b65ae1dd`. Diagnostics are under
@@ -163,10 +165,10 @@ and `build/g0-full/ctest-final.log`. The baseline skips the RHI/application
 Vulkan tests and the two cgltf tests; the full configuration skips only the two
 Vulkan tests.
 
-Remaining G0 work: hosted Windows/Linux CI evidence, smoke labels, generated
-runtime artifact hygiene, CMake requirement alignment, and the broader README
-maturity audit. Application cleanup after partial initialization failure remains
-G1 work; skipping unavailable GPU tests does not verify that path.
+Remaining G0 work: smoke labels, generated runtime artifact hygiene, CMake
+requirement alignment, and the broader README maturity audit. Application
+cleanup after partial initialization failure remains G1 work; skipping
+unavailable GPU tests does not verify that path.
 
 Rollback: revert this package's CI, job queue, regression/smoke, fixture wiring,
 and documentation changes together. No gate is promoted solely by local CPU
