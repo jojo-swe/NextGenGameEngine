@@ -24,7 +24,6 @@ struct Transform {
 
     void SetPosition(math::Vec3 pos) {
         // Extract current rotation, combine with new translation
-        pga::Motor rot = pga::Motor::Rotation({0,0,1}, 0); // TODO: extract rotation from current motor
         // For now, rebuild motor from scratch
         localMotor = pga::Motor::Translation(pos);
         // If we had rotation, we'd do: Motor::Multiply(Translation(pos), rotation)

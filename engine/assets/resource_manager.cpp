@@ -343,7 +343,7 @@ void ResourceManager::CheckHotReload() {
 
         // Check file modification time
         std::error_code ec;
-        auto ftime = std::filesystem::last_write_time(entry.path, ec);
+        [[maybe_unused]] const auto ftime = std::filesystem::last_write_time(entry.path, ec);
         if (ec) continue;
 
         // TODO: Compare with stored modification time and reload if changed
@@ -369,12 +369,14 @@ bool ResourceManager::LoadTexture(ResourceEntry& entry) {
 }
 
 bool ResourceManager::LoadShader(ResourceEntry& entry) {
+    static_cast<void>(entry);
     // TODO: Use ShaderCompiler to compile/load the shader
     NGE_LOG_DEBUG("Loading shader: {}", entry.path);
     return true;
 }
 
 bool ResourceManager::LoadSound(ResourceEntry& entry) {
+    static_cast<void>(entry);
     // TODO: Use AudioSystem to load sound data
     NGE_LOG_DEBUG("Loading sound: {}", entry.path);
     return true;
@@ -382,6 +384,7 @@ bool ResourceManager::LoadSound(ResourceEntry& entry) {
 
 bool ResourceManager::UploadMeshToGPU(ResourceEntry& entry) {
     if (!m_device) return false;
+    static_cast<void>(entry);
     // TODO: Create vertex/index buffers, upload via staging
     NGE_LOG_DEBUG("Uploading mesh to GPU: {}", entry.path);
     return true;
@@ -389,6 +392,7 @@ bool ResourceManager::UploadMeshToGPU(ResourceEntry& entry) {
 
 bool ResourceManager::UploadTextureToGPU(ResourceEntry& entry) {
     if (!m_device) return false;
+    static_cast<void>(entry);
     // TODO: Create texture, upload via staging buffer
     NGE_LOG_DEBUG("Uploading texture to GPU: {}", entry.path);
     return true;
