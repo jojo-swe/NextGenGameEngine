@@ -38,6 +38,10 @@ int Application::Run() {
 }
 
 bool Application::InitSubsystems() {
+#if !defined(NGE_PLATFORM_WINDOWS)
+    NGE_LOG_ERROR("Application runtime has no window backend on this platform");
+    return false;
+#else
     // ─── Logging ──────────────────────────────────────────────────────
     APP_TRACE("[APP] Log::Init()\n");
     Log::Init();
@@ -102,6 +106,7 @@ bool Application::InitSubsystems() {
     APP_TRACE("[APP] all subsystems initialized\n");
     NGE_LOG_INFO("All subsystems initialized");
     return true;
+#endif
 }
 
 void Application::ShutdownSubsystems() {

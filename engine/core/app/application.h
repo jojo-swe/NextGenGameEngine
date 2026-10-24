@@ -44,7 +44,7 @@ public:
 
     // Override these in your game class
     virtual void OnInit() {}
-    virtual void OnUpdate(f32 deltaTime) {}
+    virtual void OnUpdate(f32) {}
     virtual void OnRender() {}
     virtual void OnShutdown() {}
 

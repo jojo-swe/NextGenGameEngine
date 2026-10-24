@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/core/types.h"
+#include <algorithm>
 #include <functional>
 #include <vector>
 #include <unordered_map>
