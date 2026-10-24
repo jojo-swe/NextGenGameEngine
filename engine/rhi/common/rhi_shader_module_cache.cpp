@@ -19,9 +19,6 @@ bool ShaderModuleCache::Init(IDevice* device, const ShaderModuleCacheConfig& con
 
 void ShaderModuleCache::Shutdown() {
     std::lock_guard lock(m_mutex);
-    for (auto& [hash, mod] : m_modules) {
-        // TODO: vkDestroyShaderModule(device, mod.handle, nullptr);
-    }
     m_modules.clear();
     m_pathToHash.clear();
 }
@@ -156,9 +153,6 @@ void ShaderModuleCache::Invalidate(const std::filesystem::path& filePath) {
 
 void ShaderModuleCache::InvalidateAll() {
     std::lock_guard lock(m_mutex);
-    for (auto& [hash, mod] : m_modules) {
-        // TODO: vkDestroyShaderModule
-    }
     m_modules.clear();
     m_pathToHash.clear();
     NGE_LOG_INFO("All shader modules invalidated");
