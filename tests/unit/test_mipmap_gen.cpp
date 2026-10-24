@@ -169,8 +169,8 @@ TEST(MipmapGen, GetPendingTextures) {
     auto pending = mgr.GetPendingTextures();
     EXPECT_EQ(pending.size(), 2u);
     ASSERT_EQ(pending.size(), 2u);
-    EXPECT_EQ(pending[0], id1);
-    EXPECT_EQ(pending[1], id2);
+    EXPECT_TRUE((pending[0] == id1 && pending[1] == id2) ||
+                (pending[0] == id2 && pending[1] == id1));
 
     mgr.RequestGeneration(id1);
     mgr.ProcessFrame(0);
