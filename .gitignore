@@ -62,3 +62,15 @@ build_error*.log
 # Temp batch scripts
 _*.bat
 build_*.bat
+
+# privacy-guard: local secrets, logs, and editor state
+.env
+.env.*
+!.env.example
+logs/
+*.local
+*.local.*
+.vscode/settings.json
+*.pem
+*.key
+secrets/
