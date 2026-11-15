@@ -1,3 +1,5 @@
+<p align="center"><img src=".github/assets/logo.svg" alt="NextGenGameEngine logo" width="128"></p>
+
 # NextGenGameEngine
 
 [![CI](https://github.com/jojo-swe/NextGenGameEngine/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jojo-swe/NextGenGameEngine/actions/workflows/ci.yml)
